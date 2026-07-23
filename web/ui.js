@@ -137,12 +137,26 @@
     const eventDate = new Date(card.eventDate + "T00:00:00Z")
       .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-    // Tier assigned positionally in scrape_upcoming_card.py (main event =
-    // first billed, co-main = second, featured prelim = first prelim by
-    // billing) -- see assign_tiers() there for why position alone is
-    // reliable without scraping an explicit "Main Card"/"Prelims" label.
+    // Tier now comes from ufc.com's real Main Card/Prelims/Early Prelims
+    // segment membership (falls back to the old positional guess only if
+    // ufc.com's segment data wasn't available for this event) -- see
+    // assign_tiers_ufc()/assign_tiers() in scrape_upcoming_card.py.
     const TIER_VS_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
     const TIER_ROW_CLASS = { main_event: "fc-row--main-event", co_main: "fc-row--co-main", featured_prelim: "fc-row--featured-prelim" };
+    const BELT_ICON_SVG = `<svg class="fc-belt-icon" viewBox="0 0 24 14" aria-hidden="true" focusable="false">
+      <rect x="0" y="4" width="24" height="6" rx="1" fill="currentColor" opacity="0.55"></rect>
+      <circle cx="12" cy="7" r="6" fill="currentColor"></circle>
+      <circle cx="12" cy="7" r="3" fill="var(--canvas)"></circle>
+    </svg>`;
+
+    function boutRowClass(b) {
+      // A co-main that's ALSO a title fight (a real double-title-card
+      // scenario, e.g. UFC 330: Makhachev/Della Maddalena + Dern/Robertson)
+      // gets the main-event's gold treatment instead of the usual silver --
+      // per the user's explicit ask, not just a belt icon on a silver row.
+      if (b.tier === "co_main" && b.isTitleFight) return "fc-row--co-main fc-row--co-main-title";
+      return TIER_ROW_CLASS[b.tier] || "";
+    }
 
     function boutRowHtml(b) {
       // Match by name against the FULL historical roster in scrape_upcoming_card.py,
@@ -168,9 +182,10 @@
       const modelPick = predictable
         ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, b.tier === "main_event" ? 5 : 3, MODEL_DATA)).text)}</div>`
         : "";
+      const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
       return `
-        <div class="fc-row ${TIER_ROW_CLASS[b.tier] || ""}">
-          <div class="fc-weight mono">${escapeHtml(b.weightClass || "")}</div>
+        <div class="fc-row ${boutRowClass(b)}">
+          <div class="fc-weight mono">${beltIcon}${escapeHtml(b.weightClass || "")}</div>
           <div class="fc-matchup">
             <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
             <div class="fc-vs">${escapeHtml(TIER_VS_LABEL[b.tier] || "vs")}</div>

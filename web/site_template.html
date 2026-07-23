@@ -198,9 +198,10 @@
 
   /* Tiered card layout -- main event stands alone (gold), the rest of the
      main card follows with the co-main called out (silver), then prelims
-     with the featured prelim called out (bronze). Tier is assigned
-     positionally in scrape_upcoming_card.py (assign_tiers), not scraped --
-     see that module's comment for why position alone is enough. */
+     with the featured prelim called out (bronze). Tier comes from ufc.com's
+     real Main Card/Prelims/Early Prelims segment data when available,
+     falling back to a position-based guess otherwise -- see
+     assign_tiers_ufc()/assign_tiers() in scrape_upcoming_card.py. */
   .fc-group-label {
     font-size: 0.66rem;
     letter-spacing: 0.1em;
@@ -231,9 +232,15 @@
   .fc-row--main-event .fc-vs { color: var(--gold); font-weight: 700; }
   .fc-row--co-main { border-top: 3px solid var(--silver); background: var(--silver-wash); }
   .fc-row--co-main .fc-vs { color: var(--silver); font-weight: 700; }
+  /* A co-main that's ALSO a title fight (double-title card) wins gold
+     instead of the usual silver -- source order breaks the tie since both
+     classes are present together with equal specificity. */
+  .fc-row--co-main-title { border-top: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+  .fc-row--co-main-title .fc-vs { color: var(--gold); }
   .fc-row--featured-prelim { border-top: 3px solid var(--bronze); background: var(--bronze-wash); }
   .fc-row--featured-prelim .fc-vs { color: var(--bronze); font-weight: 700; }
   .fc-weight { font-size: 0.66rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .fc-belt-icon { width: 1em; height: auto; color: var(--gold); margin-right: 0.3em; vertical-align: -0.1em; }
   .fc-matchup { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
   .fc-fighter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; }
   .fc-badge {

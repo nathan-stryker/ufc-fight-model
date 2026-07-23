@@ -130,31 +130,63 @@ the full predictor where the round toggle can be corrected by hand for a
 flat list of 13 identical rows didn't read like a real fight card. Redesigned
 into main event (standalone, gold-outlined) -> rest of main card (co-main
 called out in silver) -> prelims (featured prelim called out in bronze),
-matching how a real UFC poster is laid out. Tier is assigned **positionally**
-in `scrape_upcoming_card.py`'s `assign_tiers()`, not scraped from an explicit
-"Main Card"/"Prelims" label -- per the user's own correction after an initial
-detour into checking whether ufc.com's event pages expose that segmentation
-(they do, via `id="main-card"`/`id="prelims-card"`/`id="early-prelims"`
-blocks, confirmed by fetching a real event page -- kept as a documented
-finding even though the simpler approach won, in case the fixed positional
-convention ever needs revisiting). The simpler rule instead: Sherdog's bout
-order is billing-prominence-descending (main event first), which is the
-*reverse* of real fight-night chronological order (prelims fight first,
-main event closes the night) -- so position alone tells you everything you
-need: index 0 = main event, index 1 = co-main (the "second-to-last" fight
-chronologically), and index `MAIN_CARD_SIZE` (a constant, currently 5 --
-the standard modern UFC main-card size) = the featured prelim (the
-"last"/biggest prelim fought right before the main card starts). No second
-data source, no extra network request, no explicit segment label needed.
+matching how a real UFC poster is laid out. First shipped with tier assigned
+**positionally** (`assign_tiers()`, a fixed `MAIN_CARD_SIZE = 5` constant
+marking where "main card" ends and "prelims" begins), per the user's own
+initial preference for the simpler approach over scraping ufc.com's explicit
+segment labels.
 
-**How to apply**: if a future card has an unusual structure (fewer than 5
-main-card bouts, or more), `MAIN_CARD_SIZE` in `scrape_upcoming_card.py` is
-the one place to adjust -- `assign_tiers()` degrades gracefully for short
-cards (fewer than `MAIN_CARD_SIZE` total bouts just means no "prelims" tier
-at all). Don't reach for ufc.com's explicit segment labels unless this
-positional convention is confirmed wrong for a real card -- it was
-investigated and works, but the user explicitly preferred the simpler
-approach.
+**Real segment data + title fights, added 2026-07-23 (same day, follow-up)**:
+the user flagged the positional guess themselves as a known gap ("it is not
+always 5 fights on a main card") and asked for a belt icon on title fights,
+with the co-main staying **gold** instead of silver when it's *also* a title
+fight (a real scenario -- some cards run two title fights). Confirmed live
+while building this: the very next UFC card at the time had **6** main-card
+bouts, not 5 -- the fixed constant really was silently wrong for a real card,
+not just a hypothetical edge case.
+
+Fixed by switching to ufc.com as the primary source for bout list + tiering
+(Sherdog remains the source for event discovery/name/date/location, already
+vetted and unchanged). `scrape_card_ufc_com()` in `scrape_upcoming_card.py`
+reads the real `id="main-card"`/`id="prelims-card"`/`id="early-prelims"`
+segment containers (each holding `.c-listing-fight` blocks with
+`.c-listing-fight__corner-name--red`/`--blue` names and a
+`.c-listing-fight__class-text` weight-class string) and derives tier from
+actual segment membership + position within it (index 0 of main-card = main
+event, index 1 = co-main, index 0 of prelims = featured prelim -- same
+prominence-descending-order logic as before, just applied to the real
+segment instead of one long guessed list). `is_title_fight` comes from the
+weight-class text containing "Title" (e.g. "Welterweight Title Bout" vs a
+plain "Light Heavyweight Bout") -- confirmed against a real two-title card
+(UFC 330: Makhachev's welterweight title defense plus a women's strawweight
+title co-main) before shipping.
+
+ufc.com's segment containers are only reliably populated once an event is
+close to fight week -- a distant future PPV can go months with only a flat
+"how to watch" bout list and no main-card/prelims split yet. Handled with a
+graceful fallback chain: if ufc.com's event page doesn't parse, its parsed
+date doesn't match the Sherdog event being looked up (guards against
+silently mixing two different events' data), or its main-card segment comes
+back empty, `scrape_upcoming_card.py` falls back to the original
+Sherdog-only scrape + positional `assign_tiers()` heuristic so the card still
+ships, just without real segment/title data for that one week -- same
+degrade-gracefully philosophy as the flag scraper.
+
+Frontend: `ui.js`'s `renderUpcomingCard()` renders a small inline SVG belt
+icon (colored via `--gold`, not an emoji) next to the weight-class label for
+any `isTitleFight` bout, and a co-main row gets a second CSS class
+(`fc-row--co-main-title`) that overrides the usual silver border/wash with
+gold when `isTitleFight` is also true (`site_template.html`, source-order
+override, same specificity as the base `.fc-row--co-main` rule).
+
+**How to apply**: `MAIN_CARD_SIZE` in `scrape_upcoming_card.py` still exists
+but is fallback-only now -- don't "fix" a wrong tier by adjusting it unless
+the fallback path is actually the one that fired that week (check the
+printed `source:` line from `python -m src.data.scrape_upcoming_card`). If
+ufc.com's HTML structure changes (class names, container ids), that's the
+first thing to check for a future "wrong tiers again" report -- it was
+verified against real live pages while building this but is inherently more
+fragile than Sherdog's cleaner itemprop microdata.
 
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
