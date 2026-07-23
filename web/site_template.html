@@ -194,9 +194,25 @@
   }
   .fc-call-btn:hover { background: var(--gold); color: var(--canvas); }
   .fc-nodata { font-size: 0.72rem; color: var(--ink-dim); font-style: italic; text-align: right; }
+  .fc-model-pick {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    text-align: center;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+    border-top: 1px dashed var(--canvas-line);
+  }
+  .fc-model-pick-label {
+    color: var(--gold);
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    margin-right: 0.4rem;
+  }
   @media (max-width: 640px) {
     .fc-row { grid-template-columns: 1fr; text-align: center; }
     .fc-call-btn, .fc-nodata { justify-self: center; }
+    .fc-model-pick { grid-column: 1; }
   }
 
   .matchup {
@@ -427,6 +443,7 @@
   }
 
   .prop-tracker { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--canvas-line); }
+  .my-predictions { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--canvas-line); }
   .tracker-note { color: var(--ink-dim); font-size: 0.8rem; line-height: 1.5; margin: 0 0 1.25rem; }
   .pt-empty-hint { color: var(--ink-dim); font-size: 0.85rem; padding: 0.5rem 0; }
   .pt-add { background: var(--canvas-raised); border: 1px solid var(--canvas-line); padding: 1rem; margin-bottom: 1.5rem; }
@@ -550,6 +567,8 @@
 
   <section class="prop-tracker" id="prop-tracker"></section>
 
+  <section class="my-predictions" id="my-predictions"></section>
+
   <footer class="disclaimer">
     Trained on <span class="mono" id="fight-count">&mdash;</span> UFC fights, 1994&ndash;2026. Runs
     entirely client-side &mdash; nothing you type is sent anywhere. Best on realistic,
@@ -569,6 +588,12 @@ __PAPER_TRADE_JS__
 </script>
 <script>
   window.PaperTrade.mount("prop-tracker");
+</script>
+<script>
+__PREDICTIONS_JS__
+</script>
+<script>
+  window.MyPredictions.mount("my-predictions");
 </script>
 <script>
 __UI_JS__

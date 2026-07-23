@@ -114,6 +114,18 @@ this exception first -- don't just widen `ACTIVE_WINDOW_MONTHS` globally,
 since that constant intentionally keeps the general search box from bloating
 with fighters nobody would currently book.
 
+**"Model Predicts" line, added 2026-07-23**: every predictable bout on the
+card also shows the model's own top-line call (e.g. "Model predicts Magomed
+Ankalaev by Decision") without needing to click "Call This Fight" first --
+`ui.js` runs `predictFull()` for each bout up front at render time and
+derives the headline via `verdictText()`, the same helper the full results
+panel's verdict line uses (extracted specifically so the two can never
+disagree -- see `renderResult()`). No scheduled-rounds data comes from
+Sherdog's card listing, so this assumes 5 rounds for the main event and 3
+for everything else (standard UFC convention); "Call This Fight" still opens
+the full predictor where the round toggle can be corrected by hand for a
+5-round co-main or similar exception.
+
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
 round before it actually stops, so the saved model has MORE trees than
@@ -161,6 +173,44 @@ Export uses the Claude Artifact `downloads` capability when available
 (`window.claude.downloads.save`), falling back to a plain `<a download>`
 click otherwise -- both paths were exercised during testing. Import is a
 plain `<input type="file">` + `FileReader`, needing no special capability.
+
+### My Predictions (not betting-affiliated), added 2026-07-23
+
+A second, separate log below the Prop Bet Tracker, for users who just want
+to record what THEY personally think will happen -- winner, optionally a
+method, optionally a round, plus a free-text note -- with zero odds, edge,
+or stake-sizing math anywhere in it. Deliberately kept as its own module
+(`web/predictions.js`) and its own `localStorage` key
+(`ufc_my_predictions_v1`) rather than folded into the prop tracker as another
+"market" type, since the user explicitly wants this framed as unrelated to
+betting. Mirrors the same mount/CSV-backup/restore pattern as
+`paper_trade.js` (see above) for consistency, including its own
+`my_predictions.csv` schema.
+
+Each logged prediction also captures what the model itself predicted for
+that matchup at the time (via the same `verdictText()` helper used
+elsewhere), shown alongside your pick for comparison, and the settled-results
+report includes a "picked the same winner as the model" rate -- a
+descriptive stat only (winner comparison, not full method+round agreement;
+the report text says so explicitly to avoid the wrong impression).
+
+**Real bug caught during testing, not just anecdote**: a CSV
+export/re-import round-trip test (log a prediction, settle it, hand-build a
+CSV row mimicking one exported from a different session, import it) showed
+the settled-results report silently under-counting genuinely correct picks.
+Root cause: `settlePrediction()` stored `correct_winner`/`correct_method`/
+`correct_round` as real JS booleans, which JSON round-trips (auto-save)
+fine, but a **CSV round-trip turns a boolean into the string `"true"`**, and
+the report's original `filter(p => p.correct_winner === true)` used strict
+equality -- a re-imported row's string `"true"` fails `=== true`, so it
+silently stopped counting as a hit. Fixed by having the report recompute
+correctness fresh from the raw `picked_*`/`actual_*` fields every time
+(`isCorrectWinner`/`isCorrectMethod`/`isCorrectRound` in `predictions.js`)
+instead of trusting the stored flags -- the stored `correct_*` columns are
+now purely for readability if someone opens the CSV directly, never read
+back by the app's own logic. Verified with a hand-built two-row CSV
+(one correct, one incorrect pick) imported via `replace` mode, confirming
+the report's accuracy percentages matched hand-computed expectations exactly.
 
 ### Visual design
 

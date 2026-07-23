@@ -7,6 +7,24 @@
   let scheduledRounds = 3;
   const METHOD_NAMES = { dec: "Decision", ko: "KO/TKO", sub: "Submission" };
 
+  // Single declarative "who/how/when" derivation, shared by the full results
+  // panel (renderResult) and the home-page card list (renderUpcomingCard) --
+  // both read the top-ranked entries of the SAME sorted distributions a
+  // predictFull() result carries, so a headline can never disagree with the
+  // detail bars it's summarizing, no matter which section is rendering it.
+  function verdictText(r) {
+    const aWinner = r.probAWins >= 0.5;
+    const winnerName = aWinner ? r.nameA : r.nameB;
+    const methodRanked = Object.entries(r.method).sort((x, y) => y[1] - x[1]);
+    const topMethod = methodRanked[0][0];
+    let text = `${winnerName} by ${METHOD_NAMES[topMethod]}`;
+    if (topMethod !== "dec") {
+      const roundRanked = Object.entries(r.roundGivenFinish).sort((x, y) => y[1] - x[1]);
+      if (roundRanked.length) text += `, Round ${roundRanked[0][0]}`;
+    }
+    return { aWinner, winnerName, methodRanked, topMethod, text };
+  }
+
   function hint(f) {
     if (f.nickname) return `"${f.nickname}"`;
     if (f.dob != null) return `b. ${new Date(f.dob * MS_PER_DAY).getUTCFullYear()}`;
@@ -133,6 +151,16 @@
       const action = predictable
         ? `<button class="fc-call-btn" data-a="${escapeHtml(b.idA)}" data-b="${escapeHtml(b.idB)}" type="button">Call This Fight</button>`
         : `<div class="fc-nodata">No prediction available</div>`;
+      // Computed up front for every predictable bout (not gated behind a
+      // click) so the card reads as a preview of the model's take on the
+      // whole night, not just a launcher into the full predictor below.
+      // No scheduled-round data comes from Sherdog's card listing, so this
+      // assumes 5 for the main event and 3 for everything else (standard
+      // UFC convention) -- "Call This Fight" still opens the full predictor
+      // where the round toggle can be corrected for a 5-round co-main, etc.
+      const modelPick = predictable
+        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, i === 0 ? 5 : 3, MODEL_DATA)).text)}</div>`
+        : "";
       return `
         <div class="fc-row">
           <div class="fc-weight mono">${escapeHtml(b.weightClass || "")}</div>
@@ -142,6 +170,7 @@
             <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
           </div>
           ${action}
+          ${modelPick}
         </div>`;
     }).join("");
 
@@ -178,6 +207,7 @@
     const result = predictFull(selected.a, selected.b, scheduledRounds, MODEL_DATA);
     renderResult(result);
     if (window.PaperTrade) window.PaperTrade.setMatchup(scheduledRounds, result);
+    if (window.MyPredictions) window.MyPredictions.setMatchup(scheduledRounds, result);
   });
 
   function makeRow(label, pct, predicted) {
@@ -197,24 +227,14 @@
     const results = document.getElementById("results");
     results.hidden = false;
 
-    const aWinner = r.probAWins >= 0.5;
+    const v = verdictText(r);
+    const aWinner = v.aWinner;
+    const methodRanked = v.methodRanked;
+    const topMethod = v.topMethod;
     document.getElementById("verdict-line").innerHTML =
       `<span class="${aWinner ? "winner" : ""}">${escapeHtml(r.nameA)}</span> vs ` +
       `<span class="${!aWinner ? "winner" : ""}">${escapeHtml(r.nameB)}</span>`;
-
-    // Single declarative prediction, derived from the exact same sorted
-    // distributions the tape bars below show (so the headline and the detail
-    // can never disagree) -- the top-ranked method/round, not a re-derived
-    // per-winner conditional distribution.
-    const winnerName = aWinner ? r.nameA : r.nameB;
-    const methodRanked = Object.entries(r.method).sort((x, y) => y[1] - x[1]);
-    const topMethod = methodRanked[0][0];
-    let verdictDetail = `${winnerName} by ${METHOD_NAMES[topMethod]}`;
-    if (topMethod !== "dec") {
-      const roundRanked = Object.entries(r.roundGivenFinish).sort((x, y) => y[1] - x[1]);
-      if (roundRanked.length) verdictDetail += `, Round ${roundRanked[0][0]}`;
-    }
-    document.getElementById("verdict-detail").textContent = verdictDetail;
+    document.getElementById("verdict-detail").textContent = v.text;
 
     const fillA = document.getElementById("odds-fill-a");
     const fillB = document.getElementById("odds-fill-b");
