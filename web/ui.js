@@ -273,4 +273,29 @@
 
     results.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  // Sticky-nav scrollspy -- highlights whichever section is actually in
+  // view so the nav answers "where am I" while scrolling, not just when you
+  // click a link. Watches the same 4 sections the nav links point to; picks
+  // the entry closest to the top of the viewport among those intersecting,
+  // so two adjacent sections both being partially visible doesn't flicker
+  // between them.
+  function setupScrollspy() {
+    const nav = document.getElementById("site-nav");
+    if (!nav || typeof IntersectionObserver === "undefined") return;
+    const links = new Map([...nav.querySelectorAll("a[data-nav]")].map((a) => [a.dataset.nav, a]));
+    const sections = ["fight-card", "predict-section", "prop-tracker", "my-predictions"]
+      .map((id) => document.getElementById(id)).filter(Boolean);
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((e) => e.isIntersecting);
+      if (visible.length === 0) return;
+      visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      const activeId = visible[0].target.id;
+      links.forEach((a, id) => a.classList.toggle("active", id === activeId));
+    }, { rootMargin: "-4rem 0px -70% 0px", threshold: 0 });
+
+    sections.forEach((s) => observer.observe(s));
+  }
+  setupScrollspy();
 })();

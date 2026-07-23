@@ -403,8 +403,8 @@
   function render() {
     if (!root) return;
     root.innerHTML = "";
-    root.appendChild(el("div", "tape-title", "<span>My Predictions</span>"));
-    root.appendChild(el("p", "tracker-note", "Not betting-affiliated -- just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
+    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
+    root.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
     root.appendChild(renderAddForm());
     root.appendChild(renderPending());
     root.appendChild(renderReport());

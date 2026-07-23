@@ -465,7 +465,7 @@
   function render() {
     if (!root) return;
     root.innerHTML = "";
-    root.appendChild(el("div", "tape-title", "<span>Prop Bet Tracker</span>"));
+    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Real odds, real stakes</div><h2 class="section-title display">Prop Bet Tracker</h2>'));
     root.appendChild(el("p", "tracker-note", "No historical odds dataset exists for method-of-victory or round-total props, so this logs your real bets against the model's own probability as cards happen, to see the results build up over time."));
     root.appendChild(renderAddForm());
     root.appendChild(renderPending());

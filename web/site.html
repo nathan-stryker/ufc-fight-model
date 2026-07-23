@@ -17,6 +17,12 @@
     --blue-dim: #21455E;
     --blue-wash: rgba(62, 133, 190, 0.14);
     --gold: #C6963C;
+    --green: #4C9A52;
+    --green-dim: #245229;
+    --green-wash: rgba(76, 154, 82, 0.14);
+    --violet: #9B7FC7;
+    --violet-dim: #4A3A66;
+    --violet-wash: rgba(155, 127, 199, 0.14);
     --shadow: rgba(0, 0, 0, 0.5);
   }
   @media (prefers-color-scheme: light) {
@@ -33,6 +39,12 @@
       --blue-dim: #C3D9E8;
       --blue-wash: rgba(41, 98, 143, 0.09);
       --gold: #8A6118;
+      --green: #2E7A3B;
+      --green-dim: #C8E6CB;
+      --green-wash: rgba(46, 122, 59, 0.09);
+      --violet: #6B4FA0;
+      --violet-dim: #DDD0EE;
+      --violet-wash: rgba(107, 79, 160, 0.09);
       --shadow: rgba(30, 22, 10, 0.14);
     }
   }
@@ -41,14 +53,20 @@
     --ink: #F0E6D2; --ink-dim: #A99878;
     --red: #D6402A; --red-dim: #6B2A1E; --red-wash: rgba(214, 64, 42, 0.14);
     --blue: #3E85BE; --blue-dim: #21455E; --blue-wash: rgba(62, 133, 190, 0.14);
-    --gold: #C6963C; --shadow: rgba(0, 0, 0, 0.5);
+    --gold: #C6963C;
+    --green: #4C9A52; --green-dim: #245229; --green-wash: rgba(76, 154, 82, 0.14);
+    --violet: #9B7FC7; --violet-dim: #4A3A66; --violet-wash: rgba(155, 127, 199, 0.14);
+    --shadow: rgba(0, 0, 0, 0.5);
   }
   :root[data-theme="light"] {
     --canvas: #EDE3CC; --canvas-raised: #FBF7EC; --canvas-line: #D8C9A3;
     --ink: #221B10; --ink-dim: #6B5D42;
     --red: #B23423; --red-dim: #E8C5BC; --red-wash: rgba(178, 52, 35, 0.09);
     --blue: #29628F; --blue-dim: #C3D9E8; --blue-wash: rgba(41, 98, 143, 0.09);
-    --gold: #8A6118; --shadow: rgba(30, 22, 10, 0.14);
+    --gold: #8A6118;
+    --green: #2E7A3B; --green-dim: #C8E6CB; --green-wash: rgba(46, 122, 59, 0.09);
+    --violet: #6B4FA0; --violet-dim: #DDD0EE; --violet-wash: rgba(107, 79, 160, 0.09);
+    --shadow: rgba(30, 22, 10, 0.14);
   }
 
   /* Oswald Bold, subsetted to Latin + Latin Extended (covers accented
@@ -88,6 +106,10 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
   /* Form controls don't inherit font-family from the body by default in any
      browser (a classic CSS gotcha) -- without this, every <button>/<select>/
      <input> quietly falls back to the OS's native control font regardless of
@@ -442,8 +464,66 @@
     .masthead { animation: none !important; }
   }
 
-  .prop-tracker { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--canvas-line); }
-  .my-predictions { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--canvas-line); }
+  /* Sticky section nav -- added so the page reads as distinct "rooms" you
+     can jump between and always know which one you're in, rather than one
+     long undifferentiated scroll. Each link's active/hover color is tied to
+     that section's own accent (gold/neutral/green/violet) via data-nav. */
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    background: color-mix(in srgb, var(--canvas) 88%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--canvas-line);
+    padding: 0.6rem 1rem;
+    margin: 0 -1.25rem 2rem;
+  }
+  .site-nav a {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 0.4rem 0.7rem;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .site-nav a:hover { color: var(--ink); }
+  .site-nav a.active[data-nav="fight-card"] { color: var(--gold); border-bottom-color: var(--gold); }
+  .site-nav a.active[data-nav="predict-section"] { color: var(--ink); border-bottom-color: var(--ink-dim); }
+  .site-nav a.active[data-nav="prop-tracker"] { color: var(--green); border-bottom-color: var(--green); }
+  .site-nav a.active[data-nav="my-predictions"] { color: var(--violet); border-bottom-color: var(--violet); }
+
+  /* Every jump target gets breathing room under the sticky nav so its own
+     header isn't hidden right underneath it when scrolled/jumped to. */
+  #fight-card, #predict-section, #prop-tracker, #my-predictions { scroll-margin-top: 4rem; }
+
+  .section-header { margin-bottom: 1.25rem; }
+  .section-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .section-title { font-size: clamp(1.2rem, 3vw, 1.6rem); margin: 0; }
+  .predict-zone { margin-bottom: 2.5rem; }
+  .predict-header { text-align: center; }
+  .predict-header .section-eyebrow { color: var(--ink-dim); }
+
+  .prop-tracker {
+    margin-top: 3.5rem; padding: 1.5rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
+    border-top: 3px solid var(--green); background: var(--green-wash);
+  }
+  .prop-tracker .section-eyebrow { color: var(--green); }
+  .my-predictions {
+    margin-top: 3.5rem; padding: 1.5rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
+    border-top: 3px solid var(--violet); background: var(--violet-wash);
+  }
+  .my-predictions .section-eyebrow { color: var(--violet); }
   .tracker-note { color: var(--ink-dim); font-size: 0.8rem; line-height: 1.5; margin: 0 0 1.25rem; }
   .pt-empty-hint { color: var(--ink-dim); font-size: 0.85rem; padding: 0.5rem 0; }
   .pt-add { background: var(--canvas-raised); border: 1px solid var(--canvas-line); padding: 1rem; margin-bottom: 1.5rem; }
@@ -490,9 +570,21 @@
     <p class="tagline">Pick two fighters. An XGBoost model trained on 30 years of UFC data calls the winner, the method, and the round &mdash; entirely in your browser.</p>
   </header>
 
+  <nav class="site-nav" id="site-nav">
+    <a href="#fight-card" data-nav="fight-card">This Week's Card</a>
+    <a href="#predict-section" data-nav="predict-section">Predict</a>
+    <a href="#prop-tracker" data-nav="prop-tracker">Prop Tracker</a>
+    <a href="#my-predictions" data-nav="my-predictions">My Predictions</a>
+  </nav>
+
   <section class="fight-card" id="fight-card"></section>
 
-  <section class="matchup">
+  <div id="predict-section" class="predict-zone">
+    <div class="section-header predict-header">
+      <div class="section-eyebrow">Pick a matchup</div>
+      <h2 class="section-title display">Predict</h2>
+    </div>
+    <section class="matchup">
     <div class="corner corner-a">
       <div class="corner-label">Red Corner</div>
       <input class="fighter-search" id="search-a" placeholder="Search a fighter&hellip;" autocomplete="off">
@@ -537,7 +629,8 @@
         <button class="clear-btn" data-clear="b">Change fighter</button>
       </div>
     </div>
-  </section>
+    </section>
+  </div>
 
   <section class="results" id="results" hidden>
     <div class="verdict">
@@ -1306,7 +1399,7 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
   function render() {
     if (!root) return;
     root.innerHTML = "";
-    root.appendChild(el("div", "tape-title", "<span>Prop Bet Tracker</span>"));
+    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Real odds, real stakes</div><h2 class="section-title display">Prop Bet Tracker</h2>'));
     root.appendChild(el("p", "tracker-note", "No historical odds dataset exists for method-of-victory or round-total props, so this logs your real bets against the model's own probability as cards happen, to see the results build up over time."));
     root.appendChild(renderAddForm());
     root.appendChild(renderPending());
@@ -1749,8 +1842,8 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
   function render() {
     if (!root) return;
     root.innerHTML = "";
-    root.appendChild(el("div", "tape-title", "<span>My Predictions</span>"));
-    root.appendChild(el("p", "tracker-note", "Not betting-affiliated -- just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
+    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
+    root.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
     root.appendChild(renderAddForm());
     root.appendChild(renderPending());
     root.appendChild(renderReport());
@@ -2062,6 +2155,31 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
 
     results.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  // Sticky-nav scrollspy -- highlights whichever section is actually in
+  // view so the nav answers "where am I" while scrolling, not just when you
+  // click a link. Watches the same 4 sections the nav links point to; picks
+  // the entry closest to the top of the viewport among those intersecting,
+  // so two adjacent sections both being partially visible doesn't flicker
+  // between them.
+  function setupScrollspy() {
+    const nav = document.getElementById("site-nav");
+    if (!nav || typeof IntersectionObserver === "undefined") return;
+    const links = new Map([...nav.querySelectorAll("a[data-nav]")].map((a) => [a.dataset.nav, a]));
+    const sections = ["fight-card", "predict-section", "prop-tracker", "my-predictions"]
+      .map((id) => document.getElementById(id)).filter(Boolean);
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((e) => e.isIntersecting);
+      if (visible.length === 0) return;
+      visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      const activeId = visible[0].target.id;
+      links.forEach((a, id) => a.classList.toggle("active", id === activeId));
+    }, { rootMargin: "-4rem 0px -70% 0px", threshold: 0 });
+
+    sections.forEach((s) => observer.observe(s));
+  }
+  setupScrollspy();
 })();
 
 </script>

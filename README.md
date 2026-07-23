@@ -212,6 +212,52 @@ back by the app's own logic. Verified with a hand-built two-row CSV
 (one correct, one incorrect pick) imported via `replace` mode, confirming
 the report's accuracy percentages matched hand-computed expectations exactly.
 
+### Page structure and section navigation, added 2026-07-23
+
+The page grew four distinct sections over the course of this project (This
+Week's Card, Predict, Prop Bet Tracker, My Predictions) that had started to
+blur together visually -- flagged directly by the user ("it is easy to get
+lost on it, there being no clear differentiation between the predictions and
+the betting log"). Fixed two ways, deliberately choosing the lighter option
+over a full tab-based UI (which would hide sections from each other and lose
+the "scroll the whole card" feel) -- explicitly agreed as a first pass, with
+tabs as the fallback if this doesn't read as different enough:
+
+- **A sticky section nav** (`#site-nav` in `site_template.html`) pinned to
+  the top of the viewport with jump-links to all four sections. Uses plain
+  `<a href="#id">` anchors + `scroll-behavior: smooth` on `html` (native
+  browser behavior, no custom scroll JS to maintain), with `scroll-margin-top`
+  on each target section so the sticky bar never covers a section's own
+  header when jumped to. A small `IntersectionObserver`-based scrollspy in
+  `ui.js` (`setupScrollspy()`) highlights whichever section is actually in
+  view as you scroll, not just on click.
+- **A distinct accent color per section**, extending the existing red/blue/
+  gold token system with two new CSS custom properties (`--green` for the
+  Prop Bet Tracker -- money/wagering association, `--violet` for My
+  Predictions -- deliberately a different hue from anything money-related,
+  reinforcing "not betting"), each with dark/light theme variants following
+  the same pattern as the existing tokens. Each tracker section gets a
+  colored top border + a very subtle background wash in its own color;
+  Prop Tracker and My Predictions also got a proper bolded section header
+  (eyebrow + title, matching the visual weight of "This Week's Card"'s own
+  header) in place of the plain `.tape-title` both used before, which is
+  part of why they read as near-identical at a glance previously.
+
+**Known gap**: the Browser pane did not composite frames in the session this
+was built (screenshot, programmatic scroll, and viewport resize all silently
+no-op'd against the live tab -- confirmed by testing `window.scrollTo()`
+directly and finding `scrollY` never changed). Verified everything checkable
+without real rendering instead: computed CSS values for the new accent
+colors/sticky positioning, the full predict -> prop-tracker -> my-predictions
+functional flow after the DOM was restructured (`.matchup` is now wrapped in
+a `#predict-section` div alongside a new header, rather than carrying the
+nav-anchor id directly), and zero console errors throughout. The anchor-jump
+and scrollspy mechanics themselves rely on standard, well-established browser
+behavior (not novel custom logic), so this is a real but bounded gap -- if
+the user reports the nav not scrolling correctly or the active-link
+highlighting not working, that's the first place to check with a real
+render.
+
 ### Visual design
 
 Deliberately built around the sport's own materials rather than a generic
