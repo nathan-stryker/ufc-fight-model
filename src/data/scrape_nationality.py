@@ -53,7 +53,17 @@ def get_active_fighters():
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv")
     snapshot = pd.read_csv(PROCESSED_DIR / "fighter_snapshot.csv", parse_dates=["last_fight_date"])
     cutoff = pd.Timestamp.now() - pd.DateOffset(months=ACTIVE_WINDOW_MONTHS)
-    active_ids = snapshot.loc[snapshot["last_fight_date"] >= cutoff, "fighter_id"]
+    active_ids = set(snapshot.loc[snapshot["last_fight_date"] >= cutoff, "fighter_id"])
+    # Same exception as export_web_model.py's export_fighters(): a fighter
+    # booked on the upcoming card is unambiguously current even if their
+    # PREVIOUS fight was long enough ago to fail the window above (a real
+    # injury/contract layoff return) -- without this, they'd be exportable
+    # for prediction (see the other exception) but permanently flagless,
+    # since this is the only place nationality/flags ever get scraped from.
+    upcoming_path = PROCESSED_DIR / "upcoming_card.csv"
+    if upcoming_path.exists():
+        upcoming = pd.read_csv(upcoming_path)
+        active_ids |= set(pd.concat([upcoming["fighter_a_id"], upcoming["fighter_b_id"]]).dropna())
     return fighters[fighters["fighter_id"].isin(active_ids)][["fighter_id", "name"]].reset_index(drop=True)
 
 

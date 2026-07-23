@@ -40,7 +40,13 @@ ORG_URL = "https://www.sherdog.com/organizations/Ultimate-Fighting-Championship-
 # given name) -- extend this dict, don't add fuzzy matching, if a future
 # week reports an unmatched fighter you can personally confirm is the same
 # person. Keyed by Sherdog's normalized name -> our normalized name.
-NAME_ALIASES = {}
+NAME_ALIASES = {
+    # Sherdog lists his full given name; UFCStats/our fighters.csv has the
+    # short form. Same Uzbek fighter (also in manual_nationality_overrides.py
+    # as "Ramazan Temirov" -> Uzbekistan) -- confirmed by weight class +
+    # opponent match on the UFC Fight Night 282 card, not a guess.
+    "ramazonbek temirov": "ramazan temirov",
+}
 
 
 def normalize_name(name):
