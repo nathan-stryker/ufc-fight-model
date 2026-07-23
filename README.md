@@ -46,11 +46,23 @@ The site is published two ways, both driven by the same `build_site.py` output:
   **https://nathan-stryker.github.io/ufc-fight-model/** from the
   [nathan-stryker/ufc-fight-model](https://github.com/nathan-stryker/ufc-fight-model)
   repo (public), Pages configured to build from `docs/` on `master`. Pushing to
-  `master` auto-rebuilds Pages in ~1-2 minutes -- no separate deploy step.
+  `master` *usually* auto-rebuilds Pages in ~1-2 minutes -- no separate deploy
+  step needed in the common case.
   `data/raw/`, `data/processed/`, and `models/artifacts/` stay gitignored (large,
   regenerable); only source, `web/`, and `docs/index.html` are committed. The
   weekly scheduled refresh (`ufc-fight-model-refresh`) pushes to this repo
   automatically after a successful retrain, keeping both copies in sync.
+
+  **Gotcha, caught for real**: a push does NOT reliably auto-trigger a Pages
+  rebuild -- one push landed cleanly (`git status` clean, commit visible on
+  GitHub) with no new Pages build at all, so the live site kept serving the
+  previous version. Always verify after pushing: check
+  `gh api repos/nathan-stryker/ufc-fight-model/pages/builds/latest` for a
+  build matching the pushed commit SHA; if it's still pinned to an older
+  commit after ~60-90s, manually kick one with
+  `gh api -X POST repos/nathan-stryker/ufc-fight-model/pages/builds`. The
+  scheduled weekly refresh does this verification automatically now -- see
+  its task prompt (`ufc-fight-model-refresh`) for the exact steps.
 
 ### This week's card (home page)
 
