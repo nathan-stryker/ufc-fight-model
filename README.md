@@ -52,6 +52,56 @@ The site is published two ways, both driven by the same `build_site.py` output:
   weekly scheduled refresh (`ufc-fight-model-refresh`) pushes to this repo
   automatically after a successful retrain, keeping both copies in sync.
 
+### This week's card (home page)
+
+The home page shows the next upcoming UFC event's full fight card, each bout
+with a **Call This Fight** button that auto-fills both corners and runs the
+prediction in one click. Data comes from `src/data/scrape_upcoming_card.py`
+(same Sherdog.com source as fighter nationality, checked again for this
+feature: unrestricted robots.txt), which finds the soonest event on Sherdog's
+UFC organization page and scrapes its bout list (fighter names + weight
+class) at build time -- not fetched live in-browser, since this is a static
+site with no server and Artifact's CSP blocks cross-origin fetches anyway.
+
+Rebuild/refresh with:
+```
+python -m src.data.scrape_upcoming_card   # writes data/processed/upcoming_card.csv
+python -m src.export_web_model            # embeds it into web/model_data.json
+python web/build_site.py
+```
+
+Each scraped fighter is matched to our own `fighters.csv` by **exact
+normalized name only** -- deliberately no fuzzy fallback, unlike the
+one-time manual nationality backlog: this runs unattended every week with no
+one to sanity-check individual guesses, so a wrong-but-plausible match is a
+worse outcome than just showing "No prediction available" for that bout. A
+genuine UFC debutant is expected to miss too (no fight history in our data
+at all, so there'd be nothing to predict from regardless). A small
+hand-verified `NAME_ALIASES` dict in the script exists for the rare case of a
+real, confirmed spelling mismatch between Sherdog and our data (same trust
+model as `manual_nationality_overrides.py` -- a human decided the pairing is
+correct, not an algorithm guessing).
+
+**Real gap found and fixed while building this**: the site's fighter picker
+is active-roster-only (fought in the last 24 months -- see "Fighter
+portraits" below), which is normally reasonable, but a fighter returning from
+a genuine multi-year injury/contract layoff can be booked on a real card
+while failing that window. On the first real card scraped (UFC Fight Night
+282), 6 of 13 bouts had a fighter matched by name but silently missing from
+the exported roster for exactly this reason -- their "Call This Fight"
+button would have crashed on click. Fixed in `export_web_model.py`'s
+`export_fighters()`: the active-window filter now has an explicit exception
+that always keeps any fighter appearing in `upcoming_card.csv`, regardless of
+how long ago their *previous* fight was -- being booked on the next card is
+unambiguously current. Verified after the fix: 12 of 13 bouts on that card
+became fully clickable (the 13th was a genuine name mismatch, not this bug).
+
+**How to apply**: if this ever regresses (a "Call This Fight" button crashes,
+or a bout that should be predictable shows "No prediction available"), check
+this exception first -- don't just widen `ACTIVE_WINDOW_MONTHS` globally,
+since that constant intentionally keeps the general search box from bloating
+with fighters nobody would currently book.
+
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
 round before it actually stops, so the saved model has MORE trees than

@@ -100,6 +100,70 @@
     document.getElementById("results").hidden = true;
   }
 
+  // Home-page "this week's card" -- scraped from Sherdog.com at build time
+  // (src/data/scrape_upcoming_card.py), not fetched live in-browser (this
+  // site has no server and Artifact CSP blocks cross-origin fetches anyway).
+  // A bout only gets a "Call This Fight" button if BOTH fighters matched our
+  // own roster by exact name -- a UFC debutant, or a name-spelling mismatch
+  // between Sherdog and our data, has genuinely nothing to predict from, so
+  // it's shown as plain text rather than wired to a broken/guessed action.
+  function renderUpcomingCard() {
+    const section = document.getElementById("fight-card");
+    if (!section) return;
+    const card = MODEL_DATA.upcoming_card;
+    if (!card || !card.bouts || !card.bouts.length) {
+      section.hidden = true;
+      return;
+    }
+
+    const eventDate = new Date(card.eventDate + "T00:00:00Z")
+      .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+    const rowsHtml = card.bouts.map((b, i) => {
+      // Match by name against the FULL historical roster in scrape_upcoming_card.py,
+      // but MODEL_DATA.fighters (byId) is active-roster-only (see export_web_model.py) --
+      // a fighter returning from a 24+ month layoff could match by name yet still be
+      // missing from byId, so predictability is gated on the byId lookup actually
+      // resolving, not just on the scraper having found a fighter_id.
+      const fA = b.idA ? byId.get(b.idA) : null;
+      const fB = b.idB ? byId.get(b.idB) : null;
+      const predictable = !!(fA && fB);
+      const badgeA = fA ? `<div class="fc-badge">${flagBadgeHtml(fA.iso_code)}</div>` : "";
+      const badgeB = fB ? `<div class="fc-badge">${flagBadgeHtml(fB.iso_code)}</div>` : "";
+      const action = predictable
+        ? `<button class="fc-call-btn" data-a="${escapeHtml(b.idA)}" data-b="${escapeHtml(b.idB)}" type="button">Call This Fight</button>`
+        : `<div class="fc-nodata">No prediction available</div>`;
+      return `
+        <div class="fc-row">
+          <div class="fc-weight mono">${escapeHtml(b.weightClass || "")}</div>
+          <div class="fc-matchup">
+            <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
+            <div class="fc-vs">${i === 0 ? "Main Event" : "vs"}</div>
+            <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
+          </div>
+          ${action}
+        </div>`;
+    }).join("");
+
+    section.innerHTML =
+      `<div class="fc-header">
+        <div class="fc-eyebrow">This week's card</div>
+        <h2 class="fc-event-name display">${escapeHtml(card.eventName)}</h2>
+        <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>
+      </div>
+      <div class="fc-rows">${rowsHtml}</div>`;
+
+    section.querySelectorAll(".fc-call-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        selectFighter("a", btn.dataset.a);
+        selectFighter("b", btn.dataset.b);
+        document.getElementById("predict-btn").click();
+      });
+    });
+  }
+
+  renderUpcomingCard();
+
   setupCorner("a");
   setupCorner("b");
 

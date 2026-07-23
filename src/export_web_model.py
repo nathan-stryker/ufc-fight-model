@@ -151,7 +151,21 @@ def export_fighters():
     # the site's search box can select, and is the same window scrape_nationality.py
     # used to decide who needed a flag scraped in the first place.
     cutoff = pd.Timestamp.now() - pd.DateOffset(months=ACTIVE_WINDOW_MONTHS)
-    df = df[df["last_fight_date"] >= cutoff]
+    keep = df["last_fight_date"] >= cutoff
+    # Exception: always keep anyone actually booked on the upcoming card (see
+    # scrape_upcoming_card.py), even if their PREVIOUS fight was long enough ago
+    # to fail the window above -- a fighter returning from a real multi-year
+    # layoff is unambiguously current the moment they're booked, and excluding
+    # them defeats the point of showing that card on the home page at all.
+    # Found by testing: several of the actual UFC Fight Night 282 card's fighters
+    # (e.g. a couple returning from injury/layoff) matched by name but failed
+    # this cutoff, silently breaking their "Call This Fight" button.
+    upcoming_path = PROCESSED_DIR / "upcoming_card.csv"
+    if upcoming_path.exists():
+        upcoming = pd.read_csv(upcoming_path)
+        booked_ids = pd.concat([upcoming["fighter_a_id"], upcoming["fighter_b_id"]]).dropna().unique()
+        keep = keep | df["fighter_id"].isin(booked_ids)
+    df = df[keep]
 
     win_snapshot_fields = [
         "elo", "fights_entering", "win_pct_entering", "finish_rate_entering", "current_streak_entering",
@@ -181,6 +195,39 @@ def export_fighters():
         rows.append([clean(row[f]) for f in fields])
 
     return {"fields": fields, "rows": rows}, sorted({str(c).lower() for c in df["iso_code"].dropna().unique()})
+
+
+def _upcoming_card_payload():
+    """
+    Reads the pre-scraped upcoming-card cache (data/processed/upcoming_card.csv,
+    see src/data/scrape_upcoming_card.py) -- NOT scraped over the network
+    here, this is a build step. Degrades to no home-page card section at all
+    if the file doesn't exist yet or the scrape found nothing, rather than
+    failing the whole export.
+    """
+    path = PROCESSED_DIR / "upcoming_card.csv"
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    if df.empty:
+        return None
+    df = df.sort_values("bout_order")
+    first = df.iloc[0]
+    bouts = []
+    for _, row in df.iterrows():
+        bouts.append({
+            "weightClass": row["weight_class"] if pd.notna(row["weight_class"]) else None,
+            "nameA": row["fighter_a_name"],
+            "idA": row["fighter_a_id"] if pd.notna(row["fighter_a_id"]) else None,
+            "nameB": row["fighter_b_name"],
+            "idB": row["fighter_b_id"] if pd.notna(row["fighter_b_id"]) else None,
+        })
+    return {
+        "eventName": first["event_name"],
+        "eventDate": first["event_date"],
+        "eventLocation": first["event_location"],
+        "bouts": bouts,
+    }
 
 
 def _flags_payload(codes):
@@ -232,6 +279,7 @@ def main():
     }
     payload["fighters"], flag_codes = export_fighters()
     payload["flags"] = _flags_payload(flag_codes)
+    payload["upcoming_card"] = _upcoming_card_payload()
 
     out_path = WEB_DIR / "model_data.json"
     with open(out_path, "w") as f:
@@ -244,6 +292,12 @@ def main():
     print(f"  round_model: {len(payload['round_model']['trees'])} trees")
     print(f"  fighters: {len(payload['fighters']['rows'])} rows, {len(payload['fighters']['fields'])} fields each (active roster only)")
     print(f"  flags: {len(payload['flags'])} countries")
+    if payload["upcoming_card"]:
+        n_matched = sum(1 for b in payload["upcoming_card"]["bouts"] if b["idA"] and b["idB"])
+        print(f"  upcoming_card: {payload['upcoming_card']['eventName']}, "
+              f"{len(payload['upcoming_card']['bouts'])} bouts ({n_matched} predictable)")
+    else:
+        print("  upcoming_card: none (run `python -m src.data.scrape_upcoming_card` first)")
 
 
 if __name__ == "__main__":
