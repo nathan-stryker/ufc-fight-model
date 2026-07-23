@@ -188,6 +188,31 @@ first thing to check for a future "wrong tiers again" report -- it was
 verified against real live pages while building this but is inherently more
 fragile than Sherdog's cleaner itemprop microdata.
 
+**Recent-form W/L badges, added 2026-07-23 (same day, follow-up)**: user
+asked for a fun addition -- up to the last 5 UFC results per fighter on the
+card, as a hoverable badge showing who they beat/lost to. Entirely derived
+from `fights.csv`, already sitting in our processed data -- no new scraping.
+`export_web_model.py`'s `_recent_results_payload()` looks up every fighter
+appearing on the upcoming card (both corners), sorts their fights by date
+descending, and takes the top 5, tagging each as `W`/`L`/`D`/`NC` (draws and
+no-contests checked via their own boolean columns first, since `winner_id`
+is NaN for both and would otherwise silently fall through to "loss").
+Scoped to just the upcoming-card fighters for now, not the full active
+roster, matching the user's explicit "start with the week's card" choice
+over the full predictor -- extend the scope here if this later gets added
+to the main predictor's fighter cards too, per the user's stated ideal.
+
+Frontend (`ui.js`'s `formBadgesHtml()`): small colored square badges (green
+`W` / red `L` / gray `D`/`NC`, reusing the existing `--green`/`--red` tokens
+rather than adding new ones -- the letter already disambiguates) rendered as
+`<button>` elements, not plain hover targets, because hover has no mobile
+equivalent -- tap toggles a `.open` class that reveals a small tooltip
+(`.fc-form-tip`, "lost to Alex Pereira · KO/TKO · R1") showing opponent +
+method + round, with a `document`-level click listener closing any open
+tooltip on an outside tap. `:hover`/`:focus` in the CSS cover desktop for
+free on top of the same toggle mechanism. Fighters with no UFC fight record
+(a handful of debutants each week) just show no badges, no placeholder.
+
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
 round before it actually stops, so the saved model has MORE trees than

@@ -232,6 +232,59 @@ def _upcoming_card_payload():
     }
 
 
+def _recent_results_payload(upcoming_card_payload, n=5):
+    """
+    Last up-to-`n` UFC fight results per fighter appearing on the upcoming
+    card (for the home page's hoverable W/L form badges) -- scoped to just
+    those fighters for now rather than the whole active roster, matching
+    where this is actually used; extend the scope here if this ever gets
+    added to the main predictor's fighter cards too.
+
+    All derived from fights.csv, already sitting in our own processed data
+    -- no new scrape needed. winner_id is NaN for draws/no-contests (both
+    already flagged by their own boolean columns), so those are checked
+    first rather than falling through to a same-as-loss "not a win" default.
+    """
+    if not upcoming_card_payload:
+        return {}
+    fighter_ids = {
+        fid
+        for b in upcoming_card_payload["bouts"]
+        for fid in (b["idA"], b["idB"])
+        if fid
+    }
+    if not fighter_ids:
+        return {}
+
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+    fights = fights.sort_values("event_date", ascending=False)
+
+    results = {}
+    for fid in fighter_ids:
+        mine = fights[(fights["fighter_1_id"] == fid) | (fights["fighter_2_id"] == fid)].head(n)
+        rows = []
+        for _, r in mine.iterrows():
+            is_fighter_1 = r["fighter_1_id"] == fid
+            opponent = r["fighter_2_name"] if is_fighter_1 else r["fighter_1_name"]
+            if r["is_no_contest"]:
+                outcome = "NC"
+            elif r["is_draw"]:
+                outcome = "D"
+            elif pd.notna(r["winner_id"]) and r["winner_id"] == fid:
+                outcome = "W"
+            else:
+                outcome = "L"
+            rows.append({
+                "result": outcome,
+                "opponent": opponent,
+                "method": r["method"] if pd.notna(r["method"]) else None,
+                "round": int(r["round"]) if pd.notna(r["round"]) else None,
+            })
+        if rows:
+            results[fid] = rows
+    return results
+
+
 def _flags_payload(codes):
     """
     Reads the pre-fetched local cache (web/flags/, see src/fetch_flags.py --
@@ -282,6 +335,7 @@ def main():
     payload["fighters"], flag_codes = export_fighters()
     payload["flags"] = _flags_payload(flag_codes)
     payload["upcoming_card"] = _upcoming_card_payload()
+    payload["recent_results"] = _recent_results_payload(payload["upcoming_card"])
 
     out_path = WEB_DIR / "model_data.json"
     with open(out_path, "w") as f:
@@ -298,6 +352,8 @@ def main():
         n_matched = sum(1 for b in payload["upcoming_card"]["bouts"] if b["idA"] and b["idB"])
         print(f"  upcoming_card: {payload['upcoming_card']['eventName']}, "
               f"{len(payload['upcoming_card']['bouts'])} bouts ({n_matched} predictable)")
+        n_with_history = sum(1 for v in payload["recent_results"].values() if v)
+        print(f"  recent_results: {n_with_history} upcoming-card fighters with fight history")
     else:
         print("  upcoming_card: none (run `python -m src.data.scrape_upcoming_card` first)")
 

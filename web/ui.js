@@ -148,6 +148,27 @@
       <circle cx="12" cy="7" r="6" fill="currentColor"></circle>
       <circle cx="12" cy="7" r="3" fill="var(--canvas)"></circle>
     </svg>`;
+    const FORM_VERB = { W: "def.", L: "lost to", D: "drew", NC: "no contest vs." };
+
+    // Last-up-to-5 UFC results per fighter, data from fights.csv via
+    // export_web_model.py's _recent_results_payload() -- scoped to just
+    // this week's card fighters for now. Each badge is a <button> (not a
+    // plain hover target) since hover has no mobile equivalent -- tap
+    // toggles the tooltip open via the click handler wired below, :hover/
+    // :focus in the CSS cover desktop for free on top of that.
+    function formBadgesHtml(fighterId) {
+      const results = fighterId && MODEL_DATA.recent_results ? MODEL_DATA.recent_results[fighterId] : null;
+      if (!results || !results.length) return "";
+      const badges = results.map((r) => {
+        const cls = r.result === "W" ? "fc-form-badge--w" : r.result === "L" ? "fc-form-badge--l" : "fc-form-badge--nd";
+        const bits = [`${FORM_VERB[r.result]} ${r.opponent}`];
+        if (r.method) bits.push(r.method);
+        if (r.round) bits.push(`R${r.round}`);
+        const tip = bits.join(" · ");
+        return `<button type="button" class="fc-form-badge ${cls}">${r.result}<span class="fc-form-tip">${escapeHtml(tip)}</span></button>`;
+      }).join("");
+      return `<div class="fc-form">${badges}</div>`;
+    }
 
     function boutRowClass(b) {
       // A co-main that's ALSO a title fight (a real double-title-card
@@ -187,9 +208,15 @@
         <div class="fc-row ${boutRowClass(b)}">
           <div class="fc-weight mono">${beltIcon}${escapeHtml(b.weightClass || "")}</div>
           <div class="fc-matchup">
-            <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
+            <div class="fc-fighter-block">
+              <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
+              ${formBadgesHtml(b.idA)}
+            </div>
             <div class="fc-vs">${escapeHtml(TIER_VS_LABEL[b.tier] || "vs")}</div>
-            <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
+            <div class="fc-fighter-block">
+              <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
+              ${formBadgesHtml(b.idB)}
+            </div>
           </div>
           ${action}
           ${modelPick}
@@ -222,6 +249,18 @@
         selectFighter("b", btn.dataset.b);
         document.getElementById("predict-btn").click();
       });
+    });
+
+    section.querySelectorAll(".fc-form-badge").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const wasOpen = btn.classList.contains("open");
+        section.querySelectorAll(".fc-form-badge.open").forEach((b) => b.classList.remove("open"));
+        if (!wasOpen) btn.classList.add("open");
+      });
+    });
+    document.addEventListener("click", () => {
+      section.querySelectorAll(".fc-form-badge.open").forEach((b) => b.classList.remove("open"));
     });
   }
 
