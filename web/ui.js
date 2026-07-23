@@ -141,7 +141,7 @@
     // segment membership (falls back to the old positional guess only if
     // ufc.com's segment data wasn't available for this event) -- see
     // assign_tiers_ufc()/assign_tiers() in scrape_upcoming_card.py.
-    const TIER_VS_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
+    const TIER_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
     const TIER_ROW_CLASS = { main_event: "fc-row--main-event", co_main: "fc-row--co-main", featured_prelim: "fc-row--featured-prelim" };
     const BELT_ICON_SVG = `<svg class="fc-belt-icon" viewBox="0 0 24 14" aria-hidden="true" focusable="false">
       <rect x="0" y="4" width="24" height="6" rx="1" fill="currentColor" opacity="0.55"></rect>
@@ -204,15 +204,26 @@
         ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, b.tier === "main_event" ? 5 : 3, MODEL_DATA)).text)}</div>`
         : "";
       const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
+      // Tier label (Main Event/Co-Main/Featured Prelim) sits above the
+      // weight class in a left-aligned corner block, not in the "vs" spot
+      // between fighter names -- the "vs" spot is just "vs" for every row
+      // now, per user feedback that the tier text belongs with the weight
+      // class, not swapped in as the divider.
+      const tierLabel = TIER_LABEL[b.tier]
+        ? `<div class="fc-tier-label">${escapeHtml(TIER_LABEL[b.tier])}</div>`
+        : "";
       return `
         <div class="fc-row ${boutRowClass(b)}">
-          <div class="fc-weight mono">${beltIcon}${escapeHtml(b.weightClass || "")}</div>
+          <div class="fc-row-header">
+            ${tierLabel}
+            <div class="fc-weight mono">${beltIcon}${escapeHtml(b.weightClass || "")}</div>
+          </div>
           <div class="fc-matchup">
             <div class="fc-fighter-block">
               <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
               ${formBadgesHtml(b.idA)}
             </div>
-            <div class="fc-vs">${escapeHtml(TIER_VS_LABEL[b.tier] || "vs")}</div>
+            <div class="fc-vs">vs</div>
             <div class="fc-fighter-block">
               <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
               ${formBadgesHtml(b.idB)}

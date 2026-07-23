@@ -224,12 +224,15 @@
   }
   /* Main event gets the full row width instead of squeezing into the
      shared 7rem/1fr/9.5rem grid's ~50%-width middle column -- at the
-     bigger main-event font size, two fighter names + the "Main Event"
-     label didn't fit in that column and wrapped onto extra lines, which
-     read as cramped rather than as the poster headline it's meant to be.
-     Stacking into one centered column (same pattern the <640px mobile
-     breakpoint already uses for every row) gives the matchup line the
-     entire row width to lay out on one line. */
+     bigger main-event font size, two fighter names didn't fit in that
+     column and wrapped onto extra lines, which read as cramped rather
+     than as the poster headline it's meant to be. Stacking into one
+     column (same pattern the <640px mobile breakpoint already uses for
+     every row) gives the matchup line the entire row width to lay out on
+     one line. The row-header (tier label + weight class) stays LEFT-
+     aligned even though the rest of the row is centered -- it reads as a
+     poster corner tag, not another centered line, and matches how every
+     other row keeps its tier label/weight class on the left. */
   .fc-row--main-event {
     grid-template-columns: 1fr;
     text-align: center;
@@ -237,22 +240,29 @@
     padding: 1rem 1.25rem;
     margin-bottom: 0.25rem;
   }
+  .fc-row--main-event .fc-row-header { text-align: left; margin-bottom: 0.6rem; }
   .fc-row--main-event .fc-call-btn, .fc-row--main-event .fc-nodata { justify-self: center; }
   .fc-row--main-event .fc-model-pick { grid-column: 1; }
   .fc-row--main-event .fc-fighter { font-size: 1.2rem; }
   .fc-row--main-event .fc-badge { width: 2.3rem; height: 1.6rem; }
-  .fc-row--main-event .fc-vs { color: var(--gold); font-weight: 700; font-size: 0.78rem; margin: 0 0.25rem; }
   .fc-row--main-event .fc-matchup { gap: 1.25rem; margin: 0.5rem 0; }
   .fc-row--main-event .fc-call-btn { margin-top: 0.25rem; }
   .fc-row--co-main { border-top: 3px solid var(--silver); background: var(--silver-wash); }
-  .fc-row--co-main .fc-vs { color: var(--silver); font-weight: 700; }
   /* A co-main that's ALSO a title fight (double-title card) wins gold
      instead of the usual silver -- source order breaks the tie since both
      classes are present together with equal specificity. */
   .fc-row--co-main-title { border-top: 3px solid var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
-  .fc-row--co-main-title .fc-vs { color: var(--gold); }
   .fc-row--featured-prelim { border-top: 3px solid var(--bronze); background: var(--bronze-wash); }
-  .fc-row--featured-prelim .fc-vs { color: var(--bronze); font-weight: 700; }
+  /* Tier label sits above the weight class in a left-aligned corner block
+     (not swapped in as the "vs" divider between fighter names, which is
+     now always literally "vs") -- colored to match the row's own accent,
+     same colors the divider used to carry. */
+  .fc-row-header { display: flex; flex-direction: column; gap: 0.15rem; }
+  .fc-tier-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-dim); }
+  .fc-row--main-event .fc-tier-label { color: var(--gold); font-size: 0.72rem; }
+  .fc-row--co-main .fc-tier-label { color: var(--silver); }
+  .fc-row--co-main-title .fc-tier-label { color: var(--gold); }
+  .fc-row--featured-prelim .fc-tier-label { color: var(--bronze); }
   .fc-weight { font-size: 0.66rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
   .fc-belt-icon { width: 1em; height: auto; color: var(--gold); margin-right: 0.3em; vertical-align: -0.1em; }
   .fc-matchup { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
@@ -2134,7 +2144,7 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     // segment membership (falls back to the old positional guess only if
     // ufc.com's segment data wasn't available for this event) -- see
     // assign_tiers_ufc()/assign_tiers() in scrape_upcoming_card.py.
-    const TIER_VS_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
+    const TIER_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
     const TIER_ROW_CLASS = { main_event: "fc-row--main-event", co_main: "fc-row--co-main", featured_prelim: "fc-row--featured-prelim" };
     const BELT_ICON_SVG = `<svg class="fc-belt-icon" viewBox="0 0 24 14" aria-hidden="true" focusable="false">
       <rect x="0" y="4" width="24" height="6" rx="1" fill="currentColor" opacity="0.55"></rect>
@@ -2197,15 +2207,26 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
         ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, b.tier === "main_event" ? 5 : 3, MODEL_DATA)).text)}</div>`
         : "";
       const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
+      // Tier label (Main Event/Co-Main/Featured Prelim) sits above the
+      // weight class in a left-aligned corner block, not in the "vs" spot
+      // between fighter names -- the "vs" spot is just "vs" for every row
+      // now, per user feedback that the tier text belongs with the weight
+      // class, not swapped in as the divider.
+      const tierLabel = TIER_LABEL[b.tier]
+        ? `<div class="fc-tier-label">${escapeHtml(TIER_LABEL[b.tier])}</div>`
+        : "";
       return `
         <div class="fc-row ${boutRowClass(b)}">
-          <div class="fc-weight mono">${beltIcon}${escapeHtml(b.weightClass || "")}</div>
+          <div class="fc-row-header">
+            ${tierLabel}
+            <div class="fc-weight mono">${beltIcon}${escapeHtml(b.weightClass || "")}</div>
+          </div>
           <div class="fc-matchup">
             <div class="fc-fighter-block">
               <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
               ${formBadgesHtml(b.idA)}
             </div>
-            <div class="fc-vs">${escapeHtml(TIER_VS_LABEL[b.tier] || "vs")}</div>
+            <div class="fc-vs">vs</div>
             <div class="fc-fighter-block">
               <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
               ${formBadgesHtml(b.idB)}
