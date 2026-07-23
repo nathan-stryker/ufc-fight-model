@@ -1,0 +1,13 @@
+requests
+beautifulsoup4
+lxml
+pandas
+numpy
+scikit-learn
+xgboost
+matplotlib
+tqdm
+joblib
+ipykernel
+nbformat
+nbclient
