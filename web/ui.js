@@ -137,7 +137,14 @@
     const eventDate = new Date(card.eventDate + "T00:00:00Z")
       .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-    const rowsHtml = card.bouts.map((b, i) => {
+    // Tier assigned positionally in scrape_upcoming_card.py (main event =
+    // first billed, co-main = second, featured prelim = first prelim by
+    // billing) -- see assign_tiers() there for why position alone is
+    // reliable without scraping an explicit "Main Card"/"Prelims" label.
+    const TIER_VS_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
+    const TIER_ROW_CLASS = { main_event: "fc-row--main-event", co_main: "fc-row--co-main", featured_prelim: "fc-row--featured-prelim" };
+
+    function boutRowHtml(b) {
       // Match by name against the FULL historical roster in scrape_upcoming_card.py,
       // but MODEL_DATA.fighters (byId) is active-roster-only (see export_web_model.py) --
       // a fighter returning from a 24+ month layoff could match by name yet still be
@@ -154,25 +161,37 @@
       // Computed up front for every predictable bout (not gated behind a
       // click) so the card reads as a preview of the model's take on the
       // whole night, not just a launcher into the full predictor below.
-      // No scheduled-round data comes from Sherdog's card listing, so this
-      // assumes 5 for the main event and 3 for everything else (standard
-      // UFC convention) -- "Call This Fight" still opens the full predictor
+      // No scheduled-round data comes from the scrape, so this assumes 5
+      // for the main event and 3 for everything else (standard UFC
+      // convention) -- "Call This Fight" still opens the full predictor
       // where the round toggle can be corrected for a 5-round co-main, etc.
       const modelPick = predictable
-        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, i === 0 ? 5 : 3, MODEL_DATA)).text)}</div>`
+        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, b.tier === "main_event" ? 5 : 3, MODEL_DATA)).text)}</div>`
         : "";
       return `
-        <div class="fc-row">
+        <div class="fc-row ${TIER_ROW_CLASS[b.tier] || ""}">
           <div class="fc-weight mono">${escapeHtml(b.weightClass || "")}</div>
           <div class="fc-matchup">
             <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
-            <div class="fc-vs">${i === 0 ? "Main Event" : "vs"}</div>
+            <div class="fc-vs">${escapeHtml(TIER_VS_LABEL[b.tier] || "vs")}</div>
             <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
           </div>
           ${action}
           ${modelPick}
         </div>`;
-    }).join("");
+    }
+
+    const mainEvent = card.bouts.filter((b) => b.tier === "main_event");
+    const restOfMainCard = card.bouts.filter((b) => b.tier === "co_main" || b.tier === "main_card");
+    const prelims = card.bouts.filter((b) => b.tier === "featured_prelim" || b.tier === "prelim");
+
+    let bodyHtml = mainEvent.map(boutRowHtml).join("");
+    if (restOfMainCard.length) {
+      bodyHtml += `<div class="fc-group-label">Main Card</div><div class="fc-rows">${restOfMainCard.map(boutRowHtml).join("")}</div>`;
+    }
+    if (prelims.length) {
+      bodyHtml += `<div class="fc-group-label">Prelims</div><div class="fc-rows">${prelims.map(boutRowHtml).join("")}</div>`;
+    }
 
     section.innerHTML =
       `<div class="fc-header">
@@ -180,7 +199,7 @@
         <h2 class="fc-event-name display">${escapeHtml(card.eventName)}</h2>
         <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>
       </div>
-      <div class="fc-rows">${rowsHtml}</div>`;
+      ${bodyHtml}`;
 
     section.querySelectorAll(".fc-call-btn").forEach((btn) => {
       btn.addEventListener("click", () => {

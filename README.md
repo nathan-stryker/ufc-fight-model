@@ -126,6 +126,36 @@ for everything else (standard UFC convention); "Call This Fight" still opens
 the full predictor where the round toggle can be corrected by hand for a
 5-round co-main or similar exception.
 
+**Tiered poster layout, added 2026-07-23**: user feedback -- the original
+flat list of 13 identical rows didn't read like a real fight card. Redesigned
+into main event (standalone, gold-outlined) -> rest of main card (co-main
+called out in silver) -> prelims (featured prelim called out in bronze),
+matching how a real UFC poster is laid out. Tier is assigned **positionally**
+in `scrape_upcoming_card.py`'s `assign_tiers()`, not scraped from an explicit
+"Main Card"/"Prelims" label -- per the user's own correction after an initial
+detour into checking whether ufc.com's event pages expose that segmentation
+(they do, via `id="main-card"`/`id="prelims-card"`/`id="early-prelims"`
+blocks, confirmed by fetching a real event page -- kept as a documented
+finding even though the simpler approach won, in case the fixed positional
+convention ever needs revisiting). The simpler rule instead: Sherdog's bout
+order is billing-prominence-descending (main event first), which is the
+*reverse* of real fight-night chronological order (prelims fight first,
+main event closes the night) -- so position alone tells you everything you
+need: index 0 = main event, index 1 = co-main (the "second-to-last" fight
+chronologically), and index `MAIN_CARD_SIZE` (a constant, currently 5 --
+the standard modern UFC main-card size) = the featured prelim (the
+"last"/biggest prelim fought right before the main card starts). No second
+data source, no extra network request, no explicit segment label needed.
+
+**How to apply**: if a future card has an unusual structure (fewer than 5
+main-card bouts, or more), `MAIN_CARD_SIZE` in `scrape_upcoming_card.py` is
+the one place to adjust -- `assign_tiers()` degrades gracefully for short
+cards (fewer than `MAIN_CARD_SIZE` total bouts just means no "prelims" tier
+at all). Don't reach for ufc.com's explicit segment labels unless this
+positional convention is confirmed wrong for a real card -- it was
+investigated and works, but the user explicitly preferred the simpler
+approach.
+
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
 round before it actually stops, so the saved model has MORE trees than
@@ -257,6 +287,16 @@ behavior (not novel custom logic), so this is a real but bounded gap -- if
 the user reports the nav not scrolling correctly or the active-link
 highlighting not working, that's the first place to check with a real
 render.
+
+**Compacting pass, same feedback round**: the user also asked for the page
+to feel less spread out. Trimmed vertical rhythm across the board rather
+than one big rewrite -- `.page` top/bottom padding, the masthead's bottom
+margin, the sticky nav's own margin, each section's top margin (2.5-3.5rem
+down to 1.75-2.5rem depending on section), and the fight-card row list's
+internal padding/gaps. Kept every individual change small and additive to
+existing values (no rule deleted or restructured) specifically so this pass
+carries near-zero regression risk -- nothing about component structure or
+behavior changed, only spacing numbers.
 
 ### Visual design
 

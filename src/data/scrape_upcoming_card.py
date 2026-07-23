@@ -35,6 +35,36 @@ PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; personal MMA-stats research script)"}
 ORG_URL = "https://www.sherdog.com/organizations/Ultimate-Fighting-Championship-UFC-2"
 
+# Standard modern UFC card format: 5 main-card bouts (main event + 4 more),
+# everything after that is prelims -- a fixed positional convention, not
+# scraped, per the user's own correction: no site reliably labels "main
+# card"/"prelims" segments the way Sherdog's data is structured (it's just
+# billing order, most prominent first), but real fight-night broadcast order
+# is the reverse -- prelims happen first, main card last, main event closing
+# the night. So in Sherdog's prominence-descending list (main event = index
+# 0), position alone tells you everything: main event = index 0, co-main =
+# index 1 (the "second to last" fight chronologically), and the featured
+# prelim = index MAIN_CARD_SIZE (the most prominent prelim, i.e. the "last"
+# and biggest prelim fought chronologically, right before the main card
+# starts) -- no second data source or explicit segment scraping needed.
+MAIN_CARD_SIZE = 5
+
+
+def assign_tiers(bouts):
+    n = len(bouts)
+    for i, b in enumerate(bouts):
+        if i == 0:
+            b["tier"] = "main_event"
+        elif i == 1 and n > 1:
+            b["tier"] = "co_main"
+        elif i < MAIN_CARD_SIZE:
+            b["tier"] = "main_card"
+        elif i == MAIN_CARD_SIZE:
+            b["tier"] = "featured_prelim"
+        else:
+            b["tier"] = "prelim"
+    return bouts
+
 # Hand-verified name variants between Sherdog's card listing and our own
 # UFCStats-derived fighters.csv (e.g. a fuller/shorter form of the same
 # given name) -- extend this dict, don't add fuzzy matching, if a future
@@ -113,6 +143,7 @@ def main():
     event = find_next_event(session)
     bouts = scrape_card(session, event["event_url"])
     bouts = match_fighter_ids(bouts)
+    bouts = assign_tiers(bouts)
 
     rows = []
     for i, b in enumerate(bouts, 1):
@@ -126,7 +157,7 @@ def main():
     print(f"{len(bouts)} bouts, {matched} fully matched to our fighter data")
     for b in bouts:
         tag = "" if (b["fighter_a_id"] and b["fighter_b_id"]) else "  <-- unmatched"
-        print(f"  [{b['weight_class']}] {b['fighter_a_name']} vs {b['fighter_b_name']}{tag}")
+        print(f"  [{b['tier']:>14}] [{b['weight_class']}] {b['fighter_a_name']} vs {b['fighter_b_name']}{tag}")
     print(f"wrote {out_path}")
 
 

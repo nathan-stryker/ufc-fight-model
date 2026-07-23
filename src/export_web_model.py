@@ -221,6 +221,7 @@ def _upcoming_card_payload():
             "idA": row["fighter_a_id"] if pd.notna(row["fighter_a_id"]) else None,
             "nameB": row["fighter_b_name"],
             "idB": row["fighter_b_id"] if pd.notna(row["fighter_b_id"]) else None,
+            "tier": row["tier"] if pd.notna(row.get("tier")) else "prelim",
         })
     return {
         "eventName": first["event_name"],

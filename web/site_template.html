@@ -17,6 +17,10 @@
     --blue-dim: #21455E;
     --blue-wash: rgba(62, 133, 190, 0.14);
     --gold: #C6963C;
+    --silver: #ADB4BD;
+    --silver-wash: rgba(173, 180, 189, 0.14);
+    --bronze: #B87333;
+    --bronze-wash: rgba(184, 115, 51, 0.14);
     --green: #4C9A52;
     --green-dim: #245229;
     --green-wash: rgba(76, 154, 82, 0.14);
@@ -39,6 +43,10 @@
       --blue-dim: #C3D9E8;
       --blue-wash: rgba(41, 98, 143, 0.09);
       --gold: #8A6118;
+      --silver: #5C6470;
+      --silver-wash: rgba(92, 100, 112, 0.09);
+      --bronze: #8B5423;
+      --bronze-wash: rgba(139, 84, 35, 0.09);
       --green: #2E7A3B;
       --green-dim: #C8E6CB;
       --green-wash: rgba(46, 122, 59, 0.09);
@@ -54,6 +62,10 @@
     --red: #D6402A; --red-dim: #6B2A1E; --red-wash: rgba(214, 64, 42, 0.14);
     --blue: #3E85BE; --blue-dim: #21455E; --blue-wash: rgba(62, 133, 190, 0.14);
     --gold: #C6963C;
+    --silver: #ADB4BD;
+    --silver-wash: rgba(173, 180, 189, 0.14);
+    --bronze: #B87333;
+    --bronze-wash: rgba(184, 115, 51, 0.14);
     --green: #4C9A52; --green-dim: #245229; --green-wash: rgba(76, 154, 82, 0.14);
     --violet: #9B7FC7; --violet-dim: #4A3A66; --violet-wash: rgba(155, 127, 199, 0.14);
     --shadow: rgba(0, 0, 0, 0.5);
@@ -64,6 +76,8 @@
     --red: #B23423; --red-dim: #E8C5BC; --red-wash: rgba(178, 52, 35, 0.09);
     --blue: #29628F; --blue-dim: #C3D9E8; --blue-wash: rgba(41, 98, 143, 0.09);
     --gold: #8A6118;
+    --silver: #5C6470; --silver-wash: rgba(92, 100, 112, 0.09);
+    --bronze: #8B5423; --bronze-wash: rgba(139, 84, 35, 0.09);
     --green: #2E7A3B; --green-dim: #C8E6CB; --green-wash: rgba(46, 122, 59, 0.09);
     --violet: #6B4FA0; --violet-dim: #DDD0EE; --violet-wash: rgba(107, 79, 160, 0.09);
     --shadow: rgba(30, 22, 10, 0.14);
@@ -137,14 +151,14 @@
   .page {
     max-width: 760px;
     margin: 0 auto;
-    padding: 2.5rem 1.25rem 4rem;
+    padding: 1.75rem 1.25rem 3rem;
   }
 
   @keyframes riseIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .masthead { text-align: center; margin-bottom: 2.25rem; animation: riseIn 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .masthead { text-align: center; margin-bottom: 1.5rem; animation: riseIn 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
   .eyebrow {
     font-size: 0.7rem;
     letter-spacing: 0.14em;
@@ -170,18 +184,34 @@
     margin: 0 auto;
   }
 
-  .fight-card { margin-bottom: 2.75rem; animation: riseIn 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .fc-header { text-align: center; margin-bottom: 1.25rem; }
+  .fight-card { margin-bottom: 2.25rem; animation: riseIn 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .fc-header { text-align: center; margin-bottom: 1rem; }
   .fc-eyebrow {
     font-size: 0.7rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--gold);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
   }
-  .fc-event-name { font-size: clamp(1.2rem, 3vw, 1.6rem); margin: 0 0 0.3rem; }
-  .fc-event-meta { color: var(--ink-dim); font-size: 0.8rem; }
-  .fc-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+  .fc-event-name { font-size: clamp(1.15rem, 3vw, 1.5rem); margin: 0 0 0.25rem; }
+  .fc-event-meta { color: var(--ink-dim); font-size: 0.78rem; }
+
+  /* Tiered card layout -- main event stands alone (gold), the rest of the
+     main card follows with the co-main called out (silver), then prelims
+     with the featured prelim called out (bronze). Tier is assigned
+     positionally in scrape_upcoming_card.py (assign_tiers), not scraped --
+     see that module's comment for why position alone is enough. */
+  .fc-group-label {
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 1.1rem 0 0.4rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--canvas-line);
+  }
+  .fc-group-label:first-of-type { margin-top: 0.25rem; }
+  .fc-rows { display: flex; flex-direction: column; gap: 0.4rem; }
   .fc-row {
     display: grid;
     grid-template-columns: 7rem 1fr 9.5rem;
@@ -189,12 +219,23 @@
     gap: 1rem;
     background: var(--canvas-raised);
     border: 1px solid var(--canvas-line);
-    padding: 0.7rem 1rem;
+    padding: 0.6rem 1rem;
   }
-  .fc-row:first-child { border-top: 3px solid var(--gold); }
-  .fc-weight { font-size: 0.68rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .fc-row--main-event {
+    border: 2px solid var(--gold);
+    padding: 0.9rem 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+  .fc-row--main-event .fc-fighter { font-size: 1.05rem; }
+  .fc-row--main-event .fc-badge { width: 2.1rem; height: 1.5rem; }
+  .fc-row--main-event .fc-vs { color: var(--gold); font-weight: 700; }
+  .fc-row--co-main { border-top: 3px solid var(--silver); background: var(--silver-wash); }
+  .fc-row--co-main .fc-vs { color: var(--silver); font-weight: 700; }
+  .fc-row--featured-prelim { border-top: 3px solid var(--bronze); background: var(--bronze-wash); }
+  .fc-row--featured-prelim .fc-vs { color: var(--bronze); font-weight: 700; }
+  .fc-weight { font-size: 0.66rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
   .fc-matchup { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
-  .fc-fighter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
+  .fc-fighter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; }
   .fc-badge {
     width: 1.7rem; height: 1.2rem; flex-shrink: 0;
     border: 1px solid var(--canvas-line);
@@ -202,32 +243,32 @@
     overflow: hidden;
   }
   .fc-badge svg { width: 100%; height: 100%; display: block; object-fit: cover; }
-  .fc-vs { color: var(--ink-dim); font-size: 0.7rem; text-transform: uppercase; }
+  .fc-vs { color: var(--ink-dim); font-size: 0.68rem; text-transform: uppercase; }
   .fc-call-btn, .fc-nodata { justify-self: end; }
   .fc-call-btn {
     border: 1px solid var(--gold);
     color: var(--gold);
     background: transparent;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.76rem;
     font-family: inherit;
     cursor: pointer;
     white-space: nowrap;
   }
   .fc-call-btn:hover { background: var(--gold); color: var(--canvas); }
-  .fc-nodata { font-size: 0.72rem; color: var(--ink-dim); font-style: italic; text-align: right; }
+  .fc-nodata { font-size: 0.7rem; color: var(--ink-dim); font-style: italic; text-align: right; }
   .fc-model-pick {
     grid-column: 1 / -1;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     text-align: center;
-    padding-top: 0.5rem;
-    margin-top: 0.5rem;
+    padding-top: 0.4rem;
+    margin-top: 0.4rem;
     border-top: 1px dashed var(--canvas-line);
   }
   .fc-model-pick-label {
     color: var(--gold);
     text-transform: uppercase;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     letter-spacing: 0.06em;
     margin-right: 0.4rem;
   }
@@ -381,7 +422,7 @@
   .predict-btn:not(:disabled):hover { transform: scale(1.04); }
   .predict-btn:not(:disabled):active { transform: scale(0.98); }
 
-  .results { margin-top: 3rem; }
+  .results { margin-top: 2.25rem; }
   .results[hidden] { display: none; }
 
   .verdict {
@@ -450,7 +491,7 @@
   }
 
   .disclaimer {
-    margin-top: 3.5rem;
+    margin-top: 2.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--canvas-line);
     color: var(--ink-dim);
@@ -479,8 +520,8 @@
     background: color-mix(in srgb, var(--canvas) 88%, transparent);
     backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--canvas-line);
-    padding: 0.6rem 1rem;
-    margin: 0 -1.25rem 2rem;
+    padding: 0.5rem 1rem;
+    margin: 0 -1.25rem 1.5rem;
   }
   .site-nav a {
     font-size: 0.72rem;
@@ -510,17 +551,17 @@
     margin-bottom: 0.4rem;
   }
   .section-title { font-size: clamp(1.2rem, 3vw, 1.6rem); margin: 0; }
-  .predict-zone { margin-bottom: 2.5rem; }
+  .predict-zone { margin-bottom: 1.75rem; }
   .predict-header { text-align: center; }
   .predict-header .section-eyebrow { color: var(--ink-dim); }
 
   .prop-tracker {
-    margin-top: 3.5rem; padding: 1.5rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
+    margin-top: 2.5rem; padding: 1.25rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
     border-top: 3px solid var(--green); background: var(--green-wash);
   }
   .prop-tracker .section-eyebrow { color: var(--green); }
   .my-predictions {
-    margin-top: 3.5rem; padding: 1.5rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
+    margin-top: 2.5rem; padding: 1.25rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
     border-top: 3px solid var(--violet); background: var(--violet-wash);
   }
   .my-predictions .section-eyebrow { color: var(--violet); }
