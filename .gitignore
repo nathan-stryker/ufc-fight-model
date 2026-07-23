@@ -1,5 +1,6 @@
 data/raw/
 data/processed/
+data/external/
 models/artifacts/
 __pycache__/
 *.pyc

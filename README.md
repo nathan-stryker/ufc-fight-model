@@ -26,12 +26,31 @@ run entirely in the browser with no server and no data leaving the page.
 To rebuild it after retraining:
 ```
 python -m src.export_web_model   # strips models + fighter data to web/model_data.json
-python web/build_site.py         # assembles web/site.html (template + engine.js + model data + ui.js)
+python web/build_site.py         # assembles web/site.html AND docs/index.html (template + engine.js + model data + ui.js)
 ```
-`web/site.html` is the single self-contained file to publish/share. It was
+`web/site.html` / `docs/index.html` are identical, self-contained files (~1.7MB)
+-- everything (model, fighter data, fonts, flags, JS) is inlined, so either
+one can be opened directly or hosted anywhere with zero build step. They were
 verified against `predict.py` for several matchups (exact match to the
 decimal) before publishing -- see the "best_iteration truncation" note below,
 which was a real bug caught during that verification.
+
+### Deployment
+
+The site is published two ways, both driven by the same `build_site.py` output:
+
+- **Claude Artifact** -- `web/site.html` republished via the `Artifact` tool to
+  a stable URL (`https://claude.ai/code/artifact/37135e89-...`), private by
+  default until shared.
+- **GitHub Pages** -- `docs/index.html` served publicly at
+  **https://nathan-stryker.github.io/ufc-fight-model/** from the
+  [nathan-stryker/ufc-fight-model](https://github.com/nathan-stryker/ufc-fight-model)
+  repo (public), Pages configured to build from `docs/` on `master`. Pushing to
+  `master` auto-rebuilds Pages in ~1-2 minutes -- no separate deploy step.
+  `data/raw/`, `data/processed/`, and `models/artifacts/` stay gitignored (large,
+  regenerable); only source, `web/`, and `docs/index.html` are committed. The
+  weekly scheduled refresh (`ufc-fight-model-refresh`) pushes to this repo
+  automatically after a successful retrain, keeping both copies in sync.
 
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
