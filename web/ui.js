@@ -196,11 +196,10 @@
       const predictable = !!(fA && fB);
       const badgeA = fA ? `<div class="fc-badge">${flagBadgeHtml(fA.iso_code)}</div>` : "";
       const badgeB = fB ? `<div class="fc-badge">${flagBadgeHtml(fB.iso_code)}</div>` : "";
-      // Main events are scheduled for 5 rounds, everything else for 3 --
-      // same rule the "Model predicts" preview line below already uses.
-      // TODO: title fights anywhere on the card (not just the main event)
-      // are also scheduled for 5 -- deferred, main-event-only for now.
-      const callRounds = b.tier === "main_event" ? 5 : 3;
+      // Main events and title fights (anywhere on the card) are scheduled
+      // for 5 rounds, everything else for 3 -- same rule the "Model
+      // predicts" preview line below already uses.
+      const callRounds = b.tier === "main_event" || b.isTitleFight ? 5 : 3;
       const action = predictable
         ? `<button class="fc-call-btn" data-a="${escapeHtml(b.idA)}" data-b="${escapeHtml(b.idB)}" data-rounds="${callRounds}" type="button">Call This Fight</button>`
         : `<div class="fc-nodata">No prediction available</div>`;
@@ -208,11 +207,11 @@
       // click) so the card reads as a preview of the model's take on the
       // whole night, not just a launcher into the full predictor below.
       // No scheduled-round data comes from the scrape, so this assumes 5
-      // for the main event and 3 for everything else (standard UFC
-      // convention) -- "Call This Fight" still opens the full predictor
-      // where the round toggle can be corrected for a 5-round co-main, etc.
+      // for the main event and title fights and 3 for everything else
+      // (standard UFC convention) -- "Call This Fight" still opens the full
+      // predictor where the round toggle can be corrected if needed.
       const modelPick = predictable
-        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, b.tier === "main_event" ? 5 : 3, MODEL_DATA)).text)}</div>`
+        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, callRounds, MODEL_DATA)).text)}</div>`
         : "";
       const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
       // Divisional rank, scraped from ufc.com's ranks-row alongside the
