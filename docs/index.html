@@ -184,7 +184,10 @@
       justify-content: center;
     }
     .main-col { grid-area: main; }
-    .news-sidebar { grid-area: aside; margin-bottom: 0; position: sticky; top: 5.5rem; }
+    /* Deliberately NOT sticky -- scrolls with the page like an ordinary
+       news-site side column, not pinned in place to keep pushing headlines
+       at the reader while they're using the predictor. */
+    .news-sidebar { grid-area: aside; margin-bottom: 0; }
     .disclaimer { grid-area: footer; }
   }
 
