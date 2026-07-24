@@ -196,8 +196,13 @@
       const predictable = !!(fA && fB);
       const badgeA = fA ? `<div class="fc-badge">${flagBadgeHtml(fA.iso_code)}</div>` : "";
       const badgeB = fB ? `<div class="fc-badge">${flagBadgeHtml(fB.iso_code)}</div>` : "";
+      // Main events are scheduled for 5 rounds, everything else for 3 --
+      // same rule the "Model predicts" preview line below already uses.
+      // TODO: title fights anywhere on the card (not just the main event)
+      // are also scheduled for 5 -- deferred, main-event-only for now.
+      const callRounds = b.tier === "main_event" ? 5 : 3;
       const action = predictable
-        ? `<button class="fc-call-btn" data-a="${escapeHtml(b.idA)}" data-b="${escapeHtml(b.idB)}" type="button">Call This Fight</button>`
+        ? `<button class="fc-call-btn" data-a="${escapeHtml(b.idA)}" data-b="${escapeHtml(b.idB)}" data-rounds="${callRounds}" type="button">Call This Fight</button>`
         : `<div class="fc-nodata">No prediction available</div>`;
       // Computed up front for every predictable bout (not gated behind a
       // click) so the card reads as a preview of the model's take on the
@@ -272,6 +277,10 @@
       btn.addEventListener("click", () => {
         selectFighter("a", btn.dataset.a);
         selectFighter("b", btn.dataset.b);
+        scheduledRounds = parseInt(btn.dataset.rounds, 10);
+        document.querySelectorAll("#rounds-toggle button").forEach((rb) => {
+          rb.classList.toggle("active", parseInt(rb.dataset.rounds, 10) === scheduledRounds);
+        });
         document.getElementById("predict-btn").click();
       });
     });
