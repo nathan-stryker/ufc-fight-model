@@ -286,6 +286,10 @@
      letter inside each badge already disambiguates, so color reuse across
      UI regions reads fine here. */
   .fc-form { display: flex; gap: 0.25rem; }
+  /* Shown in the same spot as the form badges for a fighter with zero
+     recorded UFC fights -- distinguishes a genuine debut from a fighter
+     this payload never looked up at all (which renders nothing here). */
+  .fc-debut-label { font-size: 0.62rem; font-style: italic; color: var(--ink-dim); }
   .fc-form-badge {
     position: relative;
     width: 1.15rem; height: 1.15rem;

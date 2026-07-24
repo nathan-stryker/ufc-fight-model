@@ -157,8 +157,14 @@
     // toggles the tooltip open via the click handler wired below, :hover/
     // :focus in the CSS cover desktop for free on top of that.
     function formBadgesHtml(fighterId) {
-      const results = fighterId && MODEL_DATA.recent_results ? MODEL_DATA.recent_results[fighterId] : null;
-      if (!results || !results.length) return "";
+      // recent_results now always has a key (even an empty array) for
+      // every fighter the payload actually looked up -- lets a genuine
+      // "zero recorded UFC fights" debut be shown as "UFC Debut" instead
+      // of silently rendering nothing, which used to be indistinguishable
+      // from "not applicable" (an unmatched fighter with no id at all).
+      const results = fighterId && MODEL_DATA.recent_results ? MODEL_DATA.recent_results[fighterId] : undefined;
+      if (results === undefined) return "";
+      if (!results.length) return `<div class="fc-debut-label">UFC Debut</div>`;
       const badges = results.map((r) => {
         const cls = r.result === "W" ? "fc-form-badge--w" : r.result === "L" ? "fc-form-badge--l" : "fc-form-badge--nd";
         const bits = [`${FORM_VERB[r.result]} ${r.opponent}`];

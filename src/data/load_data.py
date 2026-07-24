@@ -32,6 +32,26 @@ DIVISION_KEYWORDS = [
     "Lightweight", "Featherweight", "Bantamweight", "Flyweight", "Strawweight",
 ]
 
+# (upper bound in lbs, division name) -- non-title-bout weight limits, checked
+# in ascending order. Used only to disambiguate a fighter's OWN listed weight
+# (their fight weight, not a random walking weight -- UFCStats' tott "WEIGHT"
+# field clusters tightly on these exact numbers) against a duplicate-named
+# fighter's division, not as a general classifier.
+_DIVISION_BOUNDS = [
+    (115, "Strawweight"), (125, "Flyweight"), (135, "Bantamweight"),
+    (145, "Featherweight"), (155, "Lightweight"), (170, "Welterweight"),
+    (185, "Middleweight"), (205, "Light Heavyweight"), (10_000, "Heavyweight"),
+]
+
+
+def _weight_to_division(weight_lbs):
+    if pd.isna(weight_lbs):
+        return None
+    for bound, division in _DIVISION_BOUNDS:
+        if weight_lbs <= bound:
+            return division
+    return "Heavyweight"
+
 
 def _normalize_weightclass(raw: str) -> str:
     if not isinstance(raw, str) or not raw.strip():
@@ -146,10 +166,42 @@ def load_fights(fighters: pd.DataFrame) -> pd.DataFrame:
     bout_split = fights["BOUT"].str.split(r"\s+vs\.?\s+", n=1, regex=True, expand=True)
     fights["fighter_1_name"] = bout_split[0].str.strip()
     fights["fighter_2_name"] = bout_split[1].str.strip()
+    fights["weightclass"] = fights["WEIGHTCLASS"].apply(_normalize_weightclass)
 
-    name_to_id = fighters.dropna(subset=["name"]).drop_duplicates(subset="name", keep=False).set_index("name")["fighter_id"]
-    fights["fighter_1_id"] = fights["fighter_1_name"].map(name_to_id)
-    fights["fighter_2_id"] = fights["fighter_2_name"].map(name_to_id)
+    named = fighters.dropna(subset=["name"])
+    dupe_names = set(named.loc[named.duplicated(subset="name", keep=False), "name"])
+    unique_map = named[~named["name"].isin(dupe_names)].set_index("name")["fighter_id"]
+
+    # Duplicate-named fighters (8 real, distinct people who happen to share a
+    # name, e.g. two different "Bruno Silva"s at different weights) used to
+    # be dropped from name_to_id ENTIRELY via drop_duplicates(keep=False) --
+    # which silently excluded every one of their fights from the dataset,
+    # not just genuinely ambiguous ones (confirmed: "Mike Davis" -- a real,
+    # active UFC lightweight -- had 7 real fights all showing up with no
+    # fighter_id, making him look like he'd never fought). Disambiguate
+    # per-fight instead: compare each candidate's own listed fight weight
+    # (UFCStats' tott "WEIGHT" field, which clusters on real division
+    # numbers, not a random walking weight) against the bout's own weight
+    # class. Only resolves when EXACTLY ONE candidate's division matches --
+    # stays unresolved (NaN, same safe fallback as before) if zero or
+    # multiple candidates match, so a genuinely ambiguous fight is never
+    # guessed at.
+    dupe_candidates = {
+        name: [(row.fighter_id, _weight_to_division(row.weight_lbs)) for row in group.itertuples()]
+        for name, group in named[named["name"].isin(dupe_names)].groupby("name")
+    }
+
+    def resolve_id(name, weightclass):
+        if name in unique_map.index:
+            return unique_map[name]
+        candidates = dupe_candidates.get(name)
+        if not candidates:
+            return np.nan
+        matches = [fid for fid, div in candidates if div == weightclass]
+        return matches[0] if len(matches) == 1 else np.nan
+
+    fights["fighter_1_id"] = [resolve_id(n, w) for n, w in zip(fights["fighter_1_name"], fights["weightclass"])]
+    fights["fighter_2_id"] = [resolve_id(n, w) for n, w in zip(fights["fighter_2_name"], fights["weightclass"])]
 
     outcome_split = fights["OUTCOME"].str.split("/", expand=True)
     fights["result_1"] = outcome_split[0]
@@ -165,8 +217,6 @@ def load_fights(fighters: pd.DataFrame) -> pd.DataFrame:
     fights["winner_id"] = fights.apply(resolve_winner, axis=1)
     fights["is_draw"] = fights["OUTCOME"] == "D/D"
     fights["is_no_contest"] = fights["OUTCOME"] == "NC/NC"
-
-    fights["weightclass"] = fights["WEIGHTCLASS"].apply(_normalize_weightclass)
 
     fights = fights.rename(
         columns={

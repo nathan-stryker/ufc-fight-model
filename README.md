@@ -211,7 +211,56 @@ equivalent -- tap toggles a `.open` class that reveals a small tooltip
 method + round, with a `document`-level click listener closing any open
 tooltip on an outside tap. `:hover`/`:focus` in the CSS cover desktop for
 free on top of the same toggle mechanism. Fighters with no UFC fight record
-(a handful of debutants each week) just show no badges, no placeholder.
+show a "UFC Debut" label instead (see below) rather than no badges at all.
+
+**Real duplicate-name data bug found and fixed, added 2026-07-24**: user
+noticed Mike Davis (a real, active UFC lightweight) showed zero fight
+history on the card, followed by a general "make sure we're getting all
+our data correct" ask. Root cause was in `load_data.py`'s `load_fights()`,
+not the card scraper: `name_to_id = fighters...drop_duplicates(subset="name",
+keep=False)...` dropped BOTH rows for any duplicated fighter name --
+`keep=False` means "drop every occurrence of a duplicated value," not "drop
+the extras." Our data has 8 real, distinct people who happen to share a
+name (e.g. two different "Bruno Silva"s at different weights) -- every one
+of their fights, ~50 total across `fights.csv`, silently got `fighter_id =
+NaN`, making genuinely active fighters like Mike Davis look winless/
+historyless and excluding all those fights from Elo/feature computation
+entirely.
+
+Fixed by disambiguating per-fight instead of dropping the name outright:
+`_weight_to_division()` buckets a fighter's own listed fight weight (which
+clusters tightly on the real division numbers, confirmed by checking the
+distribution) against the bout's own weight class -- resolves only when
+EXACTLY ONE candidate's division matches, stays `NaN` (same safe fallback
+as before) if zero or multiple match, so a genuinely ambiguous fight is
+never guessed at. Result: Mike Davis 7/7 fights recovered; the other 7
+duplicate names mostly recovered too (e.g. Bruno Silva 22/23 -- the one
+remaining unresolved bout has a weight class that doesn't match EITHER
+candidate, correctly left alone rather than guessed). Full pipeline
+re-run (`load_data` -> `build_features` -> `method_features` -> `train` ->
+`train_method` -> `train_round` -> `evaluate`) to pick up the ~50 newly-
+recovered fights into Elo/features -- win-model holdout accuracy moved
+0.658 -> 0.640 (AUC 0.691 -> 0.685), a real but small shift, well under
+this project's own "flag if >5 points" guard, and expected: correcting a
+fighter's ID mid-career reshuffles their whole Elo trajectory, not just
+that one fight.
+
+The SAME bug existed independently in `scrape_upcoming_card.py`'s
+`match_fighter_ids()` (`by_norm_name.setdefault(...)` silently kept
+whichever duplicate-named fighter came first, rather than dropping them --
+a different failure mode, wrong-but-plausible instead of missing, same
+root cause) -- fixed with the identical weight-class disambiguation
+(imports `_weight_to_division` from `load_data.py` rather than
+duplicating the logic).
+
+**"UFC Debut" label, same session**: user's original ask, but building it
+before the fix above would have inherited the same bug (Mike Davis would
+have shown "UFC Debut" instead of a real record -- wrong, not just
+missing). `_recent_results_payload()` now always sets a key for every
+fighter it looks up, even to an empty list, so the frontend can tell a
+genuine zero-fight debut apart from a fighter it never looked up at all
+(no id resolved) -- `formBadgesHtml()` renders `.fc-debut-label` ("UFC
+Debut", muted italic) for the former, nothing for the latter.
 
 **Divisional rankings, added 2026-07-23 (same day, follow-up)**: since the
 card scraper already reads `.c-listing-fight` blocks off ufc.com, the same

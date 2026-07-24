@@ -58,6 +58,8 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from src.data.load_data import _weight_to_division
+
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; personal MMA-stats research script)"}
 ORG_URL = "https://www.sherdog.com/organizations/Ultimate-Fighting-Championship-UFC-2"
@@ -268,17 +270,42 @@ def scrape_card(session, event_url):
     return bouts
 
 
+def _bout_division(weight_class):
+    """Strips a "Women's " prefix so it compares cleanly against
+    _weight_to_division()'s bare division names (the weight boundaries are
+    the same for men's/women's divisions, gender isn't part of that lookup)."""
+    if not weight_class:
+        return None
+    return re.sub(r"^women's\s+", "", weight_class, flags=re.IGNORECASE).strip()
+
+
 def match_fighter_ids(bouts):
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv")
     by_norm_name = {}
     for row in fighters.itertuples():
-        by_norm_name.setdefault(normalize_name(row.name), row.fighter_id)
+        by_norm_name.setdefault(normalize_name(row.name), []).append((row.fighter_id, row.weight_lbs))
 
     for b in bouts:
         for side in ("fighter_a_name", "fighter_b_name"):
             key = normalize_name(b[side])
             key = NAME_ALIASES.get(key, key)
-            b[side.replace("_name", "_id")] = by_norm_name.get(key)
+            candidates = by_norm_name.get(key, [])
+            if len(candidates) == 1:
+                fid = candidates[0][0]
+            elif len(candidates) > 1:
+                # Same real-world case this fixes in load_data.py's
+                # load_fights(): more than one distinct fighter shares this
+                # exact name (e.g. two different "Bruno Silva"s). Disambiguate
+                # via the bout's own weight class against each candidate's
+                # listed fight weight -- only resolve when EXACTLY ONE
+                # candidate's division matches, otherwise leave unmatched
+                # (None) rather than guess which same-named person this is.
+                target = _bout_division(b.get("weight_class"))
+                matches = [fid for fid, w in candidates if _weight_to_division(w) == target]
+                fid = matches[0] if len(matches) == 1 else None
+            else:
+                fid = None
+            b[side.replace("_name", "_id")] = fid
     return bouts
 
 

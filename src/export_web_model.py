@@ -282,8 +282,12 @@ def _recent_results_payload(upcoming_card_payload, n=5):
                 "method": r["method"] if pd.notna(r["method"]) else None,
                 "round": int(r["round"]) if pd.notna(r["round"]) else None,
             })
-        if rows:
-            results[fid] = rows
+        # Always set the key, even to an empty list -- distinguishes a
+        # genuine "we checked, this fighter has zero recorded UFC fights"
+        # (shown as "UFC Debut" on the site) from a fighter this payload
+        # never looked up at all (key absent, which the frontend treats
+        # differently: no badges AND no debut label).
+        results[fid] = rows
     return results
 
 
