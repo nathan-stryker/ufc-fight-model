@@ -276,6 +276,21 @@ fallback path runs instead (no ranking data available there). Rendered in
 gold for `"C"`, muted for a plain number, nothing for unranked (no
 placeholder chip).
 
+**News tab, added 2026-07-24**: `src/data/scrape_news.py` pulls ~15-20
+recent headlines from ufc.com/news (robots.txt allows it; paginated via
+`?page=N`, no JS needed). Each card exposes a clean headline/teaser/
+category-tag/thumbnail/link structure -- only that preview data is scraped,
+never the article body, and the site always links out to the real article
+rather than reproducing its text. Thumbnails are hotlinked to ufc.com's own
+hosting (same as any news aggregator), not downloaded/re-hosted. The
+source's own timestamps ("10 hours ago") are relative and would read as
+wrong on a site that only refreshes weekly, so they're discarded entirely
+in favor of a single "As of `<export date>`" line. Wired through
+`export_web_model.py`'s `_news_payload()` into `ui.js`'s `renderNews()`,
+styled with a new `--teal` accent token (same 4-theme-block pattern as
+`--green`/`--violet`) since it's a new nav section distinct from the
+existing gold/green/violet ones.
+
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
 round before it actually stops, so the saved model has MORE trees than

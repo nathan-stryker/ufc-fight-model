@@ -289,7 +289,52 @@
     });
   }
 
+  // Weekly-scraped headlines (src/data/scrape_news.py -> export_web_model.py's
+  // _news_payload()) -- always links out to the real article on ufc.com,
+  // never reproduces its body text, only the headline/teaser/thumbnail the
+  // source itself surfaces as a preview. Relative timestamps like "10 hours
+  // ago" would read as wrong on a site that only refreshes on a schedule, so
+  // those are discarded at scrape time in favor of a single "As of <date>"
+  // line reflecting when THIS payload was built.
+  function renderNews() {
+    const section = document.getElementById("news-section");
+    if (!section) return;
+    const news = MODEL_DATA.news;
+    if (!news || !news.articles || !news.articles.length) {
+      section.hidden = true;
+      return;
+    }
+    const asOfDate = new Date(news.asOfDate + "T00:00:00Z")
+      .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+    const cardsHtml = news.articles.map((a) => {
+      const image = a.imageUrl
+        ? `<img class="news-card-image" src="${escapeHtml(a.imageUrl)}" alt="" loading="lazy">`
+        : "";
+      const tag = a.tag ? `<div class="news-card-tag">${escapeHtml(a.tag)}</div>` : "";
+      const teaser = a.teaser ? `<p class="news-card-teaser">${escapeHtml(a.teaser)}</p>` : "";
+      return `
+        <a class="news-card" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">
+          ${image}
+          <div class="news-card-body">
+            ${tag}
+            <h3 class="news-card-headline display">${escapeHtml(a.headline)}</h3>
+            ${teaser}
+          </div>
+        </a>`;
+    }).join("");
+
+    section.innerHTML = `
+      <div class="news-header">
+        <div class="news-eyebrow">Latest headlines</div>
+        <h2 class="news-title display">News</h2>
+        <div class="news-asof mono">As of ${escapeHtml(asOfDate)}</div>
+      </div>
+      <div class="news-grid">${cardsHtml}</div>`;
+  }
+
   renderUpcomingCard();
+  renderNews();
 
   setupCorner("a");
   setupCorner("b");
@@ -382,7 +427,7 @@
     const nav = document.getElementById("site-nav");
     if (!nav || typeof IntersectionObserver === "undefined") return;
     const links = new Map([...nav.querySelectorAll("a[data-nav]")].map((a) => [a.dataset.nav, a]));
-    const sections = ["fight-card", "predict-section", "prop-tracker", "my-predictions"]
+    const sections = ["fight-card", "news-section", "predict-section", "prop-tracker", "my-predictions"]
       .map((id) => document.getElementById(id)).filter(Boolean);
 
     const observer = new IntersectionObserver((entries) => {

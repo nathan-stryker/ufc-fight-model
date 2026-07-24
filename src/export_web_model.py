@@ -10,6 +10,7 @@ Writes: web/model_data.json
 """
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -291,6 +292,39 @@ def _recent_results_payload(upcoming_card_payload, n=5):
     return results
 
 
+def _news_payload():
+    """
+    Reads the pre-scraped news cache (data/processed/news.csv, see
+    src/data/scrape_news.py) -- NOT scraped over the network here, this is
+    a build step. Degrades to no News tab at all if the file doesn't exist
+    yet or the scrape found nothing, rather than failing the whole export.
+
+    asOfDate is today (the export run), not anything from the scraped
+    page -- the site shows "As of <asOfDate>" instead of ufc.com's own
+    relative timestamps ("10 hours ago"), which would read as wrong by the
+    time this only refreshes again next week.
+    """
+    path = PROCESSED_DIR / "news.csv"
+    if not path.exists():
+        return None
+    df = pd.read_csv(path, encoding="utf-8")
+    if df.empty:
+        return None
+    articles = []
+    for _, row in df.iterrows():
+        articles.append({
+            "headline": row["headline"],
+            "teaser": row["teaser"] if pd.notna(row["teaser"]) else None,
+            "tag": row["tag"] if pd.notna(row["tag"]) else None,
+            "imageUrl": row["image_url"] if pd.notna(row["image_url"]) else None,
+            "url": row["url"],
+        })
+    return {
+        "asOfDate": datetime.now().strftime("%Y-%m-%d"),
+        "articles": articles,
+    }
+
+
 def _flags_payload(codes):
     """
     Reads the pre-fetched local cache (web/flags/, see src/fetch_flags.py --
@@ -342,6 +376,7 @@ def main():
     payload["flags"] = _flags_payload(flag_codes)
     payload["upcoming_card"] = _upcoming_card_payload()
     payload["recent_results"] = _recent_results_payload(payload["upcoming_card"])
+    payload["news"] = _news_payload()
 
     out_path = WEB_DIR / "model_data.json"
     with open(out_path, "w") as f:
@@ -362,6 +397,10 @@ def main():
         print(f"  recent_results: {n_with_history} upcoming-card fighters with fight history")
     else:
         print("  upcoming_card: none (run `python -m src.data.scrape_upcoming_card` first)")
+    if payload["news"]:
+        print(f"  news: {len(payload['news']['articles'])} articles (as of {payload['news']['asOfDate']})")
+    else:
+        print("  news: none (run `python -m src.data.scrape_news` first)")
 
 
 if __name__ == "__main__":

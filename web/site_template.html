@@ -27,6 +27,9 @@
     --violet: #9B7FC7;
     --violet-dim: #4A3A66;
     --violet-wash: rgba(155, 127, 199, 0.14);
+    --teal: #3FA7A0;
+    --teal-dim: #1F5451;
+    --teal-wash: rgba(63, 167, 160, 0.14);
     --shadow: rgba(0, 0, 0, 0.5);
   }
   @media (prefers-color-scheme: light) {
@@ -53,6 +56,9 @@
       --violet: #6B4FA0;
       --violet-dim: #DDD0EE;
       --violet-wash: rgba(107, 79, 160, 0.09);
+      --teal: #1F7A73;
+      --teal-dim: #C9E8E5;
+      --teal-wash: rgba(31, 122, 115, 0.09);
       --shadow: rgba(30, 22, 10, 0.14);
     }
   }
@@ -68,6 +74,7 @@
     --bronze-wash: rgba(184, 115, 51, 0.14);
     --green: #4C9A52; --green-dim: #245229; --green-wash: rgba(76, 154, 82, 0.14);
     --violet: #9B7FC7; --violet-dim: #4A3A66; --violet-wash: rgba(155, 127, 199, 0.14);
+    --teal: #3FA7A0; --teal-dim: #1F5451; --teal-wash: rgba(63, 167, 160, 0.14);
     --shadow: rgba(0, 0, 0, 0.5);
   }
   :root[data-theme="light"] {
@@ -80,6 +87,7 @@
     --bronze: #8B5423; --bronze-wash: rgba(139, 84, 35, 0.09);
     --green: #2E7A3B; --green-dim: #C8E6CB; --green-wash: rgba(46, 122, 59, 0.09);
     --violet: #6B4FA0; --violet-dim: #DDD0EE; --violet-wash: rgba(107, 79, 160, 0.09);
+    --teal: #1F7A73; --teal-dim: #C9E8E5; --teal-wash: rgba(31, 122, 115, 0.09);
     --shadow: rgba(30, 22, 10, 0.14);
   }
 
@@ -193,6 +201,44 @@
   }
 
   .fight-card { margin-bottom: 2.25rem; animation: riseIn 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  /* News tab -- scraped weekly from ufc.com/news (src/data/scrape_news.py),
+     headline/teaser/thumbnail only, always linking out to the real article
+     rather than reproducing its text. Thumbnails are hotlinked to ufc.com's
+     own hosting, not downloaded/re-hosted. */
+  .news-section { margin-bottom: 2.25rem; }
+  .news-header { margin-bottom: 1rem; }
+  .news-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 0.35rem;
+  }
+  .news-title { font-size: clamp(1.15rem, 3vw, 1.5rem); margin: 0 0 0.25rem; }
+  .news-asof { color: var(--ink-dim); font-size: 0.78rem; }
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .news-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--canvas-raised);
+    border: 1px solid var(--canvas-line);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 150ms ease;
+  }
+  .news-card:hover { border-color: var(--teal); }
+  .news-card-image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--canvas-line); display: block; }
+  .news-card-body { padding: 0.75rem 0.9rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+  .news-card-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); }
+  .news-card-headline { font-weight: 700; text-transform: uppercase; font-size: 0.95rem; line-height: 1.2; margin: 0; }
+  .news-card-teaser { font-size: 0.8rem; color: var(--ink-dim); line-height: 1.4; margin: 0; flex: 1; }
   .fc-header { text-align: center; margin-bottom: 1rem; }
   .fc-eyebrow {
     font-size: 0.7rem;
@@ -639,13 +685,14 @@
   }
   .site-nav a:hover { color: var(--ink); }
   .site-nav a.active[data-nav="fight-card"] { color: var(--gold); border-bottom-color: var(--gold); }
+  .site-nav a.active[data-nav="news-section"] { color: var(--teal); border-bottom-color: var(--teal); }
   .site-nav a.active[data-nav="predict-section"] { color: var(--ink); border-bottom-color: var(--ink-dim); }
   .site-nav a.active[data-nav="prop-tracker"] { color: var(--green); border-bottom-color: var(--green); }
   .site-nav a.active[data-nav="my-predictions"] { color: var(--violet); border-bottom-color: var(--violet); }
 
   /* Every jump target gets breathing room under the sticky nav so its own
      header isn't hidden right underneath it when scrolled/jumped to. */
-  #fight-card, #predict-section, #prop-tracker, #my-predictions { scroll-margin-top: 4rem; }
+  #fight-card, #news-section, #predict-section, #prop-tracker, #my-predictions { scroll-margin-top: 4rem; }
 
   .section-header { margin-bottom: 1.25rem; }
   .section-eyebrow {
@@ -719,12 +766,15 @@
 
   <nav class="site-nav" id="site-nav">
     <a href="#fight-card" data-nav="fight-card">This Week's Card</a>
+    <a href="#news-section" data-nav="news-section">News</a>
     <a href="#predict-section" data-nav="predict-section">Predict</a>
     <a href="#prop-tracker" data-nav="prop-tracker">Prop Tracker</a>
     <a href="#my-predictions" data-nav="my-predictions">My Predictions</a>
   </nav>
 
   <section class="fight-card" id="fight-card"></section>
+
+  <section class="news-section" id="news-section"></section>
 
   <div id="predict-section" class="predict-zone">
     <div class="section-header predict-header">
