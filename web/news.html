@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Call the Card</title>
+<title>News - Call the Card</title>
 <style>
   /* Palette pulled from the sport's own materials, not a generic UI kit:
      ring-canvas black, corner-pad red/blue (the sport's own convention),
@@ -780,129 +780,91 @@
   </header>
 
   <nav class="site-nav" id="site-nav">
-    <a href="#fight-card" data-nav="fight-card">This Week's Card</a>
-    <a href="news.html">News</a>
-    <a href="#predict-section" data-nav="predict-section">Predict</a>
-    <a href="#prop-tracker" data-nav="prop-tracker">Prop Tracker</a>
-    <a href="#my-predictions" data-nav="my-predictions">My Predictions</a>
+    <a href="index.html#fight-card">This Week's Card</a>
+    <a href="news.html" class="active" data-nav="news-section">News</a>
+    <a href="index.html#predict-section">Predict</a>
+    <a href="index.html#prop-tracker">Prop Tracker</a>
+    <a href="index.html#my-predictions">My Predictions</a>
   </nav>
 
-  <section class="fight-card" id="fight-card"></section>
+  <div class="news-page-header">
+    <a class="news-back-link" href="index.html">&larr; Back to This Week's Card</a>
+  </div>
 
   <section class="news-section" id="news-section"></section>
 
-  <div id="predict-section" class="predict-zone">
-    <div class="section-header predict-header">
-      <div class="section-eyebrow">Pick a matchup</div>
-      <h2 class="section-title display">Predict</h2>
-    </div>
-    <section class="matchup">
-    <div class="corner corner-a">
-      <div class="corner-label">Red Corner</div>
-      <input class="fighter-search" id="search-a" placeholder="Search a fighter&hellip;" autocomplete="off">
-      <div class="suggestions" id="suggestions-a"></div>
-      <div class="fighter-card" id="card-a">
-        <div class="fighter-card-top">
-          <div class="fighter-badge" id="badge-a"></div>
-          <div class="fighter-card-id">
-            <div class="fighter-name" id="name-a"></div>
-            <div class="fighter-nick" id="nick-a"></div>
-          </div>
-        </div>
-        <div class="fighter-meta" id="meta-a"></div>
-        <div class="fighter-division mono" id="division-a"></div>
-        <button class="clear-btn" data-clear="a">Change fighter</button>
-      </div>
-    </div>
-
-    <div class="vs-block">
-      <div class="vs-mark display">VS</div>
-      <div class="rounds-toggle" id="rounds-toggle">
-        <button data-rounds="3" class="active" type="button">3 RD</button>
-        <button data-rounds="5" type="button">5 RD</button>
-      </div>
-      <button class="predict-btn" id="predict-btn" disabled type="button">Call It</button>
-    </div>
-
-    <div class="corner corner-b">
-      <div class="corner-label">Blue Corner</div>
-      <input class="fighter-search" id="search-b" placeholder="Search a fighter&hellip;" autocomplete="off">
-      <div class="suggestions" id="suggestions-b"></div>
-      <div class="fighter-card" id="card-b">
-        <div class="fighter-card-top">
-          <div class="fighter-badge" id="badge-b"></div>
-          <div class="fighter-card-id">
-            <div class="fighter-name" id="name-b"></div>
-            <div class="fighter-nick" id="nick-b"></div>
-          </div>
-        </div>
-        <div class="fighter-meta" id="meta-b"></div>
-        <div class="fighter-division mono" id="division-b"></div>
-        <button class="clear-btn" data-clear="b">Change fighter</button>
-      </div>
-    </div>
-    </section>
-  </div>
-
-  <section class="results" id="results" hidden>
-    <div class="verdict">
-      <div class="verdict-name mono" id="verdict-line"></div>
-      <div class="verdict-detail display" id="verdict-detail"></div>
-    </div>
-
-    <div class="odds-bar">
-      <div class="odds-fill odds-fill-a" id="odds-fill-a"></div>
-      <div class="odds-fill odds-fill-b" id="odds-fill-b"></div>
-    </div>
-    <div class="odds-labels">
-      <div class="side-a"><div class="pct mono" id="odds-pct-a"></div><div id="odds-name-a"></div></div>
-      <div class="side-b"><div class="pct mono" id="odds-pct-b"></div><div id="odds-name-b"></div></div>
-    </div>
-
-    <div class="tape">
-      <div class="tape-title"><span>Method of Victory</span></div>
-      <div id="method-rows"></div>
-    </div>
-
-    <div class="tape">
-      <div class="tape-title"><span>Round</span><span class="mono" id="finish-chance"></span></div>
-      <div id="round-rows"></div>
-    </div>
-  </section>
-
-  <section class="prop-tracker" id="prop-tracker"></section>
-
-  <section class="my-predictions" id="my-predictions"></section>
-
   <footer class="disclaimer">
-    Trained on <span class="mono" id="fight-count">&mdash;</span> UFC fights, 1994&ndash;2026. Runs
-    entirely client-side &mdash; nothing you type is sent anywhere. Best on realistic,
-    competitively-matched pairings; treat wildly lopsided hypothetical matchups with a grain
-    of salt (see the project README for why).
+    Headlines and thumbnails from <span class="mono">ufc.com/news</span>, refreshed daily &mdash;
+    always links out to the original article.
   </footer>
 </div>
 
 <script>
-__ENGINE_JS__
+const NEWS_DATA = {"asOfDate":"2026-07-24","articles":[{"headline":"Official Weigh-In Results | UFC Abu Dhabi","teaser":"The Official Weights Of The Athletes Competing At UFC Fight Night: Ankalaev vs Guskov On July 25, 2026 At Etihad Aren","tag":"Weigh-in","imageUrl":"https://www.ufc.com/s3/files/styles/brand_page_grid_image_mobile_x1/s3/image/2026-07/072526-Magomed-Ankalaev-hero-weigh-in-GettyImages-2239073941.jpg?itok=FN6aObdg","url":"https://www.ufc.com/news/official-weigh-results-ufc-abu-dhabi-ankalaev-guskov"},{"headline":"Official Scorecards | UFC Abu Dhabi","teaser":"View The Official Judges' Scorecards From Every Bout At UFC Fight Night: Ankalaev vs Guskov, Live From Etihad Arena In Abu Dhabi On July 25, 2026","tag":"Scorecards","imageUrl":"https://ufc.com/images/styles/brand_page_big_grid_image_mobile_x1/s3/2026-03/012426-bruce-buffer-announcement-HERO-GettyImages-2258040762.jpg?itok=MkHSN--T","url":"https://www.ufc.com/news/ufc-abu-dhabi-official-scorecards"},{"headline":"Santiago Ponzinibbio Continues To Chase His Passion","teaser":"Welterweight Veteran Continues To Fly The Argentine Flag With Pride As He Continues To Compete In The Sport He Loves.","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Santiago-Ponzibbio-Hero-.jpg?itok=klP9BAnC","url":"https://www.ufc.com/news/santiago-ponzinibbio-continues-to-chase-his-passion-ufc-abu-dhabi"},{"headline":"Steve Erceg Aiming to Cement His Place In The\u2026","teaser":"Former Title Challenger Seeking Third Straight Win On Saturday In Abu Dhabi","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Steve-Erceg-Hero-.jpg?itok=EOGztpvu","url":"https://www.ufc.com/news/steve-erceg-aiming-to-cement-his-place-in-the-flyweight-ranks-ufc-abu-dhabi"},{"headline":"UFC | TWO SVGE Unveil Official UFC Eyewear\u2026","teaser":"Undisputed Style, Championship Attitude.","tag":"Licensed","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Thumbnail-1920x1080.jpg?itok=gncpm9dA","url":"https://www.ufc.com/news/ufc-two-svge-unveil-official-ufc-eyewear-collection-launching-july-27th"},{"headline":"Magomed Ankalaev Is Keen To Put Things Right","teaser":"Former Light Heavyweight Champion Blames Himself For His Title Loss.","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Magomed-Ankalaev-Hero-.jpg?itok=hC9BX7gO","url":"https://www.ufc.com/news/magomed-ankalaev-is-keen-to-put-things-right-ufc-abu-dhabi"},{"headline":"Prelim Results | UFC Abu Dhabi","teaser":"Live Results, Highlights, Post-Fight Interviews With The Prelim Winners And More From UFC Fight Night: Ankalaev vs Gu","tag":"Results","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/102525-Etihad-Arena-Geneal-Octagon-GettyImages-2243261260.jpg?itok=Dr0i8v_Z","url":"https://www.ufc.com/news/ufc-abu-dhabi-prelim-results"},{"headline":"Main Card Results | UFC Abu Dhabi","teaser":"Live Results, Highlights, Post-Fight Interviews With The Main Card Winners And More From UFC Fight Night: Ankalaev vs","tag":"Results","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/072526-ufc-fight-night-ankalaev-vs-guskov-EVENT-ART.jpg?itok=14Be9UIT","url":"https://www.ufc.com/news/ufc-abu-dhabi-results"},{"headline":"Power Slap 22 Makes Historic European Debut in Serbia","teaser":null,"tag":"Power Slap","imageUrl":"https://www.ufc.com/s3/files/styles/brand_page_grid_image_mobile_x1/s3/2026-07/1PS22_KA_Buildout_061026-1920x1080-1.jpg?itok=YNH2wSYK","url":"https://www.ufc.com/news/power-slap-22-makes-historic-european-debut-serbia"},{"headline":"Dustin Jacoby Wants To Make The Long Journey Worth It","teaser":"Veteran Light Heavyweight Talks Current Success, Motivations, Fighting In Abu Dhabi","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Dustin-Jacoby-Hero-.jpg?itok=Kpz_1xP7","url":"https://www.ufc.com/news/dustin-jacoby-wants-make-long-journey-worth-it-ufc-abu-dhabi"},{"headline":"Garcia vs Benn Tickets On Sale This Week","teaser":"World Welterweight Championship Hits T-Mobile Arena On Septermber 12, 2026","tag":"Zuffa Boxing","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Garcia-Benn-hero-ZB.jpg?itok=jMzGtgi6","url":"https://www.ufc.com/news/garcia-vs-benn-tickets-sale-week"},{"headline":"Tyrell Fortune | Always Aiming For Better","teaser":"Coming Off Debut Win, Heavyweight Eyes Even Better Effort This Weekend","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Tyrell-Fortune-Hero-.jpg?itok=jQBoFA-W","url":"https://www.ufc.com/news/tyrell-fortune-always-aiming-better-ufc-abu-dhabi"},{"headline":"Sam Patterson Knows He Belongs At The Top","teaser":"English Welterweight Arrives In Abu Dhabi Determined To Bounce Back To His Fight-Finishing Ways.","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Sam-Patterson-Hero-.jpg?itok=nZed5HfH","url":"https://www.ufc.com/news/sam-patterson-knows-he-belongs-at-the-top-ufc-abu-dhabi"},{"headline":"Axel Sola Sees His Chance To Have A \u2018Perfect\u2019\u2026","teaser":"The Surging Lightweight Believes Experience, Patience And A Signature Performance Can Elevate Him To The Next Level.","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Axel-Sola-Hero-.jpg?itok=n0BoYG8M","url":"https://www.ufc.com/news/axel-sola-sees-his-chance-have-a-perfect-performance-ufc-abu-dhabi"},{"headline":"Mike Davis Ready To Reward Patience With Statement\u2026","teaser":"After A Year On The Sidelines, Veteran Lightweight Mike Davis Sees Saturday As The Beginning Of A Fresh Chapter","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/Mike-Davis-Hero-.jpg?itok=fY2Nd13L","url":"https://www.ufc.com/news/mike-davis-ready-reward-patience-statement-performance-ufc-abu-dhabi"},{"headline":"The Reintroduction of Islam Dulatov","teaser":"Promising Welterweight Prospect Returns For Sophomore Appearance On Saturday","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/072026-islam-dulatov-pre-fight_GettyImages-2226051165.jpg?itok=dC2Ryryb","url":"https://www.ufc.com/news/the-reintroduction-of-islam-dulatov-ufc-abu-dhabi"},{"headline":"Bogdan Guskov | Huge Opportunity, Historic Moment","teaser":"Main Event Matchup With Magomed Ankalaev Ultra-Meaningful For Uzbek Standout","tag":"Athletes","imageUrl":"https://ufc.com/images/styles/brand_page_grid_image_mobile_x1/s3/2026-07/072026-bogdan-guskov-backstage-portrait_GettyImages-2001098424.jpg?itok=CJ0vJbdf","url":"https://www.ufc.com/news/bogdan-guskov-huge-opportunity-historic-moment-ufc-abu-dhabi"}]};
 </script>
 <script>
-__MODEL_DATA__
+(function () {
+  function escapeHtml(s) {
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
+  function formatAsOfDate(dateStr) {
+    return new Date(dateStr + "T00:00:00Z")
+      .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  }
+
+  function cardHtml(a) {
+    const image = a.imageUrl
+      ? `<img class="news-card-image" src="${escapeHtml(a.imageUrl)}" alt="" loading="lazy">`
+      : "";
+    const tag = a.tag ? `<div class="news-card-tag">${escapeHtml(a.tag)}</div>` : "";
+    const teaser = a.teaser ? `<p class="news-card-teaser">${escapeHtml(a.teaser)}</p>` : "";
+    return `
+      <a class="news-card" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">
+        ${image}
+        <div class="news-card-body">
+          ${tag}
+          <h3 class="news-card-headline display">${escapeHtml(a.headline)}</h3>
+          ${teaser}
+        </div>
+      </a>`;
+  }
+
+  // Shared by the home page's 3-headline preview and the standalone news.html
+  // page's full grid -- same card markup either way, just a different slice
+  // of `news.articles` and an optional "See More" link out to the full page.
+  function renderNewsSection(sectionEl, news, opts) {
+    opts = opts || {};
+    if (!sectionEl) return;
+    if (!news || !news.articles || !news.articles.length) {
+      sectionEl.hidden = true;
+      return;
+    }
+    const articles = opts.limit ? news.articles.slice(0, opts.limit) : news.articles;
+    const cardsHtml = articles.map(cardHtml).join("");
+    const seeMore = opts.seeMoreHref
+      ? `<a class="news-see-more" href="${escapeHtml(opts.seeMoreHref)}">See More News &rarr;</a>`
+      : "";
+    sectionEl.innerHTML = `
+      <div class="news-header">
+        <div class="news-eyebrow">${escapeHtml(opts.eyebrow || "Latest headlines")}</div>
+        <h2 class="news-title display">${escapeHtml(opts.title || "News")}</h2>
+        <div class="news-asof mono">As of ${escapeHtml(formatAsOfDate(news.asOfDate))}</div>
+      </div>
+      <div class="news-grid">${cardsHtml}</div>
+      ${seeMore}`;
+  }
+
+  window.NewsRender = { renderNewsSection };
+})();
+
 </script>
 <script>
-__PAPER_TRADE_JS__
-</script>
-<script>
-  window.PaperTrade.mount("prop-tracker");
-</script>
-<script>
-__PREDICTIONS_JS__
-</script>
-<script>
-  window.MyPredictions.mount("my-predictions");
-</script>
-<script>
-__NEWS_RENDER_JS__
-</script>
-<script>
-__UI_JS__
+  window.NewsRender.renderNewsSection(document.getElementById("news-section"), NEWS_DATA, {
+    eyebrow: "All headlines",
+    title: "News",
+  });
 </script>

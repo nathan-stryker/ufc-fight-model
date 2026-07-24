@@ -1,0 +1,46 @@
+<meta charset="utf-8">
+<title>News - Call the Card</title>
+__SHARED_STYLE__
+
+<div class="page">
+  <header class="masthead">
+    <h1 class="logo-mark display" aria-label="Call the Card">
+      <span class="logo-call" aria-hidden="true">Call</span>
+      <span class="logo-the" aria-hidden="true">T<br>h<br>e</span>
+      <span class="logo-card" aria-hidden="true">Card</span>
+    </h1>
+    <div class="masthead-rule"></div>
+  </header>
+
+  <nav class="site-nav" id="site-nav">
+    <a href="index.html#fight-card">This Week's Card</a>
+    <a href="news.html" class="active" data-nav="news-section">News</a>
+    <a href="index.html#predict-section">Predict</a>
+    <a href="index.html#prop-tracker">Prop Tracker</a>
+    <a href="index.html#my-predictions">My Predictions</a>
+  </nav>
+
+  <div class="news-page-header">
+    <a class="news-back-link" href="index.html">&larr; Back to This Week's Card</a>
+  </div>
+
+  <section class="news-section" id="news-section"></section>
+
+  <footer class="disclaimer">
+    Headlines and thumbnails from <span class="mono">ufc.com/news</span>, refreshed daily &mdash;
+    always links out to the original article.
+  </footer>
+</div>
+
+<script>
+__NEWS_DATA__
+</script>
+<script>
+__NEWS_RENDER_JS__
+</script>
+<script>
+  window.NewsRender.renderNewsSection(document.getElementById("news-section"), NEWS_DATA, {
+    eyebrow: "All headlines",
+    title: "News",
+  });
+</script>

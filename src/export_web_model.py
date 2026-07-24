@@ -382,6 +382,13 @@ def main():
     with open(out_path, "w") as f:
         json.dump(payload, f, separators=(",", ":"))
 
+    # Also written standalone (not just embedded in model_data.json) so the
+    # separate news.html page can embed just this ~tens-of-KB payload instead
+    # of the full multi-MB model_data.json it has no other use for.
+    news_out_path = WEB_DIR / "news_data.json"
+    with open(news_out_path, "w") as f:
+        json.dump(payload["news"], f, separators=(",", ":"))
+
     size_mb = out_path.stat().st_size / 1e6
     print(f"wrote {out_path} ({size_mb:.2f} MB)")
     print(f"  win_model: {len(payload['win_model']['trees'])} trees")
