@@ -3,19 +3,25 @@
 <style>
   /* Palette pulled from the sport's own materials, not a generic UI kit:
      ring-canvas black, corner-pad red/blue (the sport's own convention),
-     brass like an engraved belt plate, chalk-wrap ink. */
+     brass like an engraved belt plate, chalk-wrap ink. Red/blue are the
+     UFC's own official corner hex codes (#D20A0A / #011590) -- but the
+     literal navy #011590 is nearly invisible against this dark theme's
+     near-black canvas (1.3:1 contrast), so the dark theme uses a lighter
+     tint of the same hue instead (4.7:1, matching the old blue's
+     contrast) while the light theme uses the literal UFC navy, which
+     reads great there (10.9:1). */
   :root {
     --canvas: #16130E;
     --canvas-raised: #211A12;
     --canvas-line: #3A2F1F;
     --ink: #F0E6D2;
     --ink-dim: #A99878;
-    --red: #D6402A;
-    --red-dim: #6B2A1E;
-    --red-wash: rgba(214, 64, 42, 0.14);
-    --blue: #3E85BE;
-    --blue-dim: #21455E;
-    --blue-wash: rgba(62, 133, 190, 0.14);
+    --red: #D20A0A;
+    --red-dim: #670F0F;
+    --red-wash: rgba(210, 10, 10, 0.14);
+    --blue: #6376E9;
+    --blue-dim: #182990;
+    --blue-wash: rgba(99, 118, 233, 0.14);
     --gold: #C6963C;
     --silver: #ADB4BD;
     --silver-wash: rgba(173, 180, 189, 0.14);
@@ -39,12 +45,12 @@
       --canvas-line: #D8C9A3;
       --ink: #221B10;
       --ink-dim: #6B5D42;
-      --red: #B23423;
-      --red-dim: #E8C5BC;
-      --red-wash: rgba(178, 52, 35, 0.09);
-      --blue: #29628F;
-      --blue-dim: #C3D9E8;
-      --blue-wash: rgba(41, 98, 143, 0.09);
+      --red: #D20A0A;
+      --red-dim: #F2C0C0;
+      --red-wash: rgba(210, 10, 10, 0.09);
+      --blue: #011590;
+      --blue-dim: #C6CBEC;
+      --blue-wash: rgba(1, 21, 144, 0.09);
       --gold: #8A6118;
       --silver: #5C6470;
       --silver-wash: rgba(92, 100, 112, 0.09);
@@ -65,8 +71,8 @@
   :root[data-theme="dark"] {
     --canvas: #16130E; --canvas-raised: #211A12; --canvas-line: #3A2F1F;
     --ink: #F0E6D2; --ink-dim: #A99878;
-    --red: #D6402A; --red-dim: #6B2A1E; --red-wash: rgba(214, 64, 42, 0.14);
-    --blue: #3E85BE; --blue-dim: #21455E; --blue-wash: rgba(62, 133, 190, 0.14);
+    --red: #D20A0A; --red-dim: #670F0F; --red-wash: rgba(210, 10, 10, 0.14);
+    --blue: #6376E9; --blue-dim: #182990; --blue-wash: rgba(99, 118, 233, 0.14);
     --gold: #C6963C;
     --silver: #ADB4BD;
     --silver-wash: rgba(173, 180, 189, 0.14);
@@ -80,8 +86,8 @@
   :root[data-theme="light"] {
     --canvas: #EDE3CC; --canvas-raised: #FBF7EC; --canvas-line: #D8C9A3;
     --ink: #221B10; --ink-dim: #6B5D42;
-    --red: #B23423; --red-dim: #E8C5BC; --red-wash: rgba(178, 52, 35, 0.09);
-    --blue: #29628F; --blue-dim: #C3D9E8; --blue-wash: rgba(41, 98, 143, 0.09);
+    --red: #D20A0A; --red-dim: #F2C0C0; --red-wash: rgba(210, 10, 10, 0.09);
+    --blue: #011590; --blue-dim: #C6CBEC; --blue-wash: rgba(1, 21, 144, 0.09);
     --gold: #8A6118;
     --silver: #5C6470; --silver-wash: rgba(92, 100, 112, 0.09);
     --bronze: #8B5423; --bronze-wash: rgba(139, 84, 35, 0.09);
