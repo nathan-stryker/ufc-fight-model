@@ -204,6 +204,14 @@
         ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, b.tier === "main_event" ? 5 : 3, MODEL_DATA)).text)}</div>`
         : "";
       const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
+      // Divisional rank, scraped from ufc.com's ranks-row alongside the
+      // rest of the card data -- "C" for the reigning champion, "#N" for a
+      // ranked challenger, nothing for an unranked fighter (no placeholder).
+      function rankChipHtml(rank) {
+        if (!rank) return "";
+        const cls = rank === "C" ? "fc-rank-chip fc-rank-chip--champ" : "fc-rank-chip";
+        return `<span class="${cls}">${escapeHtml(rank)}</span>`;
+      }
       // Tier label (Main Event/Co-Main/Featured Prelim) sits above the
       // weight class in a left-aligned corner block, not in the "vs" spot
       // between fighter names -- the "vs" spot is just "vs" for every row
@@ -220,12 +228,12 @@
           </div>
           <div class="fc-matchup">
             <div class="fc-fighter-block">
-              <div class="fc-fighter">${badgeA}<span>${escapeHtml(b.nameA)}</span></div>
+              <div class="fc-fighter">${badgeA}${rankChipHtml(b.rankA)}<span>${escapeHtml(b.nameA)}</span></div>
               ${formBadgesHtml(b.idA)}
             </div>
             <div class="fc-vs">vs</div>
             <div class="fc-fighter-block">
-              <div class="fc-fighter">${badgeB}<span>${escapeHtml(b.nameB)}</span></div>
+              <div class="fc-fighter">${badgeB}${rankChipHtml(b.rankB)}<span>${escapeHtml(b.nameB)}</span></div>
               ${formBadgesHtml(b.idB)}
             </div>
           </div>

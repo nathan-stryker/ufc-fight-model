@@ -213,6 +213,20 @@ tooltip on an outside tap. `:hover`/`:focus` in the CSS cover desktop for
 free on top of the same toggle mechanism. Fighters with no UFC fight record
 (a handful of debutants each week) just show no badges, no placeholder.
 
+**Divisional rankings, added 2026-07-23 (same day, follow-up)**: since the
+card scraper already reads `.c-listing-fight` blocks off ufc.com, the same
+blocks also carry each fighter's official UFC divisional rank in a
+`.c-listing-fight__ranks-row` container -- always exactly two
+`.c-listing-fight__corner-rank` divs in `[red, blue]` order, each holding
+either `"C"` (reigning champion, confirmed against a real title fight),
+`"#N"`, or nothing for unranked. `_extract_ranks()` in
+`scrape_upcoming_card.py` pulls this alongside the existing name/weight-
+class/title-fight extraction; `rank_a`/`rank_b` are `None` when the Sherdog
+fallback path runs instead (no ranking data available there). Rendered in
+`ui.js` as a small chip next to each fighter's name (`rankChipHtml()`) --
+gold for `"C"`, muted for a plain number, nothing for unranked (no
+placeholder chip).
+
 **Gotcha if you ever hand-roll XGBoost inference from its native JSON dump**:
 early stopping (`early_stopping_rounds=30`) keeps training past the best
 round before it actually stops, so the saved model has MORE trees than

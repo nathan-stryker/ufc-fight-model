@@ -84,7 +84,9 @@ def assign_tiers(bouts):
             b["tier"] = "featured_prelim"
         else:
             b["tier"] = "prelim"
-        b["is_title_fight"] = False  # Sherdog's listing carries no title-fight signal
+        b["is_title_fight"] = False  # Sherdog's listing carries no title-fight or rank signal
+        b["rank_a"] = None
+        b["rank_b"] = None
     return bouts
 
 
@@ -107,6 +109,22 @@ def find_next_ufc_com_event_url(session):
     return "https://www.ufc.com" + a["href"].split("#")[0]
 
 
+def _extract_ranks(fight_node):
+    """ufc.com's `.c-listing-fight__ranks-row` always holds exactly two
+    `.c-listing-fight__corner-rank` divs in [red, blue] order -- each either
+    holds a "#N" span, the literal text "C" for the reigning champion, or is
+    empty for an unranked fighter. Confirmed champion notation against a
+    real title fight (UFC 330: Makhachev showed "C", his challenger "#1").
+    Returns (None, None) if the row itself isn't present at all."""
+    row = fight_node.select_one(".c-listing-fight__ranks-row")
+    if not row:
+        return None, None
+    divs = row.select(".c-listing-fight__corner-rank")
+    if len(divs) != 2:
+        return None, None
+    return (divs[0].get_text(strip=True) or None, divs[1].get_text(strip=True) or None)
+
+
 def _extract_segment_bouts(container):
     if not container:
         return []
@@ -121,11 +139,14 @@ def _extract_segment_bouts(container):
             or f.select_one(".c-listing-fight__class-text")
         )
         wc_raw = cls_el.get_text(strip=True) if cls_el else None
+        rank_a, rank_b = _extract_ranks(f)
         bouts.append({
             "fighter_a_name": red.get_text(" ", strip=True),
             "fighter_b_name": blue.get_text(" ", strip=True),
             "weight_class": _strip_bout_suffix(wc_raw) if wc_raw else None,
             "is_title_fight": bool(wc_raw) and "title" in wc_raw.lower(),
+            "rank_a": rank_a,
+            "rank_b": rank_b,
         })
     return bouts
 
