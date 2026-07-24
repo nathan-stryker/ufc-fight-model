@@ -162,6 +162,32 @@
     padding: 1.75rem 1.25rem 3rem;
   }
 
+  /* Below 1040px there's no room for a true side-by-side sidebar, so
+     .layout is plain block flow and the news widget just falls into DOM
+     order -- placed after the main column, so on mobile it reads as "News"
+     pushed toward the bottom rather than interrupting the fight-card ->
+     predict flow (this is the same "move it to the bottom" behavior the
+     user separately said would be acceptable, applied automatically as
+     the small-screen fallback of the wide-screen sidebar). Above 1040px,
+     .page widens and .layout becomes a real 2-column grid so the news
+     widget can run down the side, sticky, alongside the main content. */
+  .main-col { min-width: 0; }
+  .news-sidebar { margin-bottom: 2.25rem; }
+  @media (min-width: 1040px) {
+    .page { max-width: 1100px; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 760px) 300px;
+      grid-template-areas: "main aside" "footer footer";
+      column-gap: 2.5rem;
+      align-items: start;
+      justify-content: center;
+    }
+    .main-col { grid-area: main; }
+    .news-sidebar { grid-area: aside; margin-bottom: 0; position: sticky; top: 5.5rem; }
+    .disclaimer { grid-area: footer; }
+  }
+
   @keyframes riseIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -239,6 +265,24 @@
   .news-card-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); }
   .news-card-headline { font-weight: 700; text-transform: uppercase; font-size: 0.95rem; line-height: 1.2; margin: 0; }
   .news-card-teaser { font-size: 0.8rem; color: var(--ink-dim); line-height: 1.4; margin: 0; flex: 1; }
+
+  /* Compact variant for the home page's sidebar widget -- a plain
+     headline list (small thumbnail + tag + headline, no teaser) rather
+     than the full card grid news.html uses, since a 300px-wide sticky
+     column reads better as a tight list than a squeezed card grid. */
+  .news-sidebar {
+    background: var(--canvas-raised);
+    border: 1px solid var(--canvas-line);
+    padding: 1.1rem 1.15rem;
+  }
+  .news-sidebar .news-title { font-size: 1.05rem; }
+  .news-sidebar-list { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 1rem; }
+  .news-item { display: flex; gap: 0.65rem; text-decoration: none; color: inherit; }
+  .news-item-thumb { width: 60px; height: 60px; object-fit: cover; flex-shrink: 0; background: var(--canvas-line); }
+  .news-item-body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; justify-content: center; }
+  .news-item-tag { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); }
+  .news-item-headline { font-weight: 700; font-size: 0.82rem; line-height: 1.25; margin: 0; }
+  .news-item:hover .news-item-headline { color: var(--teal); }
   .news-see-more {
     display: inline-block;
     margin-top: 1rem;
@@ -787,9 +831,9 @@
     <a href="#my-predictions" data-nav="my-predictions">My Predictions</a>
   </nav>
 
+  <div class="layout">
+  <div class="main-col">
   <section class="fight-card" id="fight-card"></section>
-
-  <section class="news-section" id="news-section"></section>
 
   <div id="predict-section" class="predict-zone">
     <div class="section-header predict-header">
@@ -873,6 +917,9 @@
   <section class="prop-tracker" id="prop-tracker"></section>
 
   <section class="my-predictions" id="my-predictions"></section>
+  </div>
+
+  <aside class="news-sidebar" id="news-section"></aside>
 
   <footer class="disclaimer">
     Trained on <span class="mono" id="fight-count">&mdash;</span> UFC fights, 1994&ndash;2026. Runs
@@ -880,6 +927,7 @@
     competitively-matched pairings; treat wildly lopsided hypothetical matchups with a grain
     of salt (see the project README for why).
   </footer>
+  </div>
 </div>
 
 <script>

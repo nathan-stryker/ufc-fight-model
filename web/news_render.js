@@ -28,9 +28,28 @@
       </a>`;
   }
 
-  // Shared by the home page's 3-headline preview and the standalone news.html
-  // page's full grid -- same card markup either way, just a different slice
-  // of `news.articles` and an optional "See More" link out to the full page.
+  // Compact list item for the home page's sidebar widget -- small thumbnail
+  // + tag + headline, no teaser, reads as a headline list rather than a
+  // squeezed card grid inside a narrow sticky column.
+  function itemHtml(a) {
+    const thumb = a.imageUrl
+      ? `<img class="news-item-thumb" src="${escapeHtml(a.imageUrl)}" alt="" loading="lazy">`
+      : "";
+    const tag = a.tag ? `<div class="news-item-tag">${escapeHtml(a.tag)}</div>` : "";
+    return `
+      <a class="news-item" href="${escapeHtml(a.url)}" target="_blank" rel="noopener">
+        ${thumb}
+        <div class="news-item-body">
+          ${tag}
+          <h3 class="news-item-headline">${escapeHtml(a.headline)}</h3>
+        </div>
+      </a>`;
+  }
+
+  // Shared by the home page's 3-headline sidebar (opts.compact, a plain
+  // list) and the standalone news.html page's full card grid -- same
+  // underlying article data either way, just a different slice/markup and
+  // an optional "See More" link out to the full page.
   function renderNewsSection(sectionEl, news, opts) {
     opts = opts || {};
     if (!sectionEl) return;
@@ -39,7 +58,9 @@
       return;
     }
     const articles = opts.limit ? news.articles.slice(0, opts.limit) : news.articles;
-    const cardsHtml = articles.map(cardHtml).join("");
+    const body = opts.compact
+      ? `<div class="news-sidebar-list">${articles.map(itemHtml).join("")}</div>`
+      : `<div class="news-grid">${articles.map(cardHtml).join("")}</div>`;
     const seeMore = opts.seeMoreHref
       ? `<a class="news-see-more" href="${escapeHtml(opts.seeMoreHref)}">See More News &rarr;</a>`
       : "";
@@ -49,7 +70,7 @@
         <h2 class="news-title display">${escapeHtml(opts.title || "News")}</h2>
         <div class="news-asof mono">As of ${escapeHtml(formatAsOfDate(news.asOfDate))}</div>
       </div>
-      <div class="news-grid">${cardsHtml}</div>
+      ${body}
       ${seeMore}`;
   }
 

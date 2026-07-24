@@ -314,6 +314,7 @@
     window.NewsRender.renderNewsSection(section, MODEL_DATA.news, {
       limit: 3,
       seeMoreHref: "news.html",
+      compact: true,
     });
   }
 
