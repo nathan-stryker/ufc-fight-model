@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Call the Card</title>
+<title>Last Week's Results - Call the Card</title>
 <style>
   /* Palette pulled from the sport's own materials, not a generic UI kit:
      ring-canvas black, corner-pad red/blue (the sport's own convention),
@@ -901,7 +901,7 @@
   .pt-actions-row { display: flex; gap: 1.25rem; flex-wrap: wrap; }
 </style>
 
-<div class="page">
+<div class="page results-page">
   <header class="masthead">
     <h1 class="logo-mark display" aria-label="Call the Card">
       <span class="logo-call" aria-hidden="true">Call</span>
@@ -912,140 +912,114 @@
   </header>
 
   <nav class="site-nav" id="site-nav">
-    <a href="#fight-card" data-nav="fight-card">This Week's Card</a>
+    <a href="index.html#fight-card">This Week's Card</a>
     <a href="news.html">News</a>
-    <a href="results.html">Last Week's Results</a>
-    <a href="#predict-section" data-nav="predict-section">Predict</a>
-    <a href="#prop-tracker" data-nav="prop-tracker">Prop Tracker</a>
-    <a href="#my-predictions" data-nav="my-predictions">My Predictions</a>
+    <a href="results.html" class="active" data-nav="results-section">Last Week's Results</a>
+    <a href="index.html#predict-section">Predict</a>
+    <a href="index.html#prop-tracker">Prop Tracker</a>
+    <a href="index.html#my-predictions">My Predictions</a>
   </nav>
 
-  <div class="layout">
-  <div class="main-col">
-  <section class="fight-card" id="fight-card"></section>
-
-  <div id="predict-section" class="predict-zone">
-    <div class="section-header predict-header">
-      <div class="section-eyebrow">Pick a matchup</div>
-      <h2 class="section-title display">Predict</h2>
-    </div>
-    <section class="matchup">
-    <div class="corner corner-a">
-      <div class="corner-label">Red Corner</div>
-      <input class="fighter-search" id="search-a" placeholder="Search a fighter&hellip;" autocomplete="off">
-      <div class="suggestions" id="suggestions-a"></div>
-      <div class="fighter-card" id="card-a">
-        <div class="fighter-card-top">
-          <div class="fighter-badge" id="badge-a"></div>
-          <div class="fighter-card-id">
-            <div class="fighter-name" id="name-a"></div>
-            <div class="fighter-nick" id="nick-a"></div>
-          </div>
-        </div>
-        <div class="fighter-meta" id="meta-a"></div>
-        <div class="fighter-division mono" id="division-a"></div>
-        <button class="clear-btn" data-clear="a">Change fighter</button>
-      </div>
-    </div>
-
-    <div class="vs-block">
-      <div class="vs-mark display">VS</div>
-      <div class="rounds-toggle" id="rounds-toggle">
-        <button data-rounds="3" class="active" type="button">3 RD</button>
-        <button data-rounds="5" type="button">5 RD</button>
-      </div>
-      <button class="predict-btn" id="predict-btn" disabled type="button">Call It</button>
-    </div>
-
-    <div class="corner corner-b">
-      <div class="corner-label">Blue Corner</div>
-      <input class="fighter-search" id="search-b" placeholder="Search a fighter&hellip;" autocomplete="off">
-      <div class="suggestions" id="suggestions-b"></div>
-      <div class="fighter-card" id="card-b">
-        <div class="fighter-card-top">
-          <div class="fighter-badge" id="badge-b"></div>
-          <div class="fighter-card-id">
-            <div class="fighter-name" id="name-b"></div>
-            <div class="fighter-nick" id="nick-b"></div>
-          </div>
-        </div>
-        <div class="fighter-meta" id="meta-b"></div>
-        <div class="fighter-division mono" id="division-b"></div>
-        <button class="clear-btn" data-clear="b">Change fighter</button>
-      </div>
-    </div>
-    </section>
+  <div class="results-page-header">
+    <a class="results-back-link" href="index.html">&larr; Back to This Week's Card</a>
   </div>
 
-  <section class="results" id="results" hidden>
-    <div class="verdict">
-      <div class="verdict-name mono" id="verdict-line"></div>
-      <div class="verdict-detail display" id="verdict-detail"></div>
-    </div>
-
-    <div class="odds-bar">
-      <div class="odds-fill odds-fill-a" id="odds-fill-a"></div>
-      <div class="odds-fill odds-fill-b" id="odds-fill-b"></div>
-    </div>
-    <div class="odds-labels">
-      <div class="side-a"><div class="pct mono" id="odds-pct-a"></div><div id="odds-name-a"></div></div>
-      <div class="side-b"><div class="pct mono" id="odds-pct-b"></div><div id="odds-name-b"></div></div>
-    </div>
-
-    <div class="tape">
-      <div class="tape-title"><span>Method of Victory</span></div>
-      <div id="method-rows"></div>
-    </div>
-
-    <div class="tape">
-      <div class="tape-title"><span>Round</span><span class="mono" id="finish-chance"></span></div>
-      <div id="round-rows"></div>
-    </div>
-  </section>
-
-  <section class="prop-tracker" id="prop-tracker"></section>
-
-  <section class="my-predictions" id="my-predictions"></section>
-  </div>
-
-  <div class="sidebar-col">
-    <aside class="news-sidebar" id="news-section"></aside>
-    <aside class="results-sidebar" id="last-results-section"></aside>
-  </div>
+  <section class="results-section" id="last-results-section"></section>
 
   <footer class="disclaimer">
-    Trained on <span class="mono" id="fight-count">&mdash;</span> UFC fights, 1994&ndash;2026. Runs
-    entirely client-side &mdash; nothing you type is sent anywhere. Best on realistic,
-    competitively-matched pairings; treat wildly lopsided hypothetical matchups with a grain
-    of salt (see the project README for why).
+    Results are matched automatically from the same fight-history data this site trains its model
+    on -- a bout only appears here once it's confirmed in that record.
   </footer>
-  </div>
 </div>
 
 <script>
-__ENGINE_JS__
+const LAST_RESULTS_DATA = null;
 </script>
 <script>
-__MODEL_DATA__
+(function () {
+  function escapeHtml(s) {
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
+  const TIER_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
+  const BELT_ICON_SVG = `<svg class="lr-belt-icon" viewBox="0 0 24 14" aria-hidden="true" focusable="false">
+    <rect x="0" y="4" width="24" height="6" rx="1" fill="currentColor" opacity="0.55"></rect>
+    <circle cx="12" cy="7" r="6" fill="currentColor"></circle>
+    <circle cx="12" cy="7" r="3" fill="var(--canvas)"></circle>
+  </svg>`;
+
+  // Deliberately plain text, not the odds-bar/prediction chrome the main
+  // fight-card and predictor sections use -- this is a record of what
+  // ALREADY happened, not a forecast, so it should read like a results
+  // ticker rather than another "Call This Fight" row.
+  function resultLine(bout) {
+    if (bout.outcome === "draw") {
+      return `${escapeHtml(bout.nameA)} <span class="lr-verb">drew</span> ${escapeHtml(bout.nameB)}`;
+    }
+    if (bout.outcome === "nc") {
+      return `${escapeHtml(bout.nameA)} vs ${escapeHtml(bout.nameB)} <span class="lr-verb">No Contest</span>`;
+    }
+    const winner = bout.outcome === "a" ? bout.nameA : bout.nameB;
+    const loser = bout.outcome === "a" ? bout.nameB : bout.nameA;
+    return `<span class="lr-winner">${escapeHtml(winner)}</span> <span class="lr-verb">def.</span> ${escapeHtml(loser)}`;
+  }
+
+  function metaLine(bout) {
+    const parts = [];
+    if (bout.method) parts.push(bout.method);
+    if (bout.round) parts.push(`Round ${bout.round}`);
+    if (bout.time) parts.push(bout.time);
+    return parts.map(escapeHtml).join(" &middot; ");
+  }
+
+  function rowHtml(bout) {
+    const belt = bout.isTitleFight ? BELT_ICON_SVG : "";
+    const tierLabel = TIER_LABEL[bout.tier];
+    return `
+      <div class="lr-row">
+        <div class="lr-row-header">
+          ${tierLabel ? `<span class="lr-tier-label">${belt}${escapeHtml(tierLabel)}</span>` : ""}
+          <span class="lr-weightclass">${escapeHtml(bout.weightClass)}</span>
+        </div>
+        <div class="lr-result-line">${resultLine(bout)}</div>
+        <div class="lr-meta mono">${metaLine(bout)}</div>
+      </div>`;
+  }
+
+  // Shared by the home page's short banner (opts.limit) and the standalone
+  // results.html page's full list -- same underlying data either way, just
+  // a different slice and an optional "See More" link out to the full page.
+  function renderLastResultsSection(sectionEl, results, opts) {
+    opts = opts || {};
+    if (!sectionEl) return;
+    if (!results || !results.bouts || !results.bouts.length) {
+      sectionEl.hidden = true;
+      return;
+    }
+    const bouts = opts.limit ? results.bouts.slice(0, opts.limit) : results.bouts;
+    const rowsHtml = bouts.map(rowHtml).join("");
+    const seeMore = opts.seeMoreHref
+      ? `<a class="lr-see-more" href="${escapeHtml(opts.seeMoreHref)}">See More Results &rarr;</a>`
+      : "";
+    sectionEl.innerHTML = `
+      <div class="lr-header">
+        <div class="lr-eyebrow">${escapeHtml(opts.eyebrow || "Last Week's Results")}</div>
+        <h2 class="lr-title display">${escapeHtml(opts.title || results.eventName)}</h2>
+      </div>
+      <div class="lr-list">${rowsHtml}</div>
+      ${seeMore}`;
+  }
+
+  window.ResultsRender = { renderLastResultsSection };
+})();
+
 </script>
 <script>
-__PAPER_TRADE_JS__
-</script>
-<script>
-  window.PaperTrade.mount("prop-tracker");
-</script>
-<script>
-__PREDICTIONS_JS__
-</script>
-<script>
-  window.MyPredictions.mount("my-predictions");
-</script>
-<script>
-__NEWS_RENDER_JS__
-</script>
-<script>
-__RESULTS_RENDER_JS__
-</script>
-<script>
-__UI_JS__
+  window.ResultsRender.renderLastResultsSection(document.getElementById("last-results-section"), LAST_RESULTS_DATA, {
+    eyebrow: "Full Card Results",
+    title: LAST_RESULTS_DATA ? LAST_RESULTS_DATA.eventName : "Last Week's Results",
+  });
 </script>

@@ -292,6 +292,77 @@ def _recent_results_payload(upcoming_card_payload, n=5):
     return results
 
 
+def _last_results_payload():
+    """
+    "Last week's card" plus its actual results -- entirely derived from
+    data this project already collects, no separate results scraper.
+
+    src/data/scrape_upcoming_card.py snapshots the CURRENT upcoming_card.csv
+    to last_card.csv right before overwriting it with the next event's card,
+    every time it runs. By the time this export step runs (later in the
+    same weekly refresh, after fights.csv has already been rebuilt from the
+    latest historical data -- see load_data.py), that snapshot's event has
+    already happened, so its bouts should now have real results sitting in
+    fights.csv. This just joins the two on the fighter-id pair.
+
+    A bout that can't be matched (fights.csv's source hasn't picked up the
+    event yet, a bout was scratched/postponed, or the original card scrape
+    never resolved both fighter ids to begin with) is simply left out of
+    the results list rather than shown as a guess -- same "omit, don't
+    guess" philosophy as the rest of this scraping pipeline.
+    """
+    path = PROCESSED_DIR / "last_card.csv"
+    if not path.exists():
+        return None
+    last_card = pd.read_csv(path)
+    if last_card.empty:
+        return None
+
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+
+    bouts = []
+    for _, row in last_card.sort_values("bout_order").iterrows():
+        id_a, id_b = row.get("fighter_a_id"), row.get("fighter_b_id")
+        if pd.isna(id_a) or pd.isna(id_b):
+            continue
+        match = fights[
+            ((fights["fighter_1_id"] == id_a) & (fights["fighter_2_id"] == id_b))
+            | ((fights["fighter_1_id"] == id_b) & (fights["fighter_2_id"] == id_a))
+        ]
+        if match.empty:
+            continue
+        fight = match.iloc[0]
+        if fight["is_no_contest"]:
+            outcome = "nc"
+        elif fight["is_draw"]:
+            outcome = "draw"
+        elif pd.notna(fight["winner_id"]) and fight["winner_id"] == id_a:
+            outcome = "a"
+        elif pd.notna(fight["winner_id"]) and fight["winner_id"] == id_b:
+            outcome = "b"
+        else:
+            continue
+        bouts.append({
+            "weightClass": row["weight_class"] if pd.notna(row["weight_class"]) else None,
+            "nameA": row["fighter_a_name"], "idA": id_a,
+            "nameB": row["fighter_b_name"], "idB": id_b,
+            "tier": row["tier"] if pd.notna(row.get("tier")) else "prelim",
+            "isTitleFight": bool(row["is_title_fight"]) if pd.notna(row.get("is_title_fight")) else False,
+            "outcome": outcome,
+            "method": fight["method"] if pd.notna(fight["method"]) else None,
+            "round": int(fight["round"]) if pd.notna(fight["round"]) else None,
+            "time": fight["time"] if pd.notna(fight["time"]) else None,
+        })
+    if not bouts:
+        return None
+    first = last_card.iloc[0]
+    return {
+        "eventName": first["event_name"],
+        "eventDate": first["event_date"],
+        "bouts": bouts,
+    }
+
+
 def _news_payload():
     """
     Reads the pre-scraped news cache (data/processed/news.csv, see
@@ -377,17 +448,23 @@ def main():
     payload["upcoming_card"] = _upcoming_card_payload()
     payload["recent_results"] = _recent_results_payload(payload["upcoming_card"])
     payload["news"] = _news_payload()
+    payload["last_results"] = _last_results_payload()
 
     out_path = WEB_DIR / "model_data.json"
     with open(out_path, "w") as f:
         json.dump(payload, f, separators=(",", ":"))
 
     # Also written standalone (not just embedded in model_data.json) so the
-    # separate news.html page can embed just this ~tens-of-KB payload instead
-    # of the full multi-MB model_data.json it has no other use for.
+    # separate news.html/results.html pages can each embed just their own
+    # small payload instead of the full multi-MB model_data.json they have
+    # no other use for.
     news_out_path = WEB_DIR / "news_data.json"
     with open(news_out_path, "w") as f:
         json.dump(payload["news"], f, separators=(",", ":"))
+
+    results_out_path = WEB_DIR / "last_results_data.json"
+    with open(results_out_path, "w") as f:
+        json.dump(payload["last_results"], f, separators=(",", ":"))
 
     size_mb = out_path.stat().st_size / 1e6
     print(f"wrote {out_path} ({size_mb:.2f} MB)")
@@ -408,6 +485,11 @@ def main():
         print(f"  news: {len(payload['news']['articles'])} articles (as of {payload['news']['asOfDate']})")
     else:
         print("  news: none (run `python -m src.data.scrape_news` first)")
+    if payload["last_results"]:
+        print(f"  last_results: {payload['last_results']['eventName']}, "
+              f"{len(payload['last_results']['bouts'])} results matched")
+    else:
+        print("  last_results: none (no last_card.csv snapshot yet, or none of its bouts matched fights.csv)")
 
 
 if __name__ == "__main__":

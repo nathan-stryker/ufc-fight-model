@@ -36,6 +36,9 @@
     --teal: #3FA7A0;
     --teal-dim: #1F5451;
     --teal-wash: rgba(63, 167, 160, 0.14);
+    --slate: #9AA5B5;
+    --slate-dim: #4E596A;
+    --slate-wash: rgba(154, 165, 181, 0.14);
     --shadow: rgba(0, 0, 0, 0.5);
   }
   @media (prefers-color-scheme: light) {
@@ -65,6 +68,9 @@
       --teal: #1F7A73;
       --teal-dim: #C9E8E5;
       --teal-wash: rgba(31, 122, 115, 0.09);
+      --slate: #3D4759;
+      --slate-dim: #D4D8DD;
+      --slate-wash: rgba(61, 71, 89, 0.09);
       --shadow: rgba(30, 22, 10, 0.14);
     }
   }
@@ -81,6 +87,7 @@
     --green: #4C9A52; --green-dim: #245229; --green-wash: rgba(76, 154, 82, 0.14);
     --violet: #9B7FC7; --violet-dim: #4A3A66; --violet-wash: rgba(155, 127, 199, 0.14);
     --teal: #3FA7A0; --teal-dim: #1F5451; --teal-wash: rgba(63, 167, 160, 0.14);
+    --slate: #9AA5B5; --slate-dim: #4E596A; --slate-wash: rgba(154, 165, 181, 0.14);
     --shadow: rgba(0, 0, 0, 0.5);
   }
   :root[data-theme="light"] {
@@ -94,6 +101,7 @@
     --green: #2E7A3B; --green-dim: #C8E6CB; --green-wash: rgba(46, 122, 59, 0.09);
     --violet: #6B4FA0; --violet-dim: #DDD0EE; --violet-wash: rgba(107, 79, 160, 0.09);
     --teal: #1F7A73; --teal-dim: #C9E8E5; --teal-wash: rgba(31, 122, 115, 0.09);
+    --slate: #3D4759; --slate-dim: #D4D8DD; --slate-wash: rgba(61, 71, 89, 0.09);
     --shadow: rgba(30, 22, 10, 0.14);
   }
 
@@ -169,16 +177,18 @@
   }
 
   /* Below 1040px there's no room for a true side-by-side sidebar, so
-     .layout is plain block flow and the news widget just falls into DOM
-     order -- placed after the main column, so on mobile it reads as "News"
+     .layout is plain block flow and the sidebar widgets just fall into DOM
+     order -- placed after the main column, so on mobile they read as
      pushed toward the bottom rather than interrupting the fight-card ->
      predict flow (this is the same "move it to the bottom" behavior the
      user separately said would be acceptable, applied automatically as
      the small-screen fallback of the wide-screen sidebar). Above 1040px,
-     .page widens and .layout becomes a real 2-column grid so the news
-     widget can run down the side, sticky, alongside the main content. */
+     .page widens and .layout becomes a real 2-column grid so .sidebar-col
+     (News, then Last Week's Results, stacked) runs down the side alongside
+     the main content. */
   .main-col { min-width: 0; }
   .news-sidebar { margin-bottom: 2.25rem; }
+  .results-sidebar { margin-bottom: 2.25rem; }
   @media (min-width: 1040px) {
     .page { max-width: 1100px; }
     .layout {
@@ -191,9 +201,10 @@
     }
     .main-col { grid-area: main; }
     /* Deliberately NOT sticky -- scrolls with the page like an ordinary
-       news-site side column, not pinned in place to keep pushing headlines
+       news-site side column, not pinned in place to keep pushing content
        at the reader while they're using the predictor. */
-    .news-sidebar { grid-area: aside; margin-bottom: 0; }
+    .sidebar-col { grid-area: aside; }
+    .results-sidebar { margin-bottom: 0; }
     .disclaimer { grid-area: footer; }
   }
 
@@ -307,6 +318,73 @@
   .news-page-header { margin-bottom: 1.5rem; }
   .news-back-link { color: var(--ink-dim); font-size: 0.85rem; text-decoration: none; }
   .news-back-link:hover { color: var(--ink); }
+
+  /* Last Week's Results -- derived entirely from data already scraped for
+     the upcoming card + full fight history (see export_web_model.py's
+     _last_results_payload()), no separate results scraper. Deliberately a
+     plain results-ticker format (winner/loser line + method/round/time
+     caption, no odds bars, no thumbnails) so it reads as a record of what
+     already happened rather than another prediction row -- distinct from
+     both the main Fight Card section and the News cards. */
+  .results-sidebar {
+    background: var(--canvas-raised);
+    border: 1px solid var(--canvas-line);
+    padding: 1.1rem 1.15rem;
+  }
+  /* Plain (unboxed) variant for the standalone results.html page -- same
+     .lr-* row markup, no boxed-panel chrome, matching how news.html's
+     full grid isn't boxed either even though the home page's News widget
+     is. */
+  .results-section { margin-bottom: 2.25rem; }
+  .lr-header { margin-bottom: 1rem; }
+  .lr-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--slate);
+    margin-bottom: 0.35rem;
+  }
+  .lr-title { font-size: 1.05rem; margin: 0; }
+  .lr-list { display: flex; flex-direction: column; gap: 1rem; }
+  .lr-row { border-top: 1px solid var(--canvas-line); padding-top: 0.75rem; }
+  .lr-row:first-child { border-top: none; padding-top: 0; }
+  .lr-row-header { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem; }
+  .lr-tier-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate);
+  }
+  .lr-belt-icon { width: 16px; height: auto; color: var(--gold); }
+  .lr-weightclass { font-size: 0.68rem; color: var(--ink-dim); }
+  .lr-result-line { font-size: 0.85rem; line-height: 1.3; }
+  .lr-winner { font-weight: 700; }
+  .lr-verb { color: var(--ink-dim); font-weight: 400; }
+  .lr-meta { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.15rem; }
+  .lr-see-more {
+    display: inline-block;
+    margin-top: 1rem;
+    color: var(--slate);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    border-bottom: 1px solid var(--slate);
+  }
+  .lr-see-more:hover { opacity: 0.8; }
+  .results-page-header { margin-bottom: 1.5rem; }
+  .results-back-link { color: var(--ink-dim); font-size: 0.85rem; text-decoration: none; }
+  .results-back-link:hover { color: var(--ink); }
+  /* Full results.html page gets slightly roomier rows than the compact
+     sidebar widget -- same markup/classes, just not squeezed into 300px. */
+  .results-page .lr-list { gap: 1.5rem; max-width: 520px; }
+  .results-page .lr-result-line { font-size: 1rem; }
+  .results-page .lr-title { font-size: clamp(1.15rem, 3vw, 1.5rem); }
   .fc-header { text-align: center; margin-bottom: 1rem; }
   .fc-eyebrow {
     font-size: 0.7rem;
@@ -754,6 +832,7 @@
   .site-nav a:hover { color: var(--ink); }
   .site-nav a.active[data-nav="fight-card"] { color: var(--gold); border-bottom-color: var(--gold); }
   .site-nav a.active[data-nav="news-section"] { color: var(--teal); border-bottom-color: var(--teal); }
+  .site-nav a.active[data-nav="results-section"] { color: var(--slate); border-bottom-color: var(--slate); }
   .site-nav a.active[data-nav="predict-section"] { color: var(--ink); border-bottom-color: var(--ink-dim); }
   .site-nav a.active[data-nav="prop-tracker"] { color: var(--green); border-bottom-color: var(--green); }
   .site-nav a.active[data-nav="my-predictions"] { color: var(--violet); border-bottom-color: var(--violet); }

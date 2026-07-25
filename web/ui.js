@@ -318,8 +318,24 @@
     });
   }
 
+  // Last week's card + its results, derived from data this project already
+  // has (see export_web_model.py's _last_results_payload()) -- no separate
+  // results scraper. Home page only gets a handful of bouts, with a "See
+  // More" link out to the standalone results.html page -- shared row
+  // markup lives in results_render.js so this and the full page never
+  // drift apart.
+  function renderLastResults() {
+    const section = document.getElementById("last-results-section");
+    if (!section || !window.ResultsRender) return;
+    window.ResultsRender.renderLastResultsSection(section, MODEL_DATA.last_results, {
+      limit: 4,
+      seeMoreHref: "results.html",
+    });
+  }
+
   renderUpcomingCard();
   renderNews();
+  renderLastResults();
 
   setupCorner("a");
   setupCorner("b");

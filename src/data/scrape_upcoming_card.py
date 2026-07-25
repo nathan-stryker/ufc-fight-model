@@ -47,7 +47,11 @@ the site shows unmatched fighters as plain text with no "Call This Fight"
 button rather than guessing.
 
 Run: python -m src.data.scrape_upcoming_card
-Writes: data/processed/upcoming_card.csv
+Writes: data/processed/upcoming_card.csv (and renames the PREVIOUS run's
+upcoming_card.csv to data/processed/last_card.csv first, so "last week's
+card" is always one run behind -- see export_web_model.py's
+_last_results_payload(), which joins that snapshot against fights.csv to
+build the site's "Last Week's Results" section without a separate scraper)
 """
 import re
 import unicodedata
@@ -335,6 +339,20 @@ def main():
         rows.append({**event, "bout_order": i, **b})
     out = pd.DataFrame(rows)
     out_path = PROCESSED_DIR / "upcoming_card.csv"
+
+    # Snapshot the card we're about to replace as "last week's card" BEFORE
+    # overwriting it -- by the next time this runs, that event has already
+    # happened and fights.csv (refreshed earlier in the same weekly pipeline
+    # run, see load_data.py) should already carry its results. This is what
+    # export_web_model.py's _last_results_payload() joins against to build
+    # the site's "Last Week's Results" section -- no separate results
+    # scraper needed, we already have everything both sides of that join
+    # need. Only overwrite last_card.csv if there's actually a previous
+    # upcoming_card.csv to promote (skip on a from-scratch first run).
+    if out_path.exists():
+        last_card_path = PROCESSED_DIR / "last_card.csv"
+        out_path.replace(last_card_path)
+
     out.to_csv(out_path, index=False)
 
     matched = sum(1 for b in bouts if b["fighter_a_id"] and b["fighter_b_id"])

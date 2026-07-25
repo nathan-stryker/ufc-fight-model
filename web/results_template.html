@@ -1,0 +1,47 @@
+<meta charset="utf-8">
+<title>Last Week's Results - Call the Card</title>
+__SHARED_STYLE__
+
+<div class="page results-page">
+  <header class="masthead">
+    <h1 class="logo-mark display" aria-label="Call the Card">
+      <span class="logo-call" aria-hidden="true">Call</span>
+      <span class="logo-the" aria-hidden="true">T<br>h<br>e</span>
+      <span class="logo-card" aria-hidden="true">Card</span>
+    </h1>
+    <div class="masthead-rule"></div>
+  </header>
+
+  <nav class="site-nav" id="site-nav">
+    <a href="index.html#fight-card">This Week's Card</a>
+    <a href="news.html">News</a>
+    <a href="results.html" class="active" data-nav="results-section">Last Week's Results</a>
+    <a href="index.html#predict-section">Predict</a>
+    <a href="index.html#prop-tracker">Prop Tracker</a>
+    <a href="index.html#my-predictions">My Predictions</a>
+  </nav>
+
+  <div class="results-page-header">
+    <a class="results-back-link" href="index.html">&larr; Back to This Week's Card</a>
+  </div>
+
+  <section class="results-section" id="last-results-section"></section>
+
+  <footer class="disclaimer">
+    Results are matched automatically from the same fight-history data this site trains its model
+    on -- a bout only appears here once it's confirmed in that record.
+  </footer>
+</div>
+
+<script>
+__LAST_RESULTS_DATA__
+</script>
+<script>
+__RESULTS_RENDER_JS__
+</script>
+<script>
+  window.ResultsRender.renderLastResultsSection(document.getElementById("last-results-section"), LAST_RESULTS_DATA, {
+    eyebrow: "Full Card Results",
+    title: LAST_RESULTS_DATA ? LAST_RESULTS_DATA.eventName : "Last Week's Results",
+  });
+</script>
