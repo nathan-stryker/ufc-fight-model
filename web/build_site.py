@@ -70,3 +70,22 @@ print(f"wrote {results_site_path} ({results_site_path.stat().st_size / 1e6:.2f} 
 results_docs_path = docs_dir / "results.html"
 results_docs_path.write_text(results_out, encoding="utf-8")
 print(f"wrote {results_docs_path} (GitHub Pages copy)")
+
+# Standalone predictions.html page -- same shared-CSS pattern as news.html/
+# results.html, but embeds NO model data at all (not even a small JSON
+# payload): predictions.js's history/settle/report UI is pure localStorage,
+# it never needs engine.js or MODEL_DATA. Only the "log a new prediction"
+# form does (it needs a live matchup result), which is why that form stays
+# on the home page next to Predict and isn't offered on this page.
+predictions_template = (WEB_DIR / "predictions_template.html").read_text(encoding="utf-8")
+
+predictions_out = predictions_template.replace("__SHARED_STYLE__", shared_style)
+predictions_out = predictions_out.replace("__PREDICTIONS_JS__", predictions_js)
+
+predictions_site_path = WEB_DIR / "predictions.html"
+predictions_site_path.write_text(predictions_out, encoding="utf-8")
+print(f"wrote {predictions_site_path} ({predictions_site_path.stat().st_size / 1e6:.2f} MB)")
+
+predictions_docs_path = docs_dir / "predictions.html"
+predictions_docs_path.write_text(predictions_out, encoding="utf-8")
+print(f"wrote {predictions_docs_path} (GitHub Pages copy)")

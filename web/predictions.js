@@ -191,7 +191,17 @@
   }
 
   // ---------------------------------------------------------------------------
-  let root = null;
+  // Two independent mount points, not one: the "add a prediction" form needs
+  // a LIVE matchup result (fed by ui.js's setMatchup() call right after a
+  // prediction is made), which only exists on the home page next to the
+  // Predict section -- it needs engine.js + MODEL_DATA loaded to ever have
+  // anything to log. Viewing/settling EXISTING predictions and the track-
+  // record report are pure localStorage reads, no model needed at all, so
+  // that half can live on its own lightweight predictions.html page (or as
+  // a compact teaser in the home page's sidebar) with none of that weight.
+  let addRoot = null;
+  let historyRoot = null;
+  let historyOpts = {};
 
   function el(tag, className, html) {
     const e = document.createElement(tag);
@@ -255,7 +265,7 @@
         event: wrap.querySelector("#mp-event").value.trim(),
         note: wrap.querySelector("#mp-note").value.trim(),
       });
-      render();
+      renderAll();
     });
 
     return wrap;
@@ -315,13 +325,13 @@
           method: methodSel.value,
           round: roundSel.value,
         });
-        render();
+        renderAll();
       });
 
       const del = el("button", "clear-btn pt-delete-btn", "&times;");
       del.type = "button";
       del.title = "Remove";
-      del.addEventListener("click", () => { deletePrediction(p.pred_id); render(); });
+      del.addEventListener("click", () => { deletePrediction(p.pred_id); renderAll(); });
 
       actions.appendChild(settleBtn);
       actions.appendChild(del);
@@ -385,7 +395,7 @@
       const reader = new FileReader();
       reader.onload = () => {
         const count = window.MyPredictions.importCsvText(reader.result, "merge");
-        render();
+        renderAll();
         alert(`Restored ${count} prediction(s) from ${file.name}.`);
       };
       reader.readAsText(file);
@@ -400,26 +410,80 @@
     return box;
   }
 
-  function render() {
-    if (!root) return;
-    root.innerHTML = "";
-    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
-    root.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
-    root.appendChild(renderAddForm());
-    root.appendChild(renderPending());
-    root.appendChild(renderReport());
-    root.appendChild(renderActions());
+  // Home page's Predict section -- just the log-a-pick form, nothing else,
+  // so a fresh matchup result always has somewhere to log a pick against.
+  function renderAdd() {
+    if (!addRoot) return;
+    addRoot.innerHTML = "";
+    addRoot.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
+    addRoot.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
+    addRoot.appendChild(renderAddForm());
+  }
+
+  // Compact teaser (home page sidebar, historyOpts.compact) vs. the full
+  // predictions.html page (everything: pending list, settle/delete, report,
+  // export/import) -- same underlying data either way, no model needed for
+  // any of this, unlike renderAdd() above.
+  function renderHistoryTeaser() {
+    const rep = computeReport();
+    const pendingCount = preds.filter((p) => p.status === "pending").length;
+    const box = el("div");
+    box.appendChild(el("div", "lr-header", `
+      <div class="lr-eyebrow">Not betting-affiliated</div>
+      <h2 class="lr-title display">My Predictions</h2>`));
+    if (preds.length === 0) {
+      box.appendChild(el("div", "pt-empty-hint", "Call a matchup and log your own pick to start building a track record."));
+    } else {
+      const summary = el("div", "mp-teaser-summary mono");
+      summary.innerHTML = rep.n
+        ? `${pendingCount} pending &middot; ${pct(rep.winnerAcc)} winner accuracy (${rep.n} settled)`
+        : `${pendingCount} pending &middot; no settled predictions yet`;
+      box.appendChild(summary);
+    }
+    const seeMore = document.createElement("a");
+    seeMore.className = "lr-see-more";
+    seeMore.href = "predictions.html";
+    seeMore.textContent = "See Full History →";
+    box.appendChild(seeMore);
+    return box;
+  }
+
+  function renderHistoryFull() {
+    const box = el("div");
+    box.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
+    box.appendChild(el("p", "tracker-note", "Your own logged picks (winner, method, round) and how they've held up, including how often you agreed with the model."));
+    box.appendChild(renderPending());
+    box.appendChild(renderReport());
+    box.appendChild(renderActions());
+    return box;
+  }
+
+  function renderHistory() {
+    if (!historyRoot) return;
+    historyRoot.innerHTML = "";
+    historyRoot.appendChild(historyOpts.compact ? renderHistoryTeaser() : renderHistoryFull());
+  }
+
+  function renderAll() {
+    renderAdd();
+    renderHistory();
   }
 
   window.MyPredictions = {
-    mount(rootId) {
-      root = document.getElementById(rootId);
+    mountAdd(rootId) {
+      addRoot = document.getElementById(rootId);
       load();
-      render();
+      renderAll();
+    },
+    mountHistory(rootId, opts) {
+      historyRoot = document.getElementById(rootId);
+      historyOpts = opts || {};
+      load();
+      renderAll();
     },
     setMatchup(scheduledRounds, result) {
       matchup = { scheduledRounds, result };
-      render();
+      renderAll();
     },
     importCsvText(text, mode = "merge") {
       const rows = parseCsv(text);

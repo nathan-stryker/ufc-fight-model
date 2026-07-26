@@ -189,6 +189,7 @@
   .main-col { min-width: 0; }
   .news-sidebar { margin-bottom: 2.25rem; }
   .results-sidebar { margin-bottom: 2.25rem; }
+  .predictions-sidebar { margin-bottom: 2.25rem; }
   @media (min-width: 1040px) {
     .page { max-width: 1100px; }
     .layout {
@@ -204,7 +205,7 @@
        news-site side column, not pinned in place to keep pushing content
        at the reader while they're using the predictor. */
     .sidebar-col { grid-area: aside; }
-    .results-sidebar { margin-bottom: 0; }
+    .predictions-sidebar { margin-bottom: 0; }
     .disclaimer { grid-area: footer; }
   }
 
@@ -872,7 +873,7 @@
 
   /* Every jump target gets breathing room under the sticky nav so its own
      header isn't hidden right underneath it when scrolled/jumped to. */
-  #fight-card, #news-section, #predict-section, #prop-tracker, #my-predictions { scroll-margin-top: 4rem; }
+  #fight-card, #predict-section, #prop-tracker { scroll-margin-top: 4rem; }
 
   .section-header { margin-bottom: 1.25rem; }
   .section-eyebrow {
@@ -891,12 +892,24 @@
     border-top: 3px solid var(--green); background: var(--green-wash);
   }
   .prop-tracker .section-eyebrow { color: var(--green); }
-  .my-predictions {
+  .predict-log {
     margin-top: 2.5rem; padding: 1.25rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
     border-top: 3px solid var(--violet); background: var(--violet-wash);
   }
-  .my-predictions .section-eyebrow { color: var(--violet); }
+  .predict-log .section-eyebrow { color: var(--violet); }
   .tracker-note { color: var(--ink-dim); font-size: 0.8rem; line-height: 1.5; margin: 0 0 1.25rem; }
+
+  /* Compact "My Predictions" sidebar teaser (home page) -- just a quick
+     stat line + link out to predictions.html, unlike the News/Results
+     teasers this doesn't show actual list content since the interesting
+     part (settling a pending pick) needs its own room, not a 300px column. */
+  .predictions-sidebar {
+    background: var(--canvas-raised);
+    border: 1px solid var(--canvas-line);
+    padding: 1.1rem 1.15rem;
+  }
+  .predictions-sidebar .lr-title { font-size: 1.05rem; }
+  .mp-teaser-summary { font-size: 0.82rem; color: var(--ink); margin-top: 0.75rem; line-height: 1.4; }
   .pt-empty-hint { color: var(--ink-dim); font-size: 0.85rem; padding: 0.5rem 0; }
   .pt-add { background: var(--canvas-raised); border: 1px solid var(--canvas-line); padding: 1rem; margin-bottom: 1.5rem; }
   .pt-matchup-label { font-size: 0.85rem; color: var(--gold); margin-bottom: 0.75rem; }
@@ -950,7 +963,7 @@
     <a href="results.html">Last Week's Results</a>
     <a href="#predict-section" data-nav="predict-section">Predict</a>
     <a href="#prop-tracker" data-nav="prop-tracker">Prop Tracker</a>
-    <a href="#my-predictions" data-nav="my-predictions">My Predictions</a>
+    <a href="predictions.html">My Predictions</a>
   </nav>
 
   <div class="layout">
@@ -1038,12 +1051,13 @@
 
   <section class="prop-tracker" id="prop-tracker"></section>
 
-  <section class="my-predictions" id="my-predictions"></section>
+  <section class="predict-log" id="predict-log-section"></section>
   </div>
 
   <div class="sidebar-col">
     <aside class="news-sidebar" id="news-section"></aside>
     <aside class="results-sidebar" id="last-results-section"></aside>
+    <aside class="predictions-sidebar" id="predictions-teaser-section"></aside>
   </div>
 
   <footer class="disclaimer">
@@ -2015,7 +2029,17 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
   }
 
   // ---------------------------------------------------------------------------
-  let root = null;
+  // Two independent mount points, not one: the "add a prediction" form needs
+  // a LIVE matchup result (fed by ui.js's setMatchup() call right after a
+  // prediction is made), which only exists on the home page next to the
+  // Predict section -- it needs engine.js + MODEL_DATA loaded to ever have
+  // anything to log. Viewing/settling EXISTING predictions and the track-
+  // record report are pure localStorage reads, no model needed at all, so
+  // that half can live on its own lightweight predictions.html page (or as
+  // a compact teaser in the home page's sidebar) with none of that weight.
+  let addRoot = null;
+  let historyRoot = null;
+  let historyOpts = {};
 
   function el(tag, className, html) {
     const e = document.createElement(tag);
@@ -2079,7 +2103,7 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
         event: wrap.querySelector("#mp-event").value.trim(),
         note: wrap.querySelector("#mp-note").value.trim(),
       });
-      render();
+      renderAll();
     });
 
     return wrap;
@@ -2139,13 +2163,13 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
           method: methodSel.value,
           round: roundSel.value,
         });
-        render();
+        renderAll();
       });
 
       const del = el("button", "clear-btn pt-delete-btn", "&times;");
       del.type = "button";
       del.title = "Remove";
-      del.addEventListener("click", () => { deletePrediction(p.pred_id); render(); });
+      del.addEventListener("click", () => { deletePrediction(p.pred_id); renderAll(); });
 
       actions.appendChild(settleBtn);
       actions.appendChild(del);
@@ -2209,7 +2233,7 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
       const reader = new FileReader();
       reader.onload = () => {
         const count = window.MyPredictions.importCsvText(reader.result, "merge");
-        render();
+        renderAll();
         alert(`Restored ${count} prediction(s) from ${file.name}.`);
       };
       reader.readAsText(file);
@@ -2224,26 +2248,80 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     return box;
   }
 
-  function render() {
-    if (!root) return;
-    root.innerHTML = "";
-    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
-    root.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
-    root.appendChild(renderAddForm());
-    root.appendChild(renderPending());
-    root.appendChild(renderReport());
-    root.appendChild(renderActions());
+  // Home page's Predict section -- just the log-a-pick form, nothing else,
+  // so a fresh matchup result always has somewhere to log a pick against.
+  function renderAdd() {
+    if (!addRoot) return;
+    addRoot.innerHTML = "";
+    addRoot.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
+    addRoot.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
+    addRoot.appendChild(renderAddForm());
+  }
+
+  // Compact teaser (home page sidebar, historyOpts.compact) vs. the full
+  // predictions.html page (everything: pending list, settle/delete, report,
+  // export/import) -- same underlying data either way, no model needed for
+  // any of this, unlike renderAdd() above.
+  function renderHistoryTeaser() {
+    const rep = computeReport();
+    const pendingCount = preds.filter((p) => p.status === "pending").length;
+    const box = el("div");
+    box.appendChild(el("div", "lr-header", `
+      <div class="lr-eyebrow">Not betting-affiliated</div>
+      <h2 class="lr-title display">My Predictions</h2>`));
+    if (preds.length === 0) {
+      box.appendChild(el("div", "pt-empty-hint", "Call a matchup and log your own pick to start building a track record."));
+    } else {
+      const summary = el("div", "mp-teaser-summary mono");
+      summary.innerHTML = rep.n
+        ? `${pendingCount} pending &middot; ${pct(rep.winnerAcc)} winner accuracy (${rep.n} settled)`
+        : `${pendingCount} pending &middot; no settled predictions yet`;
+      box.appendChild(summary);
+    }
+    const seeMore = document.createElement("a");
+    seeMore.className = "lr-see-more";
+    seeMore.href = "predictions.html";
+    seeMore.textContent = "See Full History →";
+    box.appendChild(seeMore);
+    return box;
+  }
+
+  function renderHistoryFull() {
+    const box = el("div");
+    box.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
+    box.appendChild(el("p", "tracker-note", "Your own logged picks (winner, method, round) and how they've held up, including how often you agreed with the model."));
+    box.appendChild(renderPending());
+    box.appendChild(renderReport());
+    box.appendChild(renderActions());
+    return box;
+  }
+
+  function renderHistory() {
+    if (!historyRoot) return;
+    historyRoot.innerHTML = "";
+    historyRoot.appendChild(historyOpts.compact ? renderHistoryTeaser() : renderHistoryFull());
+  }
+
+  function renderAll() {
+    renderAdd();
+    renderHistory();
   }
 
   window.MyPredictions = {
-    mount(rootId) {
-      root = document.getElementById(rootId);
+    mountAdd(rootId) {
+      addRoot = document.getElementById(rootId);
       load();
-      render();
+      renderAll();
+    },
+    mountHistory(rootId, opts) {
+      historyRoot = document.getElementById(rootId);
+      historyOpts = opts || {};
+      load();
+      renderAll();
     },
     setMatchup(scheduledRounds, result) {
       matchup = { scheduledRounds, result };
-      render();
+      renderAll();
     },
     importCsvText(text, mode = "merge") {
       const rows = parseCsv(text);
@@ -2262,7 +2340,8 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
 
 </script>
 <script>
-  window.MyPredictions.mount("my-predictions");
+  window.MyPredictions.mountAdd("predict-log-section");
+  window.MyPredictions.mountHistory("predictions-teaser-section", { compact: true });
 </script>
 <script>
 (function () {
@@ -2943,7 +3022,9 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     const links = new Map([...nav.querySelectorAll("a[data-nav]")].map((a) => [a.dataset.nav, a]));
     // "News" isn't in this list -- its nav link now goes off-page to
     // news.html, so there's no on-page anchor for scrollspy to highlight.
-    const sections = ["fight-card", "predict-section", "prop-tracker", "my-predictions"]
+    // "My Predictions" isn't in this list -- its nav link now goes off-page
+    // to predictions.html, same reasoning as "News" above.
+    const sections = ["fight-card", "predict-section", "prop-tracker"]
       .map((id) => document.getElementById(id)).filter(Boolean);
 
     const observer = new IntersectionObserver((entries) => {

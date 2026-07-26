@@ -430,7 +430,9 @@
     const links = new Map([...nav.querySelectorAll("a[data-nav]")].map((a) => [a.dataset.nav, a]));
     // "News" isn't in this list -- its nav link now goes off-page to
     // news.html, so there's no on-page anchor for scrollspy to highlight.
-    const sections = ["fight-card", "predict-section", "prop-tracker", "my-predictions"]
+    // "My Predictions" isn't in this list -- its nav link now goes off-page
+    // to predictions.html, same reasoning as "News" above.
+    const sections = ["fight-card", "predict-section", "prop-tracker"]
       .map((id) => document.getElementById(id)).filter(Boolean);
 
     const observer = new IntersectionObserver((entries) => {
