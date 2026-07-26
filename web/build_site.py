@@ -118,11 +118,11 @@ print(f"wrote {edge_calculator_docs_path} (GitHub Pages copy)")
 # bout (see ui.js). Unlike news/results/predictions/edge-calculator, this
 # one DOES need the full engine.js + MODEL_DATA (it runs live inference),
 # so it's a heavy page like the home page -- that's unavoidable, prediction
-# requires the model. Also mounts predictions.js's "add" half (the log-a-
-# pick form), since this is the only page with a live matchup result to
-# log against for a hypothetical (non-real-card) pairing. paper_trade.js is
-# embedded too but never mounted here -- it just needs to be loaded so
-# setMatchup() can persist each result to localStorage for
+# requires the model. No My Predictions log-a-pick form here (removed --
+# pointless friction on a page that's just for fun, not meant to build a
+# track record); predictions.js isn't even loaded on this page anymore.
+# paper_trade.js IS still embedded, but never mounted here -- it just needs
+# to be loaded so setMatchup() can persist each result to localStorage for
 # edge-calculator.html to read (see the comment there). Reads ?a=&b=&
 # rounds= query params on load so a shared/bookmarked link still works.
 predict_template = (WEB_DIR / "predict_template.html").read_text(encoding="utf-8")
@@ -131,7 +131,6 @@ predict_out = predict_template.replace("__SHARED_STYLE__", shared_style)
 predict_out = predict_out.replace("__ENGINE_JS__", engine_js)
 predict_out = predict_out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
 predict_out = predict_out.replace("__PAPER_TRADE_JS__", paper_trade_js)
-predict_out = predict_out.replace("__PREDICTIONS_JS__", predictions_js)
 predict_out = predict_out.replace("__PREDICT_UI_JS__", predict_ui_js)
 
 predict_site_path = WEB_DIR / "predict.html"
