@@ -75,9 +75,9 @@
   }
 
   // Deliberately plain text, not the odds-bar/prediction chrome the main
-  // fight-card and predictor sections use -- this is a record of what
+  // fight-card and Fantasy Matchup pages use -- this is a record of what
   // ALREADY happened, not a forecast, so it should read like a results
-  // ticker rather than another "Call This Fight" row.
+  // ticker rather than another "Make Your Pick" row.
   function resultLine(bout) {
     if (bout.outcome === "draw") {
       return `${escapeHtml(bout.nameA)} <span class="lr-verb">drew</span> ${escapeHtml(bout.nameB)}`;

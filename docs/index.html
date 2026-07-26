@@ -451,7 +451,7 @@
   .fc-rows { display: flex; flex-direction: column; gap: 0.4rem; }
   .fc-row {
     display: grid;
-    grid-template-columns: 7rem 1fr 9.5rem;
+    grid-template-columns: 7rem 1fr;
     align-items: center;
     gap: 1rem;
     background: var(--canvas-raised);
@@ -477,12 +477,11 @@
     margin-bottom: 0.25rem;
   }
   .fc-row--main-event .fc-row-header { text-align: left; margin-bottom: 0.6rem; }
-  .fc-row--main-event .fc-call-btn, .fc-row--main-event .fc-nodata { justify-self: center; }
+  .fc-row--main-event .fc-nodata { justify-self: center; }
   .fc-row--main-event .fc-model-pick { grid-column: 1; }
   .fc-row--main-event .fc-fighter { font-size: 1.2rem; }
   .fc-row--main-event .fc-badge { width: 2.3rem; height: 1.6rem; }
   .fc-row--main-event .fc-matchup { gap: 1.25rem; margin: 0.5rem 0; }
-  .fc-row--main-event .fc-call-btn { margin-top: 0.25rem; }
   .fc-row--co-main { border-top: 3px solid var(--silver); background: var(--silver-wash); }
   /* A co-main that's ALSO a title fight (double-title card) wins gold
      instead of the usual silver -- source order breaks the tie since both
@@ -576,21 +575,7 @@
   }
   .fc-badge svg { width: 100%; height: 100%; display: block; object-fit: cover; }
   .fc-vs { color: var(--ink-dim); font-size: 0.68rem; text-transform: uppercase; }
-  .fc-call-btn, .fc-nodata { justify-self: end; }
-  .fc-call-btn {
-    display: inline-block;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    background: transparent;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.76rem;
-    font-family: inherit;
-    text-decoration: none;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .fc-call-btn:hover { background: var(--gold); color: var(--canvas); }
-  .fc-nodata { font-size: 0.7rem; color: var(--ink-dim); font-style: italic; text-align: right; }
+  .fc-nodata { grid-column: 1 / -1; font-size: 0.7rem; color: var(--ink-dim); font-style: italic; text-align: center; }
   .fc-model-pick {
     grid-column: 1 / -1;
     font-size: 0.78rem;
@@ -606,9 +591,43 @@
     letter-spacing: 0.06em;
     margin-right: 0.4rem;
   }
+  /* Inline "Make Your Pick" -- expand-per-fight accordion so a full
+     12+ bout card stays scannable, matching the same toggle/panel pattern
+     already built for the Results page's strike maps (see .lr-strike-
+     toggle/.lr-strike-panel above). The panel reuses the odds-bar/tape
+     classes from the (now de-emphasized) Fantasy Matchup page's results
+     wholesale, just tightened up (smaller margins) to fit inside a card
+     row instead of a full standalone panel. */
+  .fc-predict-toggle {
+    grid-column: 1 / -1;
+    justify-self: center;
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .fc-predict-toggle:hover { opacity: 0.8; }
+  .fc-predict-panel {
+    grid-column: 1 / -1;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--canvas-line);
+  }
+  .fc-predict-breakdown .odds-labels { margin-bottom: 1.25rem; }
+  .fc-predict-breakdown .tape { margin-bottom: 1rem; }
+  .fc-pick-mount .pt-add { margin-bottom: 0; }
   @media (max-width: 640px) {
     .fc-row { grid-template-columns: 1fr; text-align: center; }
-    .fc-call-btn, .fc-nodata { justify-self: center; }
+    .fc-nodata { justify-self: center; }
     .fc-model-pick { grid-column: 1; }
   }
 
@@ -918,6 +937,8 @@
   .pt-add { background: var(--canvas-raised); border: 1px solid var(--canvas-line); padding: 1rem; margin-bottom: 1.5rem; }
   .pt-matchup-label { font-size: 0.85rem; color: var(--gold); margin-bottom: 0.75rem; }
   .pt-matchup-source { color: var(--ink-dim); font-weight: normal; }
+  .pt-logged-confirm { color: var(--green); font-size: 0.85rem; }
+  .pt-logged-confirm a { color: inherit; }
   .pt-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
   .pt-row[hidden] { display: none; }
   .pt-row label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); width: 8.5rem; flex-shrink: 0; }
@@ -966,7 +987,7 @@
     <a href="#fight-card" data-nav="fight-card">This Week's Card</a>
     <a href="news.html">News</a>
     <a href="results.html">Last Week's Results</a>
-    <a href="predict.html">Predict</a>
+    <a href="predict.html">Fantasy Matchup</a>
     <a href="edge-calculator.html">Edge Calculator</a>
     <a href="predictions.html">My Predictions</a>
   </nav>
@@ -1362,15 +1383,15 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     return { winner, method, round };
   }
 
-  function addPrediction(form) {
-    const r = matchup.result;
+  function addPrediction(matchupObj, form) {
+    const r = matchupObj.result;
     const mv = modelVerdict(r);
     const pickedWinnerName = form.side === "a" ? r.nameA : r.nameB;
     const pred = {
       pred_id: nextId(),
       logged_at: new Date().toISOString(),
       event: form.event, fighter_a: r.nameA, fighter_b: r.nameB,
-      scheduled_rounds: matchup.scheduledRounds,
+      scheduled_rounds: matchupObj.scheduledRounds,
       picked_winner: pickedWinnerName,
       picked_method: form.method || "",
       picked_round: form.round || "",
@@ -1446,14 +1467,20 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
   }
 
   // ---------------------------------------------------------------------------
-  // Two independent mount points, not one: the "add a prediction" form needs
-  // a LIVE matchup result (fed by ui.js's setMatchup() call right after a
-  // prediction is made), which only exists on the home page next to the
-  // Predict section -- it needs engine.js + MODEL_DATA loaded to ever have
-  // anything to log. Viewing/settling EXISTING predictions and the track-
-  // record report are pure localStorage reads, no model needed at all, so
-  // that half can live on its own lightweight predictions.html page (or as
-  // a compact teaser in the home page's sidebar) with none of that weight.
+  // Three mount points, not one. Viewing/settling EXISTING predictions and
+  // the track-record report are pure localStorage reads, no model needed at
+  // all, so that half lives on its own lightweight predictions.html page (or
+  // as a compact teaser in the home page's sidebar) -- mountHistory(),
+  // unchanged by this comment. "Add a prediction" always needs a LIVE
+  // matchup result, but now has two independent call sites for that: the
+  // singleton Fantasy Matchup page (predict.html, a manual "pick any two
+  // fighters" toy -- mountAdd()/setMatchup(), module-global `matchup`), and
+  // the real fight card's own per-bout "Make Your Pick" panel, which already
+  // has its own live result computed on page load for every predictable
+  // bout (see ui.js's predictFull() call in boutRowHtml()) -- no picker
+  // needed there at all. mountCardPick() takes that result directly, no
+  // module-global involved, so any number of fight-card rows can have their
+  // own independent pick form open at once.
   let addRoot = null;
   let historyRoot = null;
   let historyOpts = {};
@@ -1465,24 +1492,29 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     return e;
   }
 
-  function renderAddForm() {
+  // Builds the actual pick form (winner/method/round/event/note + submit
+  // button) for a given {scheduledRounds, result} matchup -- used both by
+  // the singleton Fantasy Matchup page (matchup fed via setMatchup()) and
+  // by the fight card's per-bout "Make Your Pick" panels (one independent
+  // instance per expanded row, matchup fixed at mount time). Classnames,
+  // not ids, on the inputs -- multiple instances can be mounted on the same
+  // page at once (several expanded fight-card rows), and querySelector
+  // scoped to `wrap` finds the right descendant either way, but duplicate
+  // ids across simultaneous instances would still be invalid HTML.
+  function buildPickFormBase(matchupObj) {
     const wrap = el("div", "pt-add");
-    if (!matchup) {
-      wrap.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
-      return wrap;
-    }
-    const r = matchup.result;
+    const r = matchupObj.result;
     wrap.appendChild(el("div", "pt-matchup-label mono", `Predicting: ${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}`));
 
     const winnerRow = el("div", "pt-row", `<label>Winner</label>
-      <select id="mp-side">
+      <select class="mp-side">
         <option value="a">${escapeHtml(r.nameA)}</option>
         <option value="b">${escapeHtml(r.nameB)}</option>
       </select>`);
     wrap.appendChild(winnerRow);
 
     const methodRow = el("div", "pt-row", `<label>Method</label>
-      <select id="mp-method">
+      <select class="mp-method">
         <option value="">No pick (winner only)</option>
         <option value="dec">Decision</option>
         <option value="ko">KO/TKO</option>
@@ -1490,39 +1522,72 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
       </select>`);
     wrap.appendChild(methodRow);
 
-    const roundOptions = Array.from({ length: matchup.scheduledRounds }, (_, i) => i + 1)
+    const roundOptions = Array.from({ length: matchupObj.scheduledRounds }, (_, i) => i + 1)
       .map((n) => `<option value="${n}">Round ${n}</option>`).join("");
     const roundRow = el("div", "pt-row", `<label>Round</label>
-      <select id="mp-round">
+      <select class="mp-round">
         <option value="">No pick (any round)</option>
         ${roundOptions}
       </select>`);
     roundRow.hidden = true;
     wrap.appendChild(roundRow);
 
-    wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" id="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
-    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" id="mp-note" placeholder="optional -- why you think that"></div>`));
+    wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" class="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
+    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="optional -- why you think that"></div>`));
 
     const addBtn = el("button", "predict-btn pt-add-btn", "Log My Prediction");
     addBtn.type = "button";
     wrap.appendChild(addBtn);
 
-    const methodSel = methodRow.querySelector("#mp-method");
+    const methodSel = methodRow.querySelector(".mp-method");
     methodSel.addEventListener("change", () => {
       roundRow.hidden = methodSel.value === "" || methodSel.value === "dec";
     });
 
-    addBtn.addEventListener("click", () => {
-      addPrediction({
-        side: wrap.querySelector("#mp-side").value,
+    function readForm() {
+      return {
+        side: wrap.querySelector(".mp-side").value,
         method: methodSel.value,
-        round: roundRow.hidden ? "" : wrap.querySelector("#mp-round").value,
-        event: wrap.querySelector("#mp-event").value.trim(),
-        note: wrap.querySelector("#mp-note").value.trim(),
-      });
+        round: roundRow.hidden ? "" : wrap.querySelector(".mp-round").value,
+        event: wrap.querySelector(".mp-event").value.trim(),
+        note: wrap.querySelector(".mp-note").value.trim(),
+      };
+    }
+
+    return { wrap, addBtn, readForm };
+  }
+
+  // Fantasy Matchup page (singleton, module-global `matchup`) -- logging
+  // just re-renders the whole add section, which rebuilds a fresh empty
+  // form against the same matchup (lets you log a second/corrected pick
+  // without extra clicks).
+  function renderAddForm() {
+    if (!matchup) {
+      const empty = el("div", "pt-add");
+      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
+      return empty;
+    }
+    const { wrap, addBtn, readForm } = buildPickFormBase(matchup);
+    addBtn.addEventListener("click", () => {
+      addPrediction(matchup, readForm());
       renderAll();
     });
+    return wrap;
+  }
 
+  // Fight-card row (one independent instance per expanded bout, matchup
+  // fixed at mount time, no module-global involved) -- logging shows an
+  // inline confirmation instead of resetting the form, since there's no
+  // surrounding renderAdd() to rebuild this specific DOM subtree the way
+  // the singleton page has.
+  function buildCardPickForm(matchupObj) {
+    const { wrap, addBtn, readForm } = buildPickFormBase(matchupObj);
+    addBtn.addEventListener("click", () => {
+      const pred = addPrediction(matchupObj, readForm());
+      wrap.innerHTML = "";
+      wrap.appendChild(el("div", "pt-logged-confirm", `Logged: ${escapeHtml(pickSummary(pred))} <a href="predictions.html">View in My Predictions &rarr;</a>`));
+      renderAll(); // refreshes the sidebar teaser's pending count elsewhere on this same page, if mounted
+    });
     return wrap;
   }
 
@@ -1740,6 +1805,12 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
       matchup = { scheduledRounds, result };
       renderAll();
     },
+    mountCardPick(rootEl, matchupObj) {
+      if (!rootEl) return;
+      load();
+      rootEl.innerHTML = "";
+      rootEl.appendChild(buildCardPickForm(matchupObj));
+    },
     importCsvText(text, mode = "merge") {
       const rows = parseCsv(text);
       if (mode === "replace") {
@@ -1918,9 +1989,9 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
   }
 
   // Deliberately plain text, not the odds-bar/prediction chrome the main
-  // fight-card and predictor sections use -- this is a record of what
+  // fight-card and Fantasy Matchup pages use -- this is a record of what
   // ALREADY happened, not a forecast, so it should read like a results
-  // ticker rather than another "Call This Fight" row.
+  // ticker rather than another "Make Your Pick" row.
   function resultLine(bout) {
     if (bout.outcome === "draw") {
       return `${escapeHtml(bout.nameA)} <span class="lr-verb">drew</span> ${escapeHtml(bout.nameB)}`;
@@ -2026,9 +2097,11 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
 <script>
 (function () {
   // Fighter index/predictFull() are still needed here even though the
-  // manual matchup picker moved to predict.html -- the fight-card's own
-  // "Model predicts" preview line (in boutRowHtml() below) runs a live
-  // prediction for every bout on page load, no click needed.
+  // manual "pick any two fighters" picker lives on its own Fantasy Matchup
+  // page (predict.html, a fun side toy) -- the fight-card's own "Model
+  // predicts" preview line AND its per-bout "Make Your Pick" breakdown
+  // (both in boutRowHtml() below) run a live prediction for every bout on
+  // page load, no click needed for either.
   const { byId } = buildFighterIndex(MODEL_DATA.fighters);
   const fightCountEl = document.getElementById("fight-count");
   if (fightCountEl) fightCountEl.textContent = MODEL_DATA.total_fights.toLocaleString();
@@ -2072,13 +2145,68 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     return svg || `<div class="fighter-badge-empty"></div>`;
   }
 
+  // Full model breakdown (odds bar + method/round tapes), rendered as an
+  // HTML string rather than DOM nodes -- boutRowHtml() below builds the
+  // whole fight card in one big innerHTML assignment, same as the rest of
+  // this function. Deliberately duplicates predict_ui.js's renderResult()/
+  // makeRow() rather than sharing them: that version is built around fixed
+  // DOM ids for ONE result at a time, but a fight card needs N of these
+  // live at once (one per predictable bout), so a string-builder keyed off
+  // nothing but the result object itself is the simpler fit here -- same
+  // "duplicated, not shared" call already made for verdictText() across
+  // ui.js/predict_ui.js/predictions.js.
+  function tapeRowHtml(label, p, predicted) {
+    return `<div class="tape-row${predicted ? " predicted" : ""}">
+      <div class="tape-row-label">${escapeHtml(label)}${predicted ? '<span class="predicted-chip">Predicted</span>' : ""}</div>
+      <div class="tape-row-track"><div class="tape-row-fill" style="width:${(p * 100).toFixed(1)}%"></div></div>
+      <div class="tape-row-pct mono">${(p * 100).toFixed(1)}%</div>
+    </div>`;
+  }
+
+  function predictBreakdownHtml(r) {
+    const methodRanked = Object.entries(r.method).sort((x, y) => y[1] - x[1]);
+    const topMethod = methodRanked[0][0];
+    const methodRows = methodRanked.map(([k, p], i) => tapeRowHtml(METHOD_NAMES[k], p, i === 0)).join("");
+
+    const roundEntries = Object.entries(r.roundGivenFinish);
+    const showRoundPredicted = topMethod !== "dec";
+    let roundRows;
+    if (roundEntries.length === 0) {
+      roundRows = `<div class="tape-row-label" style="color:var(--ink-dim)">Finish probability too low to break down by round.</div>`;
+    } else {
+      const topRound = roundEntries.slice().sort((x, y) => y[1] - x[1])[0][0];
+      roundRows = roundEntries.map(([rnd, p]) => tapeRowHtml(`Round ${rnd}`, p, showRoundPredicted && rnd === topRound)).join("");
+    }
+
+    return `
+      <div class="fc-predict-breakdown">
+        <div class="odds-bar">
+          <div class="odds-fill odds-fill-a" style="width:${(r.probAWins * 100).toFixed(1)}%"></div>
+          <div class="odds-fill odds-fill-b" style="width:${(r.probBWins * 100).toFixed(1)}%"></div>
+        </div>
+        <div class="odds-labels">
+          <div class="side-a"><div class="pct mono">${(r.probAWins * 100).toFixed(1)}%</div><div>${escapeHtml(r.nameA)}</div></div>
+          <div class="side-b"><div class="pct mono">${(r.probBWins * 100).toFixed(1)}%</div><div>${escapeHtml(r.nameB)}</div></div>
+        </div>
+        <div class="tape">
+          <div class="tape-title"><span>Method of Victory</span></div>
+          <div>${methodRows}</div>
+        </div>
+        <div class="tape">
+          <div class="tape-title"><span>Round</span><span class="mono">${(r.pFinish * 100).toFixed(0)}% chance of a finish</span></div>
+          <div>${roundRows}</div>
+        </div>
+      </div>`;
+  }
+
   // Home-page "this week's card" -- scraped from Sherdog.com at build time
   // (src/data/scrape_upcoming_card.py), not fetched live in-browser (this
   // site has no server and Artifact CSP blocks cross-origin fetches anyway).
-  // A bout only gets a "Call This Fight" button if BOTH fighters matched our
-  // own roster by exact name -- a UFC debutant, or a name-spelling mismatch
-  // between Sherdog and our data, has genuinely nothing to predict from, so
-  // it's shown as plain text rather than wired to a broken/guessed action.
+  // A bout only gets the inline "Make Your Pick" breakdown if BOTH fighters
+  // matched our own roster by exact name -- a UFC debutant, or a name-
+  // spelling mismatch between Sherdog and our data, has genuinely nothing
+  // to predict from, so it's shown as plain text rather than wired to a
+  // broken/guessed action.
   function renderUpcomingCard() {
     const section = document.getElementById("fight-card");
     if (!section) return;
@@ -2087,6 +2215,12 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
       section.hidden = true;
       return;
     }
+    // Parallel to the "Make Your Pick" toggle buttons that end up in the
+    // DOM, in the exact same order (only predictable bouts push here, and
+    // only predictable bouts render a toggle) -- lets the post-render
+    // wiring below pair each button with its own already-computed result
+    // by plain array index, no data-attributes or JSON-in-HTML needed.
+    const boutResults = [];
 
     const eventDate = new Date(card.eventDate + "T00:00:00Z")
       .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -2152,26 +2286,26 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
       const badgeB = fB ? `<div class="fc-badge">${flagBadgeHtml(fB.iso_code)}</div>` : "";
       // Main events and title fights (anywhere on the card) are scheduled
       // for 5 rounds, everything else for 3 -- same rule the "Model
-      // predicts" preview line below already uses.
+      // predicts" preview line and the full breakdown below both use. No
+      // scheduled-round data comes from the scrape, so this is a standard-
+      // UFC-convention assumption, not a scraped fact.
       const callRounds = b.tier === "main_event" || b.isTitleFight ? 5 : 3;
-      // Links out to the standalone predict.html page (pre-filled via query
-      // params) instead of auto-populating a local Predict section -- the
-      // manual matchup picker moved to its own page, so there's no local
-      // picker left on the home page to fill in.
-      const predictUrl = `predict.html?a=${encodeURIComponent(b.idA)}&b=${encodeURIComponent(b.idB)}&rounds=${callRounds}`;
-      const action = predictable
-        ? `<a class="fc-call-btn" href="${escapeHtml(predictUrl)}">Call This Fight</a>`
-        : `<div class="fc-nodata">No prediction available</div>`;
-      // Computed up front for every predictable bout (not gated behind a
-      // click) so the card reads as a preview of the model's take on the
-      // whole night, not just a launcher into the full predictor below.
-      // No scheduled-round data comes from the scrape, so this assumes 5
-      // for the main event and title fights and 3 for everything else
-      // (standard UFC convention) -- "Call This Fight" still opens the full
-      // predictor where the round toggle can be corrected if needed.
-      const modelPick = predictable
-        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, callRounds, MODEL_DATA)).text)}</div>`
-        : "";
+      let modelPick = "";
+      let action = `<div class="fc-nodata">No prediction available</div>`;
+      if (predictable) {
+        // Computed once per bout, reused for both the one-line preview AND
+        // the full expand-on-demand breakdown below -- no second inference
+        // call when a fight is expanded.
+        const result = predictFull(fA, fB, callRounds, MODEL_DATA);
+        boutResults.push({ result, scheduledRounds: callRounds });
+        modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
+        action = `
+          <button class="fc-predict-toggle" type="button" aria-expanded="false">Make Your Pick</button>
+          <div class="fc-predict-panel" hidden>
+            ${predictBreakdownHtml(result)}
+            <div class="fc-pick-mount"></div>
+          </div>`;
+      }
       const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
       // Divisional rank, scraped from ufc.com's ranks-row alongside the
       // rest of the card data -- "C" for the reigning champion, "#N" for a
@@ -2206,8 +2340,8 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
               ${formBadgesHtml(b.idB)}
             </div>
           </div>
-          ${action}
           ${modelPick}
+          ${action}
         </div>`;
     }
 
@@ -2241,6 +2375,29 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     });
     document.addEventListener("click", () => {
       section.querySelectorAll(".fc-form-badge.open").forEach((b) => b.classList.remove("open"));
+    });
+
+    // Each toggle's matchup result is looked up by plain array index -- see
+    // the boutResults comment above. The pick-form itself is mounted lazily
+    // on first expand (not for every bout up front), and only once per row;
+    // MyPredictions.mountCardPick() feeds it the same already-computed
+    // result, so it's a live pick against the model's real output for this
+    // exact bout, not a re-simulation.
+    [...section.querySelectorAll(".fc-predict-toggle")].forEach((btn, i) => {
+      const panel = btn.nextElementSibling;
+      if (!panel || !panel.classList.contains("fc-predict-panel")) return;
+      const matchupObj = boutResults[i];
+      let mounted = false;
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+        btn.textContent = expanded ? "Make Your Pick" : "Hide";
+        panel.hidden = expanded;
+        if (!expanded && !mounted && window.MyPredictions) {
+          window.MyPredictions.mountCardPick(panel.querySelector(".fc-pick-mount"), matchupObj);
+          mounted = true;
+        }
+      });
     });
   }
 

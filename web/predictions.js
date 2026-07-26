@@ -107,15 +107,15 @@
     return { winner, method, round };
   }
 
-  function addPrediction(form) {
-    const r = matchup.result;
+  function addPrediction(matchupObj, form) {
+    const r = matchupObj.result;
     const mv = modelVerdict(r);
     const pickedWinnerName = form.side === "a" ? r.nameA : r.nameB;
     const pred = {
       pred_id: nextId(),
       logged_at: new Date().toISOString(),
       event: form.event, fighter_a: r.nameA, fighter_b: r.nameB,
-      scheduled_rounds: matchup.scheduledRounds,
+      scheduled_rounds: matchupObj.scheduledRounds,
       picked_winner: pickedWinnerName,
       picked_method: form.method || "",
       picked_round: form.round || "",
@@ -191,14 +191,20 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Two independent mount points, not one: the "add a prediction" form needs
-  // a LIVE matchup result (fed by ui.js's setMatchup() call right after a
-  // prediction is made), which only exists on the home page next to the
-  // Predict section -- it needs engine.js + MODEL_DATA loaded to ever have
-  // anything to log. Viewing/settling EXISTING predictions and the track-
-  // record report are pure localStorage reads, no model needed at all, so
-  // that half can live on its own lightweight predictions.html page (or as
-  // a compact teaser in the home page's sidebar) with none of that weight.
+  // Three mount points, not one. Viewing/settling EXISTING predictions and
+  // the track-record report are pure localStorage reads, no model needed at
+  // all, so that half lives on its own lightweight predictions.html page (or
+  // as a compact teaser in the home page's sidebar) -- mountHistory(),
+  // unchanged by this comment. "Add a prediction" always needs a LIVE
+  // matchup result, but now has two independent call sites for that: the
+  // singleton Fantasy Matchup page (predict.html, a manual "pick any two
+  // fighters" toy -- mountAdd()/setMatchup(), module-global `matchup`), and
+  // the real fight card's own per-bout "Make Your Pick" panel, which already
+  // has its own live result computed on page load for every predictable
+  // bout (see ui.js's predictFull() call in boutRowHtml()) -- no picker
+  // needed there at all. mountCardPick() takes that result directly, no
+  // module-global involved, so any number of fight-card rows can have their
+  // own independent pick form open at once.
   let addRoot = null;
   let historyRoot = null;
   let historyOpts = {};
@@ -210,24 +216,29 @@
     return e;
   }
 
-  function renderAddForm() {
+  // Builds the actual pick form (winner/method/round/event/note + submit
+  // button) for a given {scheduledRounds, result} matchup -- used both by
+  // the singleton Fantasy Matchup page (matchup fed via setMatchup()) and
+  // by the fight card's per-bout "Make Your Pick" panels (one independent
+  // instance per expanded row, matchup fixed at mount time). Classnames,
+  // not ids, on the inputs -- multiple instances can be mounted on the same
+  // page at once (several expanded fight-card rows), and querySelector
+  // scoped to `wrap` finds the right descendant either way, but duplicate
+  // ids across simultaneous instances would still be invalid HTML.
+  function buildPickFormBase(matchupObj) {
     const wrap = el("div", "pt-add");
-    if (!matchup) {
-      wrap.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
-      return wrap;
-    }
-    const r = matchup.result;
+    const r = matchupObj.result;
     wrap.appendChild(el("div", "pt-matchup-label mono", `Predicting: ${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}`));
 
     const winnerRow = el("div", "pt-row", `<label>Winner</label>
-      <select id="mp-side">
+      <select class="mp-side">
         <option value="a">${escapeHtml(r.nameA)}</option>
         <option value="b">${escapeHtml(r.nameB)}</option>
       </select>`);
     wrap.appendChild(winnerRow);
 
     const methodRow = el("div", "pt-row", `<label>Method</label>
-      <select id="mp-method">
+      <select class="mp-method">
         <option value="">No pick (winner only)</option>
         <option value="dec">Decision</option>
         <option value="ko">KO/TKO</option>
@@ -235,39 +246,72 @@
       </select>`);
     wrap.appendChild(methodRow);
 
-    const roundOptions = Array.from({ length: matchup.scheduledRounds }, (_, i) => i + 1)
+    const roundOptions = Array.from({ length: matchupObj.scheduledRounds }, (_, i) => i + 1)
       .map((n) => `<option value="${n}">Round ${n}</option>`).join("");
     const roundRow = el("div", "pt-row", `<label>Round</label>
-      <select id="mp-round">
+      <select class="mp-round">
         <option value="">No pick (any round)</option>
         ${roundOptions}
       </select>`);
     roundRow.hidden = true;
     wrap.appendChild(roundRow);
 
-    wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" id="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
-    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" id="mp-note" placeholder="optional -- why you think that"></div>`));
+    wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" class="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
+    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="optional -- why you think that"></div>`));
 
     const addBtn = el("button", "predict-btn pt-add-btn", "Log My Prediction");
     addBtn.type = "button";
     wrap.appendChild(addBtn);
 
-    const methodSel = methodRow.querySelector("#mp-method");
+    const methodSel = methodRow.querySelector(".mp-method");
     methodSel.addEventListener("change", () => {
       roundRow.hidden = methodSel.value === "" || methodSel.value === "dec";
     });
 
-    addBtn.addEventListener("click", () => {
-      addPrediction({
-        side: wrap.querySelector("#mp-side").value,
+    function readForm() {
+      return {
+        side: wrap.querySelector(".mp-side").value,
         method: methodSel.value,
-        round: roundRow.hidden ? "" : wrap.querySelector("#mp-round").value,
-        event: wrap.querySelector("#mp-event").value.trim(),
-        note: wrap.querySelector("#mp-note").value.trim(),
-      });
+        round: roundRow.hidden ? "" : wrap.querySelector(".mp-round").value,
+        event: wrap.querySelector(".mp-event").value.trim(),
+        note: wrap.querySelector(".mp-note").value.trim(),
+      };
+    }
+
+    return { wrap, addBtn, readForm };
+  }
+
+  // Fantasy Matchup page (singleton, module-global `matchup`) -- logging
+  // just re-renders the whole add section, which rebuilds a fresh empty
+  // form against the same matchup (lets you log a second/corrected pick
+  // without extra clicks).
+  function renderAddForm() {
+    if (!matchup) {
+      const empty = el("div", "pt-add");
+      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
+      return empty;
+    }
+    const { wrap, addBtn, readForm } = buildPickFormBase(matchup);
+    addBtn.addEventListener("click", () => {
+      addPrediction(matchup, readForm());
       renderAll();
     });
+    return wrap;
+  }
 
+  // Fight-card row (one independent instance per expanded bout, matchup
+  // fixed at mount time, no module-global involved) -- logging shows an
+  // inline confirmation instead of resetting the form, since there's no
+  // surrounding renderAdd() to rebuild this specific DOM subtree the way
+  // the singleton page has.
+  function buildCardPickForm(matchupObj) {
+    const { wrap, addBtn, readForm } = buildPickFormBase(matchupObj);
+    addBtn.addEventListener("click", () => {
+      const pred = addPrediction(matchupObj, readForm());
+      wrap.innerHTML = "";
+      wrap.appendChild(el("div", "pt-logged-confirm", `Logged: ${escapeHtml(pickSummary(pred))} <a href="predictions.html">View in My Predictions &rarr;</a>`));
+      renderAll(); // refreshes the sidebar teaser's pending count elsewhere on this same page, if mounted
+    });
     return wrap;
   }
 
@@ -484,6 +528,12 @@
     setMatchup(scheduledRounds, result) {
       matchup = { scheduledRounds, result };
       renderAll();
+    },
+    mountCardPick(rootEl, matchupObj) {
+      if (!rootEl) return;
+      load();
+      rootEl.innerHTML = "";
+      rootEl.appendChild(buildCardPickForm(matchupObj));
     },
     importCsvText(text, mode = "merge") {
       const rows = parseCsv(text);

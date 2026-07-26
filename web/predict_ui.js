@@ -167,10 +167,10 @@
   }
 
   // Shared by the "Call It" button click AND the auto-run path below (a
-  // fight-card "Call This Fight" link landing here with ?a=&b=&rounds=) --
-  // one place computing a prediction and fanning it out to the results
-  // panel plus both add-a-pick forms, so the two entry points can never
-  // drift into showing different things for the same matchup.
+  // shared/bookmarked ?a=&b=&rounds= link landing here) -- one place
+  // computing a prediction and fanning it out to the results panel plus
+  // both add-a-pick forms, so the two entry points can never drift into
+  // showing different things for the same matchup.
   function runPrediction() {
     if (!selected.a || !selected.b) return;
     const result = predictFull(selected.a, selected.b, scheduledRounds, MODEL_DATA);
@@ -191,12 +191,14 @@
 
   document.getElementById("predict-btn").addEventListener("click", runPrediction);
 
-  // Landed here from a fight-card "Call This Fight" link (?a=<idA>&b=<idB>&
-  // rounds=<N>) -- pre-fill both corners and run the same prediction the
-  // old same-page auto-fill-and-click used to, just across a page load
-  // instead of a DOM update. Silently does nothing if the ids don't
-  // resolve (stale link, fighter fell out of the active roster, etc.) --
-  // the page still works fine as a blank manual picker in that case.
+  // Landed here from a shared/bookmarked link (?a=<idA>&b=<idB>&rounds=<N>)
+  // -- pre-fill both corners and run the prediction immediately, no click
+  // needed. The real fight card no longer generates these (it has its own
+  // inline "Make Your Pick" panel per bout now), but a link like this still
+  // works fine as a way to jump straight to a specific hypothetical
+  // matchup. Silently does nothing if the ids don't resolve (stale link,
+  // fighter fell out of the active roster, etc.) -- the page still works
+  // fine as a blank manual picker in that case.
   function runFromQueryParams() {
     const params = new URLSearchParams(location.search);
     const idA = params.get("a");

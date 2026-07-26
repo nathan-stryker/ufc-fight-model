@@ -112,17 +112,19 @@ edge_calculator_docs_path = docs_dir / "edge-calculator.html"
 edge_calculator_docs_path.write_text(edge_calculator_out, encoding="utf-8")
 print(f"wrote {edge_calculator_docs_path} (GitHub Pages copy)")
 
-# Standalone predict.html page -- the manual "search any two fighters"
-# picker plus results panel, moved off the home page. Unlike news/results/
-# predictions/edge-calculator, this one DOES need the full engine.js +
-# MODEL_DATA (it runs live inference), so it's a heavy page like the home
-# page -- that's unavoidable, prediction requires the model. Also mounts
-# predictions.js's "add" half (the log-a-pick form), since this is the only
-# page with a live matchup result to log against. paper_trade.js is embedded
-# too but never mounted here -- it just needs to be loaded so setMatchup()
-# can persist each result to localStorage for edge-calculator.html to read
-# (see the comment there). Reads ?a=&b=&rounds= query params on load so
-# fight-card "Call This Fight" links (which now point here) still work.
+# Standalone predict.html page -- branded "Fantasy Matchup" in the nav, a
+# fun side toy (manual "pick any two fighters" picker + results panel) now
+# that the real fight card has its own inline "Make Your Pick" panel per
+# bout (see ui.js). Unlike news/results/predictions/edge-calculator, this
+# one DOES need the full engine.js + MODEL_DATA (it runs live inference),
+# so it's a heavy page like the home page -- that's unavoidable, prediction
+# requires the model. Also mounts predictions.js's "add" half (the log-a-
+# pick form), since this is the only page with a live matchup result to
+# log against for a hypothetical (non-real-card) pairing. paper_trade.js is
+# embedded too but never mounted here -- it just needs to be loaded so
+# setMatchup() can persist each result to localStorage for
+# edge-calculator.html to read (see the comment there). Reads ?a=&b=&
+# rounds= query params on load so a shared/bookmarked link still works.
 predict_template = (WEB_DIR / "predict_template.html").read_text(encoding="utf-8")
 
 predict_out = predict_template.replace("__SHARED_STYLE__", shared_style)

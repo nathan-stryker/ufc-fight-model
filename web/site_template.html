@@ -451,7 +451,7 @@
   .fc-rows { display: flex; flex-direction: column; gap: 0.4rem; }
   .fc-row {
     display: grid;
-    grid-template-columns: 7rem 1fr 9.5rem;
+    grid-template-columns: 7rem 1fr;
     align-items: center;
     gap: 1rem;
     background: var(--canvas-raised);
@@ -477,12 +477,11 @@
     margin-bottom: 0.25rem;
   }
   .fc-row--main-event .fc-row-header { text-align: left; margin-bottom: 0.6rem; }
-  .fc-row--main-event .fc-call-btn, .fc-row--main-event .fc-nodata { justify-self: center; }
+  .fc-row--main-event .fc-nodata { justify-self: center; }
   .fc-row--main-event .fc-model-pick { grid-column: 1; }
   .fc-row--main-event .fc-fighter { font-size: 1.2rem; }
   .fc-row--main-event .fc-badge { width: 2.3rem; height: 1.6rem; }
   .fc-row--main-event .fc-matchup { gap: 1.25rem; margin: 0.5rem 0; }
-  .fc-row--main-event .fc-call-btn { margin-top: 0.25rem; }
   .fc-row--co-main { border-top: 3px solid var(--silver); background: var(--silver-wash); }
   /* A co-main that's ALSO a title fight (double-title card) wins gold
      instead of the usual silver -- source order breaks the tie since both
@@ -576,21 +575,7 @@
   }
   .fc-badge svg { width: 100%; height: 100%; display: block; object-fit: cover; }
   .fc-vs { color: var(--ink-dim); font-size: 0.68rem; text-transform: uppercase; }
-  .fc-call-btn, .fc-nodata { justify-self: end; }
-  .fc-call-btn {
-    display: inline-block;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    background: transparent;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.76rem;
-    font-family: inherit;
-    text-decoration: none;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .fc-call-btn:hover { background: var(--gold); color: var(--canvas); }
-  .fc-nodata { font-size: 0.7rem; color: var(--ink-dim); font-style: italic; text-align: right; }
+  .fc-nodata { grid-column: 1 / -1; font-size: 0.7rem; color: var(--ink-dim); font-style: italic; text-align: center; }
   .fc-model-pick {
     grid-column: 1 / -1;
     font-size: 0.78rem;
@@ -606,9 +591,43 @@
     letter-spacing: 0.06em;
     margin-right: 0.4rem;
   }
+  /* Inline "Make Your Pick" -- expand-per-fight accordion so a full
+     12+ bout card stays scannable, matching the same toggle/panel pattern
+     already built for the Results page's strike maps (see .lr-strike-
+     toggle/.lr-strike-panel above). The panel reuses the odds-bar/tape
+     classes from the (now de-emphasized) Fantasy Matchup page's results
+     wholesale, just tightened up (smaller margins) to fit inside a card
+     row instead of a full standalone panel. */
+  .fc-predict-toggle {
+    grid-column: 1 / -1;
+    justify-self: center;
+    display: block;
+    margin-top: 0.5rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .fc-predict-toggle:hover { opacity: 0.8; }
+  .fc-predict-panel {
+    grid-column: 1 / -1;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--canvas-line);
+  }
+  .fc-predict-breakdown .odds-labels { margin-bottom: 1.25rem; }
+  .fc-predict-breakdown .tape { margin-bottom: 1rem; }
+  .fc-pick-mount .pt-add { margin-bottom: 0; }
   @media (max-width: 640px) {
     .fc-row { grid-template-columns: 1fr; text-align: center; }
-    .fc-call-btn, .fc-nodata { justify-self: center; }
+    .fc-nodata { justify-self: center; }
     .fc-model-pick { grid-column: 1; }
   }
 
@@ -918,6 +937,8 @@
   .pt-add { background: var(--canvas-raised); border: 1px solid var(--canvas-line); padding: 1rem; margin-bottom: 1.5rem; }
   .pt-matchup-label { font-size: 0.85rem; color: var(--gold); margin-bottom: 0.75rem; }
   .pt-matchup-source { color: var(--ink-dim); font-weight: normal; }
+  .pt-logged-confirm { color: var(--green); font-size: 0.85rem; }
+  .pt-logged-confirm a { color: inherit; }
   .pt-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
   .pt-row[hidden] { display: none; }
   .pt-row label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); width: 8.5rem; flex-shrink: 0; }
@@ -966,7 +987,7 @@
     <a href="#fight-card" data-nav="fight-card">This Week's Card</a>
     <a href="news.html">News</a>
     <a href="results.html">Last Week's Results</a>
-    <a href="predict.html">Predict</a>
+    <a href="predict.html">Fantasy Matchup</a>
     <a href="edge-calculator.html">Edge Calculator</a>
     <a href="predictions.html">My Predictions</a>
   </nav>

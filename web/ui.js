@@ -1,8 +1,10 @@
 (function () {
   // Fighter index/predictFull() are still needed here even though the
-  // manual matchup picker moved to predict.html -- the fight-card's own
-  // "Model predicts" preview line (in boutRowHtml() below) runs a live
-  // prediction for every bout on page load, no click needed.
+  // manual "pick any two fighters" picker lives on its own Fantasy Matchup
+  // page (predict.html, a fun side toy) -- the fight-card's own "Model
+  // predicts" preview line AND its per-bout "Make Your Pick" breakdown
+  // (both in boutRowHtml() below) run a live prediction for every bout on
+  // page load, no click needed for either.
   const { byId } = buildFighterIndex(MODEL_DATA.fighters);
   const fightCountEl = document.getElementById("fight-count");
   if (fightCountEl) fightCountEl.textContent = MODEL_DATA.total_fights.toLocaleString();
@@ -46,13 +48,68 @@
     return svg || `<div class="fighter-badge-empty"></div>`;
   }
 
+  // Full model breakdown (odds bar + method/round tapes), rendered as an
+  // HTML string rather than DOM nodes -- boutRowHtml() below builds the
+  // whole fight card in one big innerHTML assignment, same as the rest of
+  // this function. Deliberately duplicates predict_ui.js's renderResult()/
+  // makeRow() rather than sharing them: that version is built around fixed
+  // DOM ids for ONE result at a time, but a fight card needs N of these
+  // live at once (one per predictable bout), so a string-builder keyed off
+  // nothing but the result object itself is the simpler fit here -- same
+  // "duplicated, not shared" call already made for verdictText() across
+  // ui.js/predict_ui.js/predictions.js.
+  function tapeRowHtml(label, p, predicted) {
+    return `<div class="tape-row${predicted ? " predicted" : ""}">
+      <div class="tape-row-label">${escapeHtml(label)}${predicted ? '<span class="predicted-chip">Predicted</span>' : ""}</div>
+      <div class="tape-row-track"><div class="tape-row-fill" style="width:${(p * 100).toFixed(1)}%"></div></div>
+      <div class="tape-row-pct mono">${(p * 100).toFixed(1)}%</div>
+    </div>`;
+  }
+
+  function predictBreakdownHtml(r) {
+    const methodRanked = Object.entries(r.method).sort((x, y) => y[1] - x[1]);
+    const topMethod = methodRanked[0][0];
+    const methodRows = methodRanked.map(([k, p], i) => tapeRowHtml(METHOD_NAMES[k], p, i === 0)).join("");
+
+    const roundEntries = Object.entries(r.roundGivenFinish);
+    const showRoundPredicted = topMethod !== "dec";
+    let roundRows;
+    if (roundEntries.length === 0) {
+      roundRows = `<div class="tape-row-label" style="color:var(--ink-dim)">Finish probability too low to break down by round.</div>`;
+    } else {
+      const topRound = roundEntries.slice().sort((x, y) => y[1] - x[1])[0][0];
+      roundRows = roundEntries.map(([rnd, p]) => tapeRowHtml(`Round ${rnd}`, p, showRoundPredicted && rnd === topRound)).join("");
+    }
+
+    return `
+      <div class="fc-predict-breakdown">
+        <div class="odds-bar">
+          <div class="odds-fill odds-fill-a" style="width:${(r.probAWins * 100).toFixed(1)}%"></div>
+          <div class="odds-fill odds-fill-b" style="width:${(r.probBWins * 100).toFixed(1)}%"></div>
+        </div>
+        <div class="odds-labels">
+          <div class="side-a"><div class="pct mono">${(r.probAWins * 100).toFixed(1)}%</div><div>${escapeHtml(r.nameA)}</div></div>
+          <div class="side-b"><div class="pct mono">${(r.probBWins * 100).toFixed(1)}%</div><div>${escapeHtml(r.nameB)}</div></div>
+        </div>
+        <div class="tape">
+          <div class="tape-title"><span>Method of Victory</span></div>
+          <div>${methodRows}</div>
+        </div>
+        <div class="tape">
+          <div class="tape-title"><span>Round</span><span class="mono">${(r.pFinish * 100).toFixed(0)}% chance of a finish</span></div>
+          <div>${roundRows}</div>
+        </div>
+      </div>`;
+  }
+
   // Home-page "this week's card" -- scraped from Sherdog.com at build time
   // (src/data/scrape_upcoming_card.py), not fetched live in-browser (this
   // site has no server and Artifact CSP blocks cross-origin fetches anyway).
-  // A bout only gets a "Call This Fight" button if BOTH fighters matched our
-  // own roster by exact name -- a UFC debutant, or a name-spelling mismatch
-  // between Sherdog and our data, has genuinely nothing to predict from, so
-  // it's shown as plain text rather than wired to a broken/guessed action.
+  // A bout only gets the inline "Make Your Pick" breakdown if BOTH fighters
+  // matched our own roster by exact name -- a UFC debutant, or a name-
+  // spelling mismatch between Sherdog and our data, has genuinely nothing
+  // to predict from, so it's shown as plain text rather than wired to a
+  // broken/guessed action.
   function renderUpcomingCard() {
     const section = document.getElementById("fight-card");
     if (!section) return;
@@ -61,6 +118,12 @@
       section.hidden = true;
       return;
     }
+    // Parallel to the "Make Your Pick" toggle buttons that end up in the
+    // DOM, in the exact same order (only predictable bouts push here, and
+    // only predictable bouts render a toggle) -- lets the post-render
+    // wiring below pair each button with its own already-computed result
+    // by plain array index, no data-attributes or JSON-in-HTML needed.
+    const boutResults = [];
 
     const eventDate = new Date(card.eventDate + "T00:00:00Z")
       .toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -126,26 +189,26 @@
       const badgeB = fB ? `<div class="fc-badge">${flagBadgeHtml(fB.iso_code)}</div>` : "";
       // Main events and title fights (anywhere on the card) are scheduled
       // for 5 rounds, everything else for 3 -- same rule the "Model
-      // predicts" preview line below already uses.
+      // predicts" preview line and the full breakdown below both use. No
+      // scheduled-round data comes from the scrape, so this is a standard-
+      // UFC-convention assumption, not a scraped fact.
       const callRounds = b.tier === "main_event" || b.isTitleFight ? 5 : 3;
-      // Links out to the standalone predict.html page (pre-filled via query
-      // params) instead of auto-populating a local Predict section -- the
-      // manual matchup picker moved to its own page, so there's no local
-      // picker left on the home page to fill in.
-      const predictUrl = `predict.html?a=${encodeURIComponent(b.idA)}&b=${encodeURIComponent(b.idB)}&rounds=${callRounds}`;
-      const action = predictable
-        ? `<a class="fc-call-btn" href="${escapeHtml(predictUrl)}">Call This Fight</a>`
-        : `<div class="fc-nodata">No prediction available</div>`;
-      // Computed up front for every predictable bout (not gated behind a
-      // click) so the card reads as a preview of the model's take on the
-      // whole night, not just a launcher into the full predictor below.
-      // No scheduled-round data comes from the scrape, so this assumes 5
-      // for the main event and title fights and 3 for everything else
-      // (standard UFC convention) -- "Call This Fight" still opens the full
-      // predictor where the round toggle can be corrected if needed.
-      const modelPick = predictable
-        ? `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(predictFull(fA, fB, callRounds, MODEL_DATA)).text)}</div>`
-        : "";
+      let modelPick = "";
+      let action = `<div class="fc-nodata">No prediction available</div>`;
+      if (predictable) {
+        // Computed once per bout, reused for both the one-line preview AND
+        // the full expand-on-demand breakdown below -- no second inference
+        // call when a fight is expanded.
+        const result = predictFull(fA, fB, callRounds, MODEL_DATA);
+        boutResults.push({ result, scheduledRounds: callRounds });
+        modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
+        action = `
+          <button class="fc-predict-toggle" type="button" aria-expanded="false">Make Your Pick</button>
+          <div class="fc-predict-panel" hidden>
+            ${predictBreakdownHtml(result)}
+            <div class="fc-pick-mount"></div>
+          </div>`;
+      }
       const beltIcon = b.isTitleFight ? BELT_ICON_SVG : "";
       // Divisional rank, scraped from ufc.com's ranks-row alongside the
       // rest of the card data -- "C" for the reigning champion, "#N" for a
@@ -180,8 +243,8 @@
               ${formBadgesHtml(b.idB)}
             </div>
           </div>
-          ${action}
           ${modelPick}
+          ${action}
         </div>`;
     }
 
@@ -215,6 +278,29 @@
     });
     document.addEventListener("click", () => {
       section.querySelectorAll(".fc-form-badge.open").forEach((b) => b.classList.remove("open"));
+    });
+
+    // Each toggle's matchup result is looked up by plain array index -- see
+    // the boutResults comment above. The pick-form itself is mounted lazily
+    // on first expand (not for every bout up front), and only once per row;
+    // MyPredictions.mountCardPick() feeds it the same already-computed
+    // result, so it's a live pick against the model's real output for this
+    // exact bout, not a re-simulation.
+    [...section.querySelectorAll(".fc-predict-toggle")].forEach((btn, i) => {
+      const panel = btn.nextElementSibling;
+      if (!panel || !panel.classList.contains("fc-predict-panel")) return;
+      const matchupObj = boutResults[i];
+      let mounted = false;
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+        btn.textContent = expanded ? "Make Your Pick" : "Hide";
+        panel.hidden = expanded;
+        if (!expanded && !mounted && window.MyPredictions) {
+          window.MyPredictions.mountCardPick(panel.querySelector(".fc-pick-mount"), matchupObj);
+          mounted = true;
+        }
+      });
     });
   }
 
