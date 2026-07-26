@@ -280,7 +280,7 @@
   function renderAddForm() {
     const wrap = el("div", "pt-add");
     if (!matchup) {
-      wrap.appendChild(el("div", "pt-empty-hint", 'Call a matchup on the <a href="predict.html">Predict</a> page first -- your most recent call shows up here automatically.'));
+      wrap.appendChild(el("div", "pt-empty-hint", 'Call a matchup on the <a href="predict.html">Fantasy Matchup</a> page first -- your most recent call shows up here automatically.'));
       return wrap;
     }
     const r = matchup.result;

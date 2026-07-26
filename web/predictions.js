@@ -459,8 +459,7 @@
   function renderAdd() {
     if (!addRoot) return;
     addRoot.innerHTML = "";
-    addRoot.appendChild(el("div", "section-header", '<div class="section-eyebrow">Not betting-affiliated</div><h2 class="section-title display">My Predictions</h2>'));
-    addRoot.appendChild(el("p", "tracker-note", "Just log what YOU think will happen (winner, method, round) and see your own track record build up over time, including how often you agree with the model."));
+    addRoot.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
     addRoot.appendChild(renderAddForm());
   }
 
@@ -472,9 +471,7 @@
     const rep = computeReport();
     const pendingCount = preds.filter((p) => p.status === "pending").length;
     const box = el("div");
-    box.appendChild(el("div", "lr-header", `
-      <div class="lr-eyebrow">Not betting-affiliated</div>
-      <h2 class="lr-title display">My Predictions</h2>`));
+    box.appendChild(el("div", "lr-header", '<h2 class="lr-title display">My Predictions</h2>'));
     if (preds.length === 0) {
       box.appendChild(el("div", "pt-empty-hint", "Call a matchup and log your own pick to start building a track record."));
     } else {
@@ -495,7 +492,6 @@
   function renderHistoryFull() {
     const box = el("div");
     box.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
-    box.appendChild(el("p", "tracker-note", "Your own logged picks (winner, method, round) and how they've held up, including how often you agreed with the model."));
     box.appendChild(renderPending());
     box.appendChild(renderReport());
     box.appendChild(renderActions());

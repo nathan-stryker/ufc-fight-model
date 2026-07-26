@@ -900,7 +900,6 @@
   .section-title { font-size: clamp(1.2rem, 3vw, 1.6rem); margin: 0; }
   .predict-zone { margin-bottom: 1.75rem; }
   .predict-header { text-align: center; }
-  .predict-header .section-eyebrow { color: var(--ink-dim); }
 
   .edge-add {
     margin-top: 2.5rem; padding: 1.25rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
@@ -994,8 +993,8 @@
 
   <footer class="disclaimer">
     Stored only in your own browser (localStorage) -- nothing here is sent anywhere or shared
-    between devices. Not betting-affiliated: this computes vig-free implied probability and
-    fractional-Kelly stake sizing against odds you enter, nothing more.
+    between devices. Computes vig-free implied probability and fractional-Kelly stake sizing
+    against the odds you enter.
   </footer>
 </div>
 
@@ -1282,7 +1281,7 @@
   function renderAddForm() {
     const wrap = el("div", "pt-add");
     if (!matchup) {
-      wrap.appendChild(el("div", "pt-empty-hint", 'Call a matchup on the <a href="predict.html">Predict</a> page first -- your most recent call shows up here automatically.'));
+      wrap.appendChild(el("div", "pt-empty-hint", 'Call a matchup on the <a href="predict.html">Fantasy Matchup</a> page first -- your most recent call shows up here automatically.'));
       return wrap;
     }
     const r = matchup.result;
