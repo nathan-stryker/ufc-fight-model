@@ -348,6 +348,14 @@ def _last_results_payload():
     never resolved both fighter ids to begin with) is simply left out of
     the results list rather than shown as a guess -- same "omit, don't
     guess" philosophy as the rest of this scraping pipeline.
+
+    Returning None here means "nothing confirmed YET" (the historical
+    mirror commonly lags a real event by a day or more), not "there is
+    genuinely nothing to show" -- see the fallback in export_all() that
+    keeps the last known-good payload on disk instead of overwriting it
+    with this None, so a same-day re-run (e.g. the daily news refresh,
+    which calls this same export) can never blank out a page that was
+    showing real results a moment ago.
     """
     path = PROCESSED_DIR / "last_card.csv"
     if not path.exists():
@@ -506,6 +514,24 @@ def main():
     payload["recent_results"] = _recent_results_payload(payload["upcoming_card"])
     payload["news"] = _news_payload()
     payload["last_results"] = _last_results_payload()
+    # A None here means "not confirmed yet" (see _last_results_payload's
+    # docstring) -- e.g. this same export gets re-run by the daily news
+    # refresh, and the historical mirror can lag a real event by a day or
+    # more. Keep whatever was already on disk from the last run that DID
+    # find something, rather than regressing a page that was showing real
+    # results to blank just because TODAY'S run came up empty. Resolves
+    # itself automatically the next time a fresh computation succeeds.
+    if payload["last_results"] is None:
+        existing_results_path = WEB_DIR / "last_results_data.json"
+        if existing_results_path.exists():
+            try:
+                with open(existing_results_path) as f:
+                    existing = json.load(f)
+            except (json.JSONDecodeError, OSError):
+                existing = None
+            if existing:
+                payload["last_results"] = existing
+                print(f"  last_results: fresh computation found nothing yet, kept existing '{existing['eventName']}'")
 
     out_path = WEB_DIR / "model_data.json"
     with open(out_path, "w") as f:
