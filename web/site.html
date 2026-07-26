@@ -623,6 +623,37 @@
     .fc-row { text-align: center; }
   }
 
+  /* Meet the Debut Fighters -- home page, below the fight card. Spotlights
+     anyone on this week's card with zero recorded UFC fights (same "UFC
+     Debut" signal the fight-card's own form badges already use). Only bio
+     data (age/height/reach/stance/flag/weight class) -- that's genuinely
+     all there is to show for a fighter with no UFC fight history yet, no
+     rolling-form stats to fake. */
+  .debut-section { margin-top: 1.75rem; }
+  .debut-header { text-align: center; }
+  .debut-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 1rem;
+  }
+  .debut-card {
+    background: var(--canvas-raised);
+    border: 1px solid var(--canvas-line);
+    padding: 1rem;
+    text-align: center;
+  }
+  .debut-badge {
+    width: 2.4rem; height: 1.7rem; margin: 0 auto 0.6rem;
+    border: 1px solid var(--canvas-line); background: var(--canvas-line); overflow: hidden;
+  }
+  .debut-badge svg { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .debut-name { font-weight: 700; font-size: 0.92rem; }
+  .debut-nick { font-size: 0.75rem; color: var(--ink-dim); margin-top: 0.15rem; }
+  .debut-meta { font-size: 0.7rem; color: var(--ink-dim); margin-top: 0.5rem; }
+  .debut-division { font-size: 0.66rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.3rem; }
+  .debut-opponent { font-size: 0.76rem; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed var(--canvas-line); }
+  .debut-opponent strong { color: var(--ink); }
+
   .matchup {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -981,6 +1012,7 @@
   <div class="layout">
   <div class="main-col">
   <section class="fight-card" id="fight-card"></section>
+  <section class="debut-section" id="debut-fighters"></section>
   </div>
 
   <div class="sidebar-col">
@@ -2383,6 +2415,66 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
     });
   }
 
+  // Meet the Debut Fighters -- spotlights anyone on this week's card with
+  // zero recorded UFC fights, using the exact same "UFC Debut" signal
+  // formBadgesHtml() above already uses (MODEL_DATA.recent_results[id]
+  // resolving to a defined-but-empty array -- undefined means "never
+  // looked up", not "debut"). Only bio fields (age/height/reach/stance/
+  // flag/weight class) get shown, since that's genuinely all there is for
+  // a fighter with no fight history to compute rolling-form stats from.
+  // Degrades to hidden if nobody on this week's card is a debut, same
+  // pattern as every other data-dependent home-page section.
+  function renderDebutFighters() {
+    const section = document.getElementById("debut-fighters");
+    if (!section) return;
+    const card = MODEL_DATA.upcoming_card;
+    if (!card || !card.bouts || !card.bouts.length || !MODEL_DATA.recent_results) {
+      section.hidden = true;
+      return;
+    }
+
+    function isDebut(fighterId) {
+      const results = fighterId ? MODEL_DATA.recent_results[fighterId] : undefined;
+      return results !== undefined && results.length === 0;
+    }
+
+    const debuts = [];
+    card.bouts.forEach((b) => {
+      if (isDebut(b.idA)) debuts.push({ id: b.idA, name: b.nameA, opponent: b.nameB, weightClass: b.weightClass });
+      if (isDebut(b.idB)) debuts.push({ id: b.idB, name: b.nameB, opponent: b.nameA, weightClass: b.weightClass });
+    });
+    if (!debuts.length) {
+      section.hidden = true;
+      return;
+    }
+
+    const todayDays = todayEpochDays();
+    const cardsHtml = debuts.map((d) => {
+      const f = d.id ? byId.get(d.id) : null;
+      const badge = f ? flagBadgeHtml(f.iso_code) : `<div class="fighter-badge-empty"></div>`;
+      const metaParts = [];
+      if (f && f.dob_epoch_days != null) metaParts.push(`${Math.floor((todayDays - f.dob_epoch_days) / 365.25)} yrs`);
+      if (f && f.height_in != null) metaParts.push(`${Math.floor(f.height_in / 12)}'${Math.round(f.height_in % 12)}"`);
+      if (f && f.reach_in != null) metaParts.push(`${f.reach_in}" reach`);
+      if (f && f.stance) metaParts.push(f.stance);
+      return `
+        <div class="debut-card">
+          <div class="debut-badge">${badge}</div>
+          <div class="debut-name">${escapeHtml(d.name)}</div>
+          ${f && f.nickname ? `<div class="debut-nick">"${escapeHtml(f.nickname)}"</div>` : ""}
+          ${metaParts.length ? `<div class="debut-meta mono">${escapeHtml(metaParts.join(" - "))}</div>` : ""}
+          ${d.weightClass ? `<div class="debut-division mono">${escapeHtml(d.weightClass)}</div>` : ""}
+          <div class="debut-opponent">Faces <strong>${escapeHtml(d.opponent)}</strong> this week</div>
+        </div>`;
+    }).join("");
+
+    section.innerHTML = `
+      <div class="section-header debut-header">
+        <h2 class="section-title display">Meet the Debut Fighters</h2>
+      </div>
+      <div class="debut-grid">${cardsHtml}</div>`;
+  }
+
   // Weekly-scraped headlines (src/data/scrape_news.py -> export_web_model.py's
   // _news_payload()) -- always links out to the real article on ufc.com,
   // never reproduces its body text, only the headline/teaser/thumbnail the
@@ -2420,6 +2512,7 @@ const MODEL_DATA = {"total_fights":8629,"win_model":{"features":["elo_diff","hei
   }
 
   renderUpcomingCard();
+  renderDebutFighters();
   renderNews();
   renderLastResults();
 
