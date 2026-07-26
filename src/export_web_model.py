@@ -292,6 +292,41 @@ def _recent_results_payload(upcoming_card_payload, n=5):
     return results
 
 
+def _strikes_absorbed(round_stats, fight_id, id_a, id_b):
+    """
+    Total significant strikes landed to the head/body/legs across every
+    round of one fight, from EACH fighter's own perspective as strikes
+    they ABSORBED (i.e. fighter A's absorbed total is fighter B's landed
+    total, and vice versa) -- round_stats.csv only records what a fighter
+    landed, never a separate "absorbed" column, so this is just relabeling
+    the opponent's own landed total.
+
+    Returns None (not zeros) if this fight has no round_stats.csv rows at
+    all, so the frontend can distinguish "genuinely a scoreless round"
+    (impossible) from "we don't have detailed stats for this fight yet" --
+    same "omit, don't guess" rule as the rest of this payload.
+    """
+    mine = round_stats[round_stats["fight_id"] == fight_id]
+    if mine.empty:
+        return None
+
+    def landed(fighter_id):
+        rows = mine[mine["fighter_id"] == fighter_id]
+        return {
+            "head": int(rows["head_landed"].sum()),
+            "body": int(rows["body_landed"].sum()),
+            "leg": int(rows["leg_landed"].sum()),
+        }
+
+    landed_a, landed_b = landed(id_a), landed(id_b)
+    # Both empty means this fight_id matched but neither corner's id
+    # appears in round_stats.csv (shouldn't happen if fights.csv and
+    # round_stats.csv come from the same source, but don't guess if it does).
+    if not any(landed_a.values()) and not any(landed_b.values()):
+        return None
+    return {"a": landed_b, "b": landed_a}  # A absorbs what B landed, and vice versa
+
+
 def _last_results_payload():
     """
     "Last week's card" plus its actual results -- entirely derived from
@@ -303,7 +338,10 @@ def _last_results_payload():
     same weekly refresh, after fights.csv has already been rebuilt from the
     latest historical data -- see load_data.py), that snapshot's event has
     already happened, so its bouts should now have real results sitting in
-    fights.csv. This just joins the two on the fighter-id pair.
+    fights.csv. This just joins the two on the fighter-id pair. Per-bout
+    strike breakdowns (see _strikes_absorbed()) come from the SAME
+    round_stats.csv already built for training, from the SAME raw mirror
+    data -- no separate scrape for that either.
 
     A bout that can't be matched (fights.csv's source hasn't picked up the
     event yet, a bout was scratched/postponed, or the original card scrape
@@ -319,6 +357,7 @@ def _last_results_payload():
         return None
 
     fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+    round_stats = pd.read_csv(PROCESSED_DIR / "round_stats.csv")
 
     bouts = []
     for _, row in last_card.sort_values("bout_order").iterrows():
@@ -342,7 +381,7 @@ def _last_results_payload():
             outcome = "b"
         else:
             continue
-        bouts.append({
+        bout = {
             "weightClass": row["weight_class"] if pd.notna(row["weight_class"]) else None,
             "nameA": row["fighter_a_name"], "idA": id_a,
             "nameB": row["fighter_b_name"], "idB": id_b,
@@ -352,7 +391,11 @@ def _last_results_payload():
             "method": fight["method"] if pd.notna(fight["method"]) else None,
             "round": int(fight["round"]) if pd.notna(fight["round"]) else None,
             "time": fight["time"] if pd.notna(fight["time"]) else None,
-        })
+        }
+        strikes = _strikes_absorbed(round_stats, fight["fight_id"], id_a, id_b)
+        if strikes:
+            bout["strikes"] = strikes
+        bouts.append(bout)
     if not bouts:
         return None
     first = last_card.iloc[0]

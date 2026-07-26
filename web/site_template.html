@@ -385,6 +385,39 @@
   .results-page .lr-list { gap: 1.5rem; max-width: 520px; }
   .results-page .lr-result-line { font-size: 1rem; }
   .results-page .lr-title { font-size: clamp(1.15rem, 3vw, 1.5rem); }
+
+  /* Strike map -- a minimal 3-zone (head/body/leg) body outline per
+     fighter, colored by significant strikes ABSORBED to that zone, from
+     the same round_stats.csv already built for training (see
+     export_web_model.py's _strikes_absorbed()). Only offered when that
+     data actually exists for a fight -- see results_render.js. */
+  .lr-strike-toggle {
+    display: block;
+    margin-top: 0.6rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--slate);
+    color: var(--slate);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .lr-strike-toggle:hover { opacity: 0.8; }
+  .lr-strike-panel { margin-top: 0.9rem; }
+  .lr-strike-caption { font-size: 0.68rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
+  .lr-strike-sides { display: flex; gap: 1.5rem; }
+  .lr-strike-side { flex: 1; min-width: 0; text-align: center; }
+  .lr-strike-name { font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lr-body-diagram { width: 100%; max-width: 64px; height: auto; }
+  .lr-body-diagram ellipse, .lr-body-diagram rect { transition: fill 200ms ease; }
+  .lr-strike-numbers { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.5rem; font-size: 0.7rem; color: var(--ink-dim); }
+  .lr-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 0.35rem; }
+  .results-page .lr-strike-sides { max-width: 360px; margin: 0 auto; }
+  .results-page .lr-body-diagram { max-width: 90px; }
   .fc-header { text-align: center; margin-bottom: 1rem; }
   .fc-eyebrow {
     font-size: 0.7rem;
