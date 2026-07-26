@@ -119,6 +119,15 @@ MANUAL = {
     "Zachary Scroggin": ("United States", "US"),
     "Zhang Mingyang": ("China", "CN"),
     "Zhu Kangjie": ("China", "CN"),
+    # Both genuinely multi-national -- confirmed via web search, then a
+    # direct question to the user rather than picking one automatically
+    # (same policy as every other entry in this file). Vlasto Cepo: born
+    # in Serbia, but sources describe him as now representing Slovakia.
+    # Nina Milosevic: ties to Serbia (birth, IMMAF national team), Sweden
+    # (her own stated identity), and Australia (where she trains) -- user
+    # chose Serbia.
+    "Vlasto Cepo": ("Slovakia", "SK"),
+    "Nina Milosevic": ("Serbia", "RS"),
 }
 
 
