@@ -63,6 +63,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from src.data.load_data import _weight_to_division
+from src.models.predict import predict_full_by_id
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; personal MMA-stats research script)"}
@@ -313,6 +314,41 @@ def match_fighter_ids(bouts):
     return bouts
 
 
+def add_model_predictions(bouts):
+    """
+    The model's own predicted winner/method/round for each bout, computed
+    now (before the card happens) and carried through the last_card.csv
+    snapshot -- see export_web_model.py's _last_results_payload() -- so
+    "Last Week's Results" can show what the model actually called next to
+    what really happened. This is graded against a real prediction made
+    ahead of time, not a backtest computed after the fact.
+
+    Uses predict_full_by_id() (not predict_full()'s name-based lookup) --
+    match_fighter_ids() above already disambiguated any duplicate-named
+    fighters via weight class, and re-resolving by name here could hit
+    that same ambiguity again and raise. Only computed for bouts where
+    BOTH fighters resolved to a fighter_id -- same "omit, don't guess"
+    rule as everything else in this script.
+    """
+    for b in bouts:
+        b["predicted_winner_side"] = None
+        b["predicted_method"] = None
+        b["predicted_round"] = None
+        if not b.get("fighter_a_id") or not b.get("fighter_b_id"):
+            continue
+        scheduled_rounds = 5 if (b.get("tier") == "main_event" or b.get("is_title_fight")) else 3
+        try:
+            r = predict_full_by_id(b["fighter_a_id"], b["fighter_b_id"], scheduled_rounds=scheduled_rounds)
+        except SystemExit:
+            continue
+        top_method = max(r["method"], key=r["method"].get)
+        b["predicted_winner_side"] = "a" if r["prob_a_wins"] >= 0.5 else "b"
+        b["predicted_method"] = top_method
+        if top_method != "dec" and r["round_given_finish"]:
+            b["predicted_round"] = max(r["round_given_finish"], key=r["round_given_finish"].get)
+    return bouts
+
+
 def main():
     session = requests.Session()
     event = find_next_event(session)
@@ -333,6 +369,7 @@ def main():
         bouts = assign_tiers(scrape_card(session, event["event_url"]))
 
     bouts = match_fighter_ids(bouts)
+    bouts = add_model_predictions(bouts)
 
     rows = []
     for i, b in enumerate(bouts, 1):

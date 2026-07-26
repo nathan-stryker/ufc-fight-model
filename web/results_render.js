@@ -7,6 +7,7 @@
   }
 
   const TIER_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
+  const METHOD_NAMES = { dec: "Decision", ko: "KO/TKO", sub: "Submission" };
   const BELT_ICON_SVG = `<svg class="lr-belt-icon" viewBox="0 0 24 14" aria-hidden="true" focusable="false">
     <rect x="0" y="4" width="24" height="6" rx="1" fill="currentColor" opacity="0.55"></rect>
     <circle cx="12" cy="7" r="6" fill="currentColor"></circle>
@@ -97,7 +98,23 @@
     return parts.map(escapeHtml).join(" &middot; ");
   }
 
-  function rowHtml(bout) {
+  // What the model actually called BEFORE this fight happened (see
+  // export_web_model.py's forwarding of scrape_upcoming_card.py's
+  // add_model_predictions()) -- a real prediction made ahead of time, not
+  // a backtest. Only shown on the full results.html page (opts.showModelPick),
+  // not the home page's compact sidebar teaser -- feedback was specifically
+  // about the full page, and a 300px column has no room for a second line
+  // per row on top of everything else already there.
+  function modelPickLine(bout) {
+    if (!bout.modelPick) return "";
+    const winner = bout.modelPick.side === "a" ? bout.nameA : bout.nameB;
+    const methodName = METHOD_NAMES[bout.modelPick.method] || bout.modelPick.method;
+    let text = `${winner} by ${methodName}`;
+    if (bout.modelPick.round) text += `, Round ${bout.modelPick.round}`;
+    return `<div class="lr-model-pick mono"><span class="lr-model-pick-label">Model predicted</span> ${escapeHtml(text)}</div>`;
+  }
+
+  function rowHtml(bout, opts) {
     const belt = bout.isTitleFight ? BELT_ICON_SVG : "";
     const tierLabel = TIER_LABEL[bout.tier];
     // Only offered when round_stats.csv actually had rows for this fight --
@@ -115,6 +132,7 @@
         </div>
         <div class="lr-result-line">${resultLine(bout)}</div>
         <div class="lr-meta mono">${metaLine(bout)}</div>
+        ${opts.showModelPick ? modelPickLine(bout) : ""}
         ${strikeToggle}
         ${strikePanel}
       </div>`;
@@ -144,7 +162,7 @@
       return;
     }
     const bouts = opts.limit ? results.bouts.slice(0, opts.limit) : results.bouts;
-    const rowsHtml = bouts.map(rowHtml).join("");
+    const rowsHtml = bouts.map((b) => rowHtml(b, opts)).join("");
     const seeMore = opts.seeMoreHref
       ? `<a class="lr-see-more" href="${escapeHtml(opts.seeMoreHref)}">See More Results &rarr;</a>`
       : "";

@@ -366,6 +366,8 @@
   .lr-winner { font-weight: 700; }
   .lr-verb { color: var(--ink-dim); font-weight: 400; }
   .lr-meta { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.15rem; }
+  .lr-model-pick { font-size: 0.75rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--canvas-line); }
+  .lr-model-pick-label { color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.65rem; margin-right: 0.4rem; }
   .lr-see-more {
     display: inline-block;
     margin-top: 1rem;
@@ -979,7 +981,7 @@
 </div>
 
 <script>
-const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Guskov","eventDate":"2026-07-25","bouts":[{"weightClass":"Light Heavyweight","nameA":"Magomed Ankalaev","idA":"http://ufcstats.com/fighter-details/d802174b0c0c1f4e","nameB":"Bogdan Guskov","idB":"http://ufcstats.com/fighter-details/ef5dcb10d2bd4b0f","tier":"main_event","isTitleFight":false,"outcome":"a","method":"KO/TKO","round":5,"time":null},{"weightClass":"Flyweight","nameA":"Steve Erceg","idA":"http://ufcstats.com/fighter-details/32ab52e5de93092d","nameB":"Ramazan Temirov","idB":"http://ufcstats.com/fighter-details/7d0a1968b38ca439","tier":"co_main","isTitleFight":false,"outcome":"b","method":"KO/TKO","round":1,"time":null},{"weightClass":"Lightweight","nameA":"Magomed Zaynukov","idA":"http://ufcstats.com/fighter-details/04ff3a711504d6b3","nameB":"Damian Rzepecki","idB":"http://ufcstats.com/fighter-details/99223fbb4a05326b","tier":"main_card","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00"},{"weightClass":"Heavyweight","nameA":"Rizvan Kuniev","idA":"http://ufcstats.com/fighter-details/739fd4fbb5d862f4","nameB":"Tyrell Fortune","idB":"http://ufcstats.com/fighter-details/bc7f4b2d4c2724a2","tier":"main_card","isTitleFight":false,"outcome":"a","method":"KO/TKO","round":3,"time":null},{"weightClass":"Welterweight","nameA":"Abubakar Vagaev","idA":"http://ufcstats.com/fighter-details/f7adc1fd115f8fdd","nameB":"Saygid Izagakhmaev","idB":"http://ufcstats.com/fighter-details/de26d906f2874dd4","tier":"main_card","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00"},{"weightClass":"Heavyweight","nameA":"Valter Walker","idA":"http://ufcstats.com/fighter-details/f5779a2303ed76ec","nameB":"Thomas Petersen","idB":"http://ufcstats.com/fighter-details/764d39074a352e33","tier":"featured_prelim","isTitleFight":false,"outcome":"a","method":"Submission","round":1,"time":null},{"weightClass":"Light Heavyweight","nameA":"Dustin Jacoby","idA":"http://ufcstats.com/fighter-details/e4277e87a789d687","nameB":"Muhammad Saidov","idB":"http://ufcstats.com/fighter-details/b01a5e0dcd9f231d","tier":"prelim","isTitleFight":false,"outcome":"b","method":"KO/TKO","round":2,"time":null},{"weightClass":"Welterweight","nameA":"Santiago Ponzinibbio","idA":"http://ufcstats.com/fighter-details/6d1bffff14897645","nameB":"Sam Patterson","idB":"http://ufcstats.com/fighter-details/8b6e5dc2ba1edbe7","tier":"prelim","isTitleFight":false,"outcome":"b","method":"KO/TKO","round":2,"time":null},{"weightClass":"Lightweight","nameA":"Ismael Bonfim","idA":"http://ufcstats.com/fighter-details/eb393afdbe3293d5","nameB":"Axel Sola","idB":"http://ufcstats.com/fighter-details/1d2d98ddd05b38fb","tier":"prelim","isTitleFight":false,"outcome":"b","method":"Submission","round":1,"time":null},{"weightClass":"Light Heavyweight","nameA":"Magomed Tuchalov","idA":"http://ufcstats.com/fighter-details/bc5a51159ec2fdf2","nameB":"Brendson Ribeiro","idB":"http://ufcstats.com/fighter-details/49edd0d90f60fb7d","tier":"prelim","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00"},{"weightClass":"Lightweight","nameA":"Nurullo Aliev","idA":"http://ufcstats.com/fighter-details/ca28cdf526d6b6e9","nameB":"Mike Davis","idB":"http://ufcstats.com/fighter-details/fb3e61720be4690c","tier":"prelim","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00"},{"weightClass":"Bantamweight","nameA":"Cody Gibson","idA":"http://ufcstats.com/fighter-details/700a674c042b7a96","nameB":"Abdul Hussein","idB":"http://ufcstats.com/fighter-details/0e6bc8d1d6c0ad90","tier":"prelim","isTitleFight":false,"outcome":"b","method":"Submission","round":3,"time":null}]};
+const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Guskov","eventDate":"2026-07-25","bouts":[{"weightClass":"Light Heavyweight","nameA":"Magomed Ankalaev","idA":"http://ufcstats.com/fighter-details/d802174b0c0c1f4e","nameB":"Bogdan Guskov","idB":"http://ufcstats.com/fighter-details/ef5dcb10d2bd4b0f","tier":"main_event","isTitleFight":false,"outcome":"a","method":"KO/TKO","round":5,"time":null,"modelPick":{"side":"a","method":"dec"}},{"weightClass":"Flyweight","nameA":"Steve Erceg","idA":"http://ufcstats.com/fighter-details/32ab52e5de93092d","nameB":"Ramazan Temirov","idB":"http://ufcstats.com/fighter-details/7d0a1968b38ca439","tier":"co_main","isTitleFight":false,"outcome":"b","method":"KO/TKO","round":1,"time":null,"modelPick":{"side":"a","method":"dec"}},{"weightClass":"Lightweight","nameA":"Magomed Zaynukov","idA":"http://ufcstats.com/fighter-details/04ff3a711504d6b3","nameB":"Damian Rzepecki","idB":"http://ufcstats.com/fighter-details/99223fbb4a05326b","tier":"main_card","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00","modelPick":{"side":"b","method":"ko","round":1}},{"weightClass":"Heavyweight","nameA":"Rizvan Kuniev","idA":"http://ufcstats.com/fighter-details/739fd4fbb5d862f4","nameB":"Tyrell Fortune","idB":"http://ufcstats.com/fighter-details/bc7f4b2d4c2724a2","tier":"main_card","isTitleFight":false,"outcome":"a","method":"KO/TKO","round":3,"time":null,"modelPick":{"side":"b","method":"dec"}},{"weightClass":"Welterweight","nameA":"Abubakar Vagaev","idA":"http://ufcstats.com/fighter-details/f7adc1fd115f8fdd","nameB":"Saygid Izagakhmaev","idB":"http://ufcstats.com/fighter-details/de26d906f2874dd4","tier":"main_card","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00","modelPick":{"side":"b","method":"ko","round":1}},{"weightClass":"Heavyweight","nameA":"Valter Walker","idA":"http://ufcstats.com/fighter-details/f5779a2303ed76ec","nameB":"Thomas Petersen","idB":"http://ufcstats.com/fighter-details/764d39074a352e33","tier":"featured_prelim","isTitleFight":false,"outcome":"a","method":"Submission","round":1,"time":null,"modelPick":{"side":"a","method":"dec"}},{"weightClass":"Light Heavyweight","nameA":"Dustin Jacoby","idA":"http://ufcstats.com/fighter-details/e4277e87a789d687","nameB":"Muhammad Saidov","idB":"http://ufcstats.com/fighter-details/b01a5e0dcd9f231d","tier":"prelim","isTitleFight":false,"outcome":"b","method":"KO/TKO","round":2,"time":null,"modelPick":{"side":"a","method":"ko","round":1}},{"weightClass":"Welterweight","nameA":"Santiago Ponzinibbio","idA":"http://ufcstats.com/fighter-details/6d1bffff14897645","nameB":"Sam Patterson","idB":"http://ufcstats.com/fighter-details/8b6e5dc2ba1edbe7","tier":"prelim","isTitleFight":false,"outcome":"b","method":"KO/TKO","round":2,"time":null,"modelPick":{"side":"b","method":"ko","round":1}},{"weightClass":"Lightweight","nameA":"Ismael Bonfim","idA":"http://ufcstats.com/fighter-details/eb393afdbe3293d5","nameB":"Axel Sola","idB":"http://ufcstats.com/fighter-details/1d2d98ddd05b38fb","tier":"prelim","isTitleFight":false,"outcome":"b","method":"Submission","round":1,"time":null,"modelPick":{"side":"a","method":"dec"}},{"weightClass":"Light Heavyweight","nameA":"Magomed Tuchalov","idA":"http://ufcstats.com/fighter-details/bc5a51159ec2fdf2","nameB":"Brendson Ribeiro","idB":"http://ufcstats.com/fighter-details/49edd0d90f60fb7d","tier":"prelim","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00","modelPick":{"side":"b","method":"ko","round":1}},{"weightClass":"Lightweight","nameA":"Nurullo Aliev","idA":"http://ufcstats.com/fighter-details/ca28cdf526d6b6e9","nameB":"Mike Davis","idB":"http://ufcstats.com/fighter-details/fb3e61720be4690c","tier":"prelim","isTitleFight":false,"outcome":"a","method":"Decision","round":3,"time":"5:00","modelPick":{"side":"a","method":"dec"}},{"weightClass":"Bantamweight","nameA":"Cody Gibson","idA":"http://ufcstats.com/fighter-details/700a674c042b7a96","nameB":"Abdul Hussein","idB":"http://ufcstats.com/fighter-details/0e6bc8d1d6c0ad90","tier":"prelim","isTitleFight":false,"outcome":"b","method":"Submission","round":3,"time":null,"modelPick":{"side":"b","method":"ko","round":1}}]};
 </script>
 <script>
 (function () {
@@ -991,6 +993,7 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
   }
 
   const TIER_LABEL = { main_event: "Main Event", co_main: "Co-Main", featured_prelim: "Featured Prelim" };
+  const METHOD_NAMES = { dec: "Decision", ko: "KO/TKO", sub: "Submission" };
   const BELT_ICON_SVG = `<svg class="lr-belt-icon" viewBox="0 0 24 14" aria-hidden="true" focusable="false">
     <rect x="0" y="4" width="24" height="6" rx="1" fill="currentColor" opacity="0.55"></rect>
     <circle cx="12" cy="7" r="6" fill="currentColor"></circle>
@@ -1081,7 +1084,23 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
     return parts.map(escapeHtml).join(" &middot; ");
   }
 
-  function rowHtml(bout) {
+  // What the model actually called BEFORE this fight happened (see
+  // export_web_model.py's forwarding of scrape_upcoming_card.py's
+  // add_model_predictions()) -- a real prediction made ahead of time, not
+  // a backtest. Only shown on the full results.html page (opts.showModelPick),
+  // not the home page's compact sidebar teaser -- feedback was specifically
+  // about the full page, and a 300px column has no room for a second line
+  // per row on top of everything else already there.
+  function modelPickLine(bout) {
+    if (!bout.modelPick) return "";
+    const winner = bout.modelPick.side === "a" ? bout.nameA : bout.nameB;
+    const methodName = METHOD_NAMES[bout.modelPick.method] || bout.modelPick.method;
+    let text = `${winner} by ${methodName}`;
+    if (bout.modelPick.round) text += `, Round ${bout.modelPick.round}`;
+    return `<div class="lr-model-pick mono"><span class="lr-model-pick-label">Model predicted</span> ${escapeHtml(text)}</div>`;
+  }
+
+  function rowHtml(bout, opts) {
     const belt = bout.isTitleFight ? BELT_ICON_SVG : "";
     const tierLabel = TIER_LABEL[bout.tier];
     // Only offered when round_stats.csv actually had rows for this fight --
@@ -1099,6 +1118,7 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
         </div>
         <div class="lr-result-line">${resultLine(bout)}</div>
         <div class="lr-meta mono">${metaLine(bout)}</div>
+        ${opts.showModelPick ? modelPickLine(bout) : ""}
         ${strikeToggle}
         ${strikePanel}
       </div>`;
@@ -1128,7 +1148,7 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
       return;
     }
     const bouts = opts.limit ? results.bouts.slice(0, opts.limit) : results.bouts;
-    const rowsHtml = bouts.map(rowHtml).join("");
+    const rowsHtml = bouts.map((b) => rowHtml(b, opts)).join("");
     const seeMore = opts.seeMoreHref
       ? `<a class="lr-see-more" href="${escapeHtml(opts.seeMoreHref)}">See More Results &rarr;</a>`
       : "";
@@ -1150,5 +1170,6 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
   window.ResultsRender.renderLastResultsSection(document.getElementById("last-results-section"), LAST_RESULTS_DATA, {
     eyebrow: "Full Card Results",
     title: LAST_RESULTS_DATA ? LAST_RESULTS_DATA.eventName : "Last Week's Results",
+    showModelPick: true,
   });
 </script>

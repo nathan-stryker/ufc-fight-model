@@ -395,6 +395,20 @@ def _last_results_payload():
         strikes = _strikes_absorbed(round_stats, fight["fight_id"], id_a, id_b)
         if strikes:
             bout["strikes"] = strikes
+        # What the model actually called BEFORE the fight happened (computed
+        # at scrape time by scrape_upcoming_card.py's add_model_predictions(),
+        # carried through the last_card.csv snapshot) -- a real prediction
+        # made ahead of time, not a backtest. Older snapshots predating this
+        # column just won't have it (row.get() returns None, not a KeyError),
+        # so this degrades to no "model predicted" line for those bouts.
+        pred_side = row.get("predicted_winner_side")
+        pred_method = row.get("predicted_method")
+        if pd.notna(pred_side) and pd.notna(pred_method):
+            model_pick = {"side": pred_side, "method": pred_method}
+            pred_round = row.get("predicted_round")
+            if pd.notna(pred_round):
+                model_pick["round"] = int(pred_round)
+            bout["modelPick"] = model_pick
         bouts.append(bout)
     if not bouts:
         return None

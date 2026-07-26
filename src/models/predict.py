@@ -59,6 +59,21 @@ def resolve_fighter(name: str, fighters: pd.DataFrame) -> pd.Series:
     return matches.iloc[0]
 
 
+def resolve_fighter_by_id(fighter_id: str, fighters: pd.DataFrame) -> pd.Series:
+    """
+    Same lookup as resolve_fighter(), but by fighter_id instead of name --
+    for callers that already have an unambiguous id (e.g.
+    scrape_upcoming_card.py's match_fighter_ids(), which disambiguates
+    duplicate names via weight class before this ever runs) and shouldn't
+    risk re-triggering resolve_fighter()'s "multiple fighters share this
+    name" error for a name that's already been resolved once.
+    """
+    matches = fighters[fighters["fighter_id"] == fighter_id]
+    if len(matches) == 0:
+        raise SystemExit(f"No fighter found with id '{fighter_id}'.")
+    return matches.iloc[0]
+
+
 # Defaults for a fighter with no matched fight history (a true UFC debut, or an
 # older fighter whose one fight failed name-matching): base Elo, zero
 # experience, and NaN for everything that requires prior fights -- XGBoost
@@ -150,9 +165,14 @@ def compute_alignment_features(dist_a: dict, dist_b: dict, a_is_favorite: bool) 
     return align
 
 
-def predict_full(name_a: str, name_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None):
-    as_of = as_of or pd.Timestamp(datetime.now().date())
-
+def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as_of: pd.Timestamp):
+    """
+    Everything predict_full() does AFTER resolving its two fighters to rows
+    -- factored out so predict_full() (resolve by name) and
+    predict_full_by_id() (resolve by id) share one implementation and can
+    never drift apart. Loads its own CSVs/artifacts fresh each call, same
+    as the original single-function version.
+    """
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
     snapshot = pd.read_csv(PROCESSED_DIR / "fighter_snapshot.csv", parse_dates=["last_fight_date"])
     method_snapshot = pd.read_csv(PROCESSED_DIR / "method_snapshot.csv")
@@ -167,9 +187,6 @@ def predict_full(name_a: str, name_b: str, scheduled_rounds: int = 3, as_of: pd.
         method_classes = json.load(f)
     with open(ARTIFACTS_DIR / "round_feature_cols.json") as f:
         round_feature_cols = json.load(f)
-
-    a = resolve_fighter(name_a, fighters)
-    b = resolve_fighter(name_b, fighters)
 
     # --- win probability (same as before) ---
     feats_a = build_feature_row(a, snapshot, as_of)
@@ -256,6 +273,27 @@ def predict_full(name_a: str, name_b: str, scheduled_rounds: int = 3, as_of: pd.
         "division_a": get_division_info(a["fighter_id"], division_ratings),
         "division_b": get_division_info(b["fighter_id"], division_ratings),
     }
+
+
+def predict_full(name_a: str, name_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None):
+    as_of = as_of or pd.Timestamp(datetime.now().date())
+    fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
+    a = resolve_fighter(name_a, fighters)
+    b = resolve_fighter(name_b, fighters)
+    return _predict_full_for_rows(a, b, scheduled_rounds, as_of)
+
+
+def predict_full_by_id(fighter_id_a: str, fighter_id_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None):
+    """
+    Same as predict_full(), but resolves both fighters by fighter_id
+    instead of name -- for callers with an already-unambiguous id (see
+    resolve_fighter_by_id()'s docstring for why this matters).
+    """
+    as_of = as_of or pd.Timestamp(datetime.now().date())
+    fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
+    a = resolve_fighter_by_id(fighter_id_a, fighters)
+    b = resolve_fighter_by_id(fighter_id_b, fighters)
+    return _predict_full_for_rows(a, b, scheduled_rounds, as_of)
 
 
 def predict_matchup(name_a: str, name_b: str, as_of: pd.Timestamp = None):
