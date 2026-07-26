@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>My Predictions - Call the Card</title>
+<title>Edge Calculator - Call the Card</title>
 __SHARED_STYLE__
 
 <div class="page">
@@ -17,26 +17,26 @@ __SHARED_STYLE__
     <a href="news.html">News</a>
     <a href="results.html">Last Week's Results</a>
     <a href="predict.html">Predict</a>
-    <a href="edge-calculator.html">Edge Calculator</a>
-    <a href="predictions.html" class="active" data-nav="my-predictions">My Predictions</a>
+    <a href="edge-calculator.html" class="active" data-nav="edge-calculator">Edge Calculator</a>
+    <a href="predictions.html">My Predictions</a>
   </nav>
 
   <div class="results-page-header">
     <a class="results-back-link" href="index.html">&larr; Back to This Week's Card</a>
   </div>
 
-  <section id="history-section"></section>
+  <section id="edge-history-section"></section>
 
   <footer class="disclaimer">
     Stored only in your own browser (localStorage) -- nothing here is sent anywhere or shared
-    between devices. Use the backup/restore buttons below to move your history, or keep it safe
-    across a browser data wipe.
+    between devices. Not betting-affiliated: this computes vig-free implied probability and
+    fractional-Kelly stake sizing against odds you enter, nothing more.
   </footer>
 </div>
 
 <script>
-__PREDICTIONS_JS__
+__PAPER_TRADE_JS__
 </script>
 <script>
-  window.MyPredictions.mountHistory("history-section");
+  window.PaperTrade.mountHistory("edge-history-section");
 </script>

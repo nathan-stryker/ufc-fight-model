@@ -1,17 +1,19 @@
 (function () {
-  const { byId, searchList } = buildFighterIndex(MODEL_DATA.fighters);
+  // Fighter index/predictFull() are still needed here even though the
+  // manual matchup picker moved to predict.html -- the fight-card's own
+  // "Model predicts" preview line (in boutRowHtml() below) runs a live
+  // prediction for every bout on page load, no click needed.
+  const { byId } = buildFighterIndex(MODEL_DATA.fighters);
   const fightCountEl = document.getElementById("fight-count");
   if (fightCountEl) fightCountEl.textContent = MODEL_DATA.total_fights.toLocaleString();
 
-  const selected = { a: null, b: null };
-  let scheduledRounds = 3;
   const METHOD_NAMES = { dec: "Decision", ko: "KO/TKO", sub: "Submission" };
 
-  // Single declarative "who/how/when" derivation, shared by the full results
-  // panel (renderResult) and the home-page card list (renderUpcomingCard) --
-  // both read the top-ranked entries of the SAME sorted distributions a
-  // predictFull() result carries, so a headline can never disagree with the
-  // detail bars it's summarizing, no matter which section is rendering it.
+  // Single declarative "who/how/when" derivation -- also duplicated in
+  // predict_ui.js (predict.html's own results panel), both reading the
+  // top-ranked entries of the SAME sorted distributions a predictFull()
+  // result carries, so a headline can never disagree with the detail bars
+  // it's summarizing, no matter which page is rendering it.
   function verdictText(r) {
     const aWinner = r.probAWins >= 0.5;
     const winnerName = aWinner ? r.nameA : r.nameB;
@@ -23,46 +25,6 @@
       if (roundRanked.length) text += `, Round ${roundRanked[0][0]}`;
     }
     return { aWinner, winnerName, methodRanked, topMethod, text };
-  }
-
-  function hint(f) {
-    if (f.nickname) return `"${f.nickname}"`;
-    if (f.dob != null) return `b. ${new Date(f.dob * MS_PER_DAY).getUTCFullYear()}`;
-    return "";
-  }
-
-  function setupCorner(corner) {
-    const input = document.getElementById(`search-${corner}`);
-    const suggBox = document.getElementById(`suggestions-${corner}`);
-    const clearBtn = document.querySelector(`[data-clear="${corner}"]`);
-
-    input.addEventListener("input", () => {
-      const q = input.value.trim().toLowerCase();
-      suggBox.innerHTML = "";
-      if (q.length < 2) return;
-      const matches = searchList.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 8);
-      matches.forEach((m) => {
-        const div = document.createElement("div");
-        div.className = "suggestion";
-        const h = hint(m);
-        div.innerHTML = `<span>${escapeHtml(m.name)}</span>` + (h ? `<span class="nick">${escapeHtml(h)}</span>` : "");
-        div.addEventListener("click", () => selectFighter(corner, m.id));
-        suggBox.appendChild(div);
-      });
-    });
-
-    input.addEventListener("blur", () => {
-      setTimeout(() => { suggBox.innerHTML = ""; }, 150);
-    });
-
-    clearBtn.addEventListener("click", () => {
-      selected[corner] = null;
-      document.getElementById(`card-${corner}`).classList.remove("shown");
-      input.value = "";
-      input.style.display = "";
-      input.focus();
-      updatePredictBtn();
-    });
   }
 
   function escapeHtml(s) {
@@ -82,40 +44,6 @@
   function flagBadgeHtml(isoCode) {
     const svg = isoCode && MODEL_DATA.flags ? MODEL_DATA.flags[isoCode] : null;
     return svg || `<div class="fighter-badge-empty"></div>`;
-  }
-
-  function selectFighter(corner, id) {
-    selected[corner] = byId.get(id);
-    const f = selected[corner];
-    document.getElementById(`suggestions-${corner}`).innerHTML = "";
-    document.getElementById(`search-${corner}`).style.display = "none";
-    document.getElementById(`badge-${corner}`).innerHTML = flagBadgeHtml(f.iso_code);
-    document.getElementById(`name-${corner}`).textContent = f.name;
-    document.getElementById(`nick-${corner}`).textContent = f.nickname ? `"${f.nickname}"` : "";
-
-    const todayDays = todayEpochDays();
-    const metaParts = [];
-    if (f.dob_epoch_days != null) metaParts.push(`${Math.floor((todayDays - f.dob_epoch_days) / 365.25)} yrs`);
-    if (f.height_in != null) metaParts.push(`${Math.floor(f.height_in / 12)}'${Math.round(f.height_in % 12)}"`);
-    if (f.reach_in != null) metaParts.push(`${f.reach_in}" reach`);
-    if (f.stance) metaParts.push(f.stance);
-    if (f.elo == null) metaParts.push("no UFC history yet");
-    document.getElementById(`meta-${corner}`).textContent = metaParts.join(" - ");
-
-    const divisionEl = document.getElementById(`division-${corner}`);
-    if (f.weightclass != null && f.rank != null) {
-      divisionEl.textContent = `${f.weightclass} -- #${Math.round(f.rank)} of ${Math.round(f.n_in_division)} all-time by division Elo`;
-    } else {
-      divisionEl.textContent = "";
-    }
-
-    document.getElementById(`card-${corner}`).classList.add("shown");
-    updatePredictBtn();
-  }
-
-  function updatePredictBtn() {
-    document.getElementById("predict-btn").disabled = !(selected.a && selected.b);
-    document.getElementById("results").hidden = true;
   }
 
   // Home-page "this week's card" -- scraped from Sherdog.com at build time
@@ -200,8 +128,13 @@
       // for 5 rounds, everything else for 3 -- same rule the "Model
       // predicts" preview line below already uses.
       const callRounds = b.tier === "main_event" || b.isTitleFight ? 5 : 3;
+      // Links out to the standalone predict.html page (pre-filled via query
+      // params) instead of auto-populating a local Predict section -- the
+      // manual matchup picker moved to its own page, so there's no local
+      // picker left on the home page to fill in.
+      const predictUrl = `predict.html?a=${encodeURIComponent(b.idA)}&b=${encodeURIComponent(b.idB)}&rounds=${callRounds}`;
       const action = predictable
-        ? `<button class="fc-call-btn" data-a="${escapeHtml(b.idA)}" data-b="${escapeHtml(b.idB)}" data-rounds="${callRounds}" type="button">Call This Fight</button>`
+        ? `<a class="fc-call-btn" href="${escapeHtml(predictUrl)}">Call This Fight</a>`
         : `<div class="fc-nodata">No prediction available</div>`;
       // Computed up front for every predictable bout (not gated behind a
       // click) so the card reads as a preview of the model's take on the
@@ -272,18 +205,6 @@
       </div>
       ${bodyHtml}`;
 
-    section.querySelectorAll(".fc-call-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        selectFighter("a", btn.dataset.a);
-        selectFighter("b", btn.dataset.b);
-        scheduledRounds = parseInt(btn.dataset.rounds, 10);
-        document.querySelectorAll("#rounds-toggle button").forEach((rb) => {
-          rb.classList.toggle("active", parseInt(rb.dataset.rounds, 10) === scheduledRounds);
-        });
-        document.getElementById("predict-btn").click();
-      });
-    });
-
     section.querySelectorAll(".fc-form-badge").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -337,102 +258,15 @@
   renderNews();
   renderLastResults();
 
-  setupCorner("a");
-  setupCorner("b");
-
-  document.getElementById("rounds-toggle").addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    scheduledRounds = parseInt(btn.dataset.rounds, 10);
-    document.querySelectorAll("#rounds-toggle button").forEach((b) => b.classList.toggle("active", b === btn));
-  });
-
-  document.getElementById("predict-btn").addEventListener("click", () => {
-    const result = predictFull(selected.a, selected.b, scheduledRounds, MODEL_DATA);
-    renderResult(result);
-    if (window.PaperTrade) window.PaperTrade.setMatchup(scheduledRounds, result);
-    if (window.MyPredictions) window.MyPredictions.setMatchup(scheduledRounds, result);
-  });
-
-  function makeRow(label, pct, predicted) {
-    const row = document.createElement("div");
-    row.className = "tape-row" + (predicted ? " predicted" : "");
-    row.innerHTML =
-      `<div class="tape-row-label">${escapeHtml(label)}${predicted ? '<span class="predicted-chip">Predicted</span>' : ""}</div>` +
-      `<div class="tape-row-track"><div class="tape-row-fill"></div></div>` +
-      `<div class="tape-row-pct mono">${(pct * 100).toFixed(1)}%</div>`;
-    requestAnimationFrame(() => {
-      row.querySelector(".tape-row-fill").style.width = pct * 100 + "%";
-    });
-    return row;
-  }
-
-  function renderResult(r) {
-    const results = document.getElementById("results");
-    results.hidden = false;
-
-    const v = verdictText(r);
-    const aWinner = v.aWinner;
-    const methodRanked = v.methodRanked;
-    const topMethod = v.topMethod;
-    document.getElementById("verdict-line").innerHTML =
-      `<span class="${aWinner ? "winner" : ""}">${escapeHtml(r.nameA)}</span> vs ` +
-      `<span class="${!aWinner ? "winner" : ""}">${escapeHtml(r.nameB)}</span>`;
-    document.getElementById("verdict-detail").textContent = v.text;
-
-    const fillA = document.getElementById("odds-fill-a");
-    const fillB = document.getElementById("odds-fill-b");
-    fillA.style.width = "50%";
-    fillB.style.width = "50%";
-    void fillA.offsetWidth;
-    requestAnimationFrame(() => {
-      fillA.style.width = r.probAWins * 100 + "%";
-      fillB.style.width = r.probBWins * 100 + "%";
-    });
-
-    document.getElementById("odds-pct-a").textContent = (r.probAWins * 100).toFixed(1) + "%";
-    document.getElementById("odds-pct-b").textContent = (r.probBWins * 100).toFixed(1) + "%";
-    document.getElementById("odds-name-a").textContent = r.nameA;
-    document.getElementById("odds-name-b").textContent = r.nameB;
-
-    const methodRows = document.getElementById("method-rows");
-    methodRows.innerHTML = "";
-    methodRanked.forEach(([k, v], i) => methodRows.appendChild(makeRow(METHOD_NAMES[k], v, i === 0)));
-
-    const roundRows = document.getElementById("round-rows");
-    roundRows.innerHTML = "";
-    document.getElementById("finish-chance").textContent = `${(r.pFinish * 100).toFixed(0)}% chance of a finish`;
-    const entries = Object.entries(r.roundGivenFinish); // kept in chronological order -- round number is a real sequence
-    const topRound = entries.length ? entries.slice().sort((x, y) => y[1] - x[1])[0][0] : null;
-    const showRoundPredicted = topMethod !== "dec"; // a decision goes the distance -- no single round to call
-    if (entries.length === 0) {
-      const div = document.createElement("div");
-      div.className = "tape-row-label";
-      div.style.color = "var(--ink-dim)";
-      div.textContent = "Finish probability too low to break down by round.";
-      roundRows.appendChild(div);
-    } else {
-      entries.forEach(([rnd, p]) => roundRows.appendChild(makeRow(`Round ${rnd}`, p, showRoundPredicted && rnd === topRound)));
-    }
-
-    results.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  // Sticky-nav scrollspy -- highlights whichever section is actually in
-  // view so the nav answers "where am I" while scrolling, not just when you
-  // click a link. Watches the same 4 sections the nav links point to; picks
-  // the entry closest to the top of the viewport among those intersecting,
-  // so two adjacent sections both being partially visible doesn't flicker
-  // between them.
+  // Sticky-nav scrollspy -- highlights "This Week's Card" while it's in
+  // view. Every other nav link now goes off-page (news.html, results.html,
+  // predict.html, edge-calculator.html, predictions.html), so this is the
+  // only section left with an on-page anchor to track.
   function setupScrollspy() {
     const nav = document.getElementById("site-nav");
     if (!nav || typeof IntersectionObserver === "undefined") return;
     const links = new Map([...nav.querySelectorAll("a[data-nav]")].map((a) => [a.dataset.nav, a]));
-    // "News" isn't in this list -- its nav link now goes off-page to
-    // news.html, so there's no on-page anchor for scrollspy to highlight.
-    // "My Predictions" isn't in this list -- its nav link now goes off-page
-    // to predictions.html, same reasoning as "News" above.
-    const sections = ["fight-card", "predict-section", "prop-tracker"]
+    const sections = ["fight-card"]
       .map((id) => document.getElementById(id)).filter(Boolean);
 
     const observer = new IntersectionObserver((entries) => {

@@ -578,12 +578,14 @@
   .fc-vs { color: var(--ink-dim); font-size: 0.68rem; text-transform: uppercase; }
   .fc-call-btn, .fc-nodata { justify-self: end; }
   .fc-call-btn {
+    display: inline-block;
     border: 1px solid var(--gold);
     color: var(--gold);
     background: transparent;
     padding: 0.35rem 0.75rem;
     font-size: 0.76rem;
     font-family: inherit;
+    text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
   }
@@ -870,12 +872,12 @@
   .site-nav a.active[data-nav="news-section"] { color: var(--teal); border-bottom-color: var(--teal); }
   .site-nav a.active[data-nav="results-section"] { color: var(--slate); border-bottom-color: var(--slate); }
   .site-nav a.active[data-nav="predict-section"] { color: var(--ink); border-bottom-color: var(--ink-dim); }
-  .site-nav a.active[data-nav="prop-tracker"] { color: var(--green); border-bottom-color: var(--green); }
+  .site-nav a.active[data-nav="edge-calculator"] { color: var(--green); border-bottom-color: var(--green); }
   .site-nav a.active[data-nav="my-predictions"] { color: var(--violet); border-bottom-color: var(--violet); }
 
   /* Every jump target gets breathing room under the sticky nav so its own
      header isn't hidden right underneath it when scrolled/jumped to. */
-  #fight-card, #predict-section, #prop-tracker { scroll-margin-top: 4rem; }
+  #fight-card { scroll-margin-top: 4rem; }
 
   .section-header { margin-bottom: 1.25rem; }
   .section-eyebrow {
@@ -889,11 +891,11 @@
   .predict-header { text-align: center; }
   .predict-header .section-eyebrow { color: var(--ink-dim); }
 
-  .prop-tracker {
+  .edge-add {
     margin-top: 2.5rem; padding: 1.25rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
     border-top: 3px solid var(--green); background: var(--green-wash);
   }
-  .prop-tracker .section-eyebrow { color: var(--green); }
+  .edge-add .section-eyebrow { color: var(--green); }
   .predict-log {
     margin-top: 2.5rem; padding: 1.25rem 1.25rem; margin-left: -1.25rem; margin-right: -1.25rem;
     border-top: 3px solid var(--violet); background: var(--violet-wash);
@@ -963,8 +965,8 @@
     <a href="index.html#fight-card">This Week's Card</a>
     <a href="news.html">News</a>
     <a href="results.html">Last Week's Results</a>
-    <a href="index.html#predict-section">Predict</a>
-    <a href="index.html#prop-tracker">Prop Tracker</a>
+    <a href="predict.html">Predict</a>
+    <a href="edge-calculator.html">Edge Calculator</a>
     <a href="predictions.html" class="active" data-nav="my-predictions">My Predictions</a>
   </nav>
 

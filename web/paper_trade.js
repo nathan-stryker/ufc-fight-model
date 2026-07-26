@@ -242,10 +242,18 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Rendering (all DOM ownership lives here -- the template only provides a
-  // single mount point, #prop-tracker)
+  // Rendering. Two independent mount points, same split as predictions.js:
+  // "add a bet" needs a LIVE matchup result (fed by predict_ui.js's
+  // setMatchup() call right after a prediction is made on predict.html), so
+  // it stays there. Viewing/settling EXISTING bets + the P&L report are pure
+  // localStorage, no model needed, so that half lives on its own
+  // edge-calculator.html page (or nowhere on the home page at all -- there's
+  // no compact teaser for this one, unlike My Predictions, since it's a
+  // calculator you visit when you need it, not a running tally to check in
+  // on).
   // ---------------------------------------------------------------------------
-  let root = null;
+  let addRoot = null;
+  let historyRoot = null;
 
   function el(tag, className, html) {
     const e = document.createElement(tag);
@@ -257,7 +265,7 @@
   function renderAddForm() {
     const wrap = el("div", "pt-add");
     if (!matchup) {
-      wrap.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log a prop bet on it."));
+      wrap.appendChild(el("div", "pt-empty-hint", "Call a matchup above to calculate an edge on it."));
       return wrap;
     }
     const r = matchup.result;
@@ -346,7 +354,7 @@
       if (market === "round_total" && Number.isNaN(form.line)) { err.textContent = "Enter a line, e.g. 2.5"; return; }
       if (Number.isNaN(form.oddsAmerican) || Math.abs(form.oddsAmerican) < 100) { err.textContent = "Enter valid American odds (e.g. -150 or +130)"; return; }
       addBet(form);
-      render();
+      renderAll();
     });
 
     return wrap;
@@ -376,13 +384,13 @@
       ["won", "lost", "push"].forEach((outcome) => {
         const btn = el("button", "clear-btn pt-settle-btn", outcome[0].toUpperCase() + outcome.slice(1));
         btn.type = "button";
-        btn.addEventListener("click", () => { settleBet(b.bet_id, outcome); render(); });
+        btn.addEventListener("click", () => { settleBet(b.bet_id, outcome); renderAll(); });
         actions.appendChild(btn);
       });
       const del = el("button", "clear-btn pt-delete-btn", "&times;");
       del.type = "button";
       del.title = "Remove";
-      del.addEventListener("click", () => { deleteBet(b.bet_id); render(); });
+      del.addEventListener("click", () => { deleteBet(b.bet_id); renderAll(); });
       actions.appendChild(del);
       table.appendChild(row);
     });
@@ -447,7 +455,7 @@
       const reader = new FileReader();
       reader.onload = () => {
         const count = window.PaperTrade.importCsvText(reader.result, "merge");
-        render();
+        renderAll();
         alert(`Restored ${count} bet(s) from ${file.name}.`);
       };
       reader.readAsText(file);
@@ -462,26 +470,45 @@
     return box;
   }
 
-  function render() {
-    if (!root) return;
-    root.innerHTML = "";
-    root.appendChild(el("div", "section-header", '<div class="section-eyebrow">Real odds, real stakes</div><h2 class="section-title display">Prop Bet Tracker</h2>'));
-    root.appendChild(el("p", "tracker-note", "No historical odds dataset exists for method-of-victory or round-total props, so this logs your real bets against the model's own probability as cards happen, to see the results build up over time."));
-    root.appendChild(renderAddForm());
-    root.appendChild(renderPending());
-    root.appendChild(renderReport());
-    root.appendChild(renderActions());
+  // predict.html -- just the log-a-bet form, next to a live prediction.
+  function renderAdd() {
+    if (!addRoot) return;
+    addRoot.innerHTML = "";
+    addRoot.appendChild(el("div", "section-header", '<div class="section-eyebrow">Real odds, real stakes</div><h2 class="section-title display">Edge Calculator</h2>'));
+    addRoot.appendChild(el("p", "tracker-note", "No historical odds dataset exists for method-of-victory or round-total props, so this computes edge/Kelly stake against the model's own probability and a sportsbook line you enter -- log it to see how your calculated edges would have played out."));
+    addRoot.appendChild(renderAddForm());
+  }
+
+  // edge-calculator.html -- pure localStorage, no model needed.
+  function renderHistory() {
+    if (!historyRoot) return;
+    historyRoot.innerHTML = "";
+    historyRoot.appendChild(el("div", "section-header", '<h2 class="section-title display">Edge Calculator</h2>'));
+    historyRoot.appendChild(el("p", "tracker-note", "Your logged edge calculations and how they've settled -- profit tracked both flat-stake and fractional-Kelly."));
+    historyRoot.appendChild(renderPending());
+    historyRoot.appendChild(renderReport());
+    historyRoot.appendChild(renderActions());
+  }
+
+  function renderAll() {
+    renderAdd();
+    renderHistory();
   }
 
   window.PaperTrade = {
-    mount(rootId) {
-      root = document.getElementById(rootId);
+    mountAdd(rootId) {
+      addRoot = document.getElementById(rootId);
       load();
-      render();
+      renderAll();
+    },
+    mountHistory(rootId) {
+      historyRoot = document.getElementById(rootId);
+      load();
+      renderAll();
     },
     setMatchup(scheduledRounds, result) {
       matchup = { scheduledRounds, result };
-      render();
+      renderAll();
     },
     importCsvText(text, mode = "merge") {
       const rows = parseCsv(text);

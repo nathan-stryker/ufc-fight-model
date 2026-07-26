@@ -1,0 +1,136 @@
+<meta charset="utf-8">
+<title>Predict - Call the Card</title>
+__SHARED_STYLE__
+
+<div class="page">
+  <header class="masthead">
+    <h1 class="logo-mark display" aria-label="Call the Card">
+      <span class="logo-call" aria-hidden="true">Call</span>
+      <span class="logo-the" aria-hidden="true">T<br>h<br>e</span>
+      <span class="logo-card" aria-hidden="true">Card</span>
+    </h1>
+    <div class="masthead-rule"></div>
+  </header>
+
+  <nav class="site-nav" id="site-nav">
+    <a href="index.html#fight-card">This Week's Card</a>
+    <a href="news.html">News</a>
+    <a href="results.html">Last Week's Results</a>
+    <a href="predict.html" class="active" data-nav="predict-section">Predict</a>
+    <a href="edge-calculator.html">Edge Calculator</a>
+    <a href="predictions.html">My Predictions</a>
+  </nav>
+
+  <div class="results-page-header">
+    <a class="results-back-link" href="index.html">&larr; Back to This Week's Card</a>
+  </div>
+
+  <div id="predict-section" class="predict-zone">
+    <div class="section-header predict-header">
+      <div class="section-eyebrow">Pick a matchup</div>
+      <h2 class="section-title display">Predict</h2>
+    </div>
+    <section class="matchup">
+    <div class="corner corner-a">
+      <div class="corner-label">Red Corner</div>
+      <input class="fighter-search" id="search-a" placeholder="Search a fighter&hellip;" autocomplete="off">
+      <div class="suggestions" id="suggestions-a"></div>
+      <div class="fighter-card" id="card-a">
+        <div class="fighter-card-top">
+          <div class="fighter-badge" id="badge-a"></div>
+          <div class="fighter-card-id">
+            <div class="fighter-name" id="name-a"></div>
+            <div class="fighter-nick" id="nick-a"></div>
+          </div>
+        </div>
+        <div class="fighter-meta" id="meta-a"></div>
+        <div class="fighter-division mono" id="division-a"></div>
+        <button class="clear-btn" data-clear="a">Change fighter</button>
+      </div>
+    </div>
+
+    <div class="vs-block">
+      <div class="vs-mark display">VS</div>
+      <div class="rounds-toggle" id="rounds-toggle">
+        <button data-rounds="3" class="active" type="button">3 RD</button>
+        <button data-rounds="5" type="button">5 RD</button>
+      </div>
+      <button class="predict-btn" id="predict-btn" disabled type="button">Call It</button>
+    </div>
+
+    <div class="corner corner-b">
+      <div class="corner-label">Blue Corner</div>
+      <input class="fighter-search" id="search-b" placeholder="Search a fighter&hellip;" autocomplete="off">
+      <div class="suggestions" id="suggestions-b"></div>
+      <div class="fighter-card" id="card-b">
+        <div class="fighter-card-top">
+          <div class="fighter-badge" id="badge-b"></div>
+          <div class="fighter-card-id">
+            <div class="fighter-name" id="name-b"></div>
+            <div class="fighter-nick" id="nick-b"></div>
+          </div>
+        </div>
+        <div class="fighter-meta" id="meta-b"></div>
+        <div class="fighter-division mono" id="division-b"></div>
+        <button class="clear-btn" data-clear="b">Change fighter</button>
+      </div>
+    </div>
+    </section>
+  </div>
+
+  <section class="results" id="results" hidden>
+    <div class="verdict">
+      <div class="verdict-name mono" id="verdict-line"></div>
+      <div class="verdict-detail display" id="verdict-detail"></div>
+    </div>
+
+    <div class="odds-bar">
+      <div class="odds-fill odds-fill-a" id="odds-fill-a"></div>
+      <div class="odds-fill odds-fill-b" id="odds-fill-b"></div>
+    </div>
+    <div class="odds-labels">
+      <div class="side-a"><div class="pct mono" id="odds-pct-a"></div><div id="odds-name-a"></div></div>
+      <div class="side-b"><div class="pct mono" id="odds-pct-b"></div><div id="odds-name-b"></div></div>
+    </div>
+
+    <div class="tape">
+      <div class="tape-title"><span>Method of Victory</span></div>
+      <div id="method-rows"></div>
+    </div>
+
+    <div class="tape">
+      <div class="tape-title"><span>Round</span><span class="mono" id="finish-chance"></span></div>
+      <div id="round-rows"></div>
+    </div>
+  </section>
+
+  <section class="predict-log" id="predict-log-section"></section>
+
+  <section class="edge-add" id="edge-add-section"></section>
+
+  <footer class="disclaimer">
+    Runs entirely client-side &mdash; nothing you type is sent anywhere. Best on realistic,
+    competitively-matched pairings; treat wildly lopsided hypothetical matchups with a grain
+    of salt (see the project README for why).
+  </footer>
+</div>
+
+<script>
+__ENGINE_JS__
+</script>
+<script>
+__MODEL_DATA__
+</script>
+<script>
+__PAPER_TRADE_JS__
+</script>
+<script>
+__PREDICTIONS_JS__
+</script>
+<script>
+__PREDICT_UI_JS__
+</script>
+<script>
+  window.PaperTrade.mountAdd("edge-add-section");
+  window.MyPredictions.mountAdd("predict-log-section");
+</script>

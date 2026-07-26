@@ -12,10 +12,13 @@ paper_trade_js = (WEB_DIR / "paper_trade.js").read_text(encoding="utf-8")
 predictions_js = (WEB_DIR / "predictions.js").read_text(encoding="utf-8")
 news_render_js = (WEB_DIR / "news_render.js").read_text(encoding="utf-8")
 results_render_js = (WEB_DIR / "results_render.js").read_text(encoding="utf-8")
+predict_ui_js = (WEB_DIR / "predict_ui.js").read_text(encoding="utf-8")
 
+# Home page no longer embeds paper_trade.js/predictions.js's ADD flows (those
+# moved to predict.html, see below) -- it only needs predictions.js, and only
+# for the compact sidebar teaser (mountHistory), not paper_trade.js at all.
 out = template.replace("__ENGINE_JS__", engine_js)
 out = out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
-out = out.replace("__PAPER_TRADE_JS__", paper_trade_js)
 out = out.replace("__PREDICTIONS_JS__", predictions_js)
 out = out.replace("__NEWS_RENDER_JS__", news_render_js)
 out = out.replace("__RESULTS_RENDER_JS__", results_render_js)
@@ -75,8 +78,8 @@ print(f"wrote {results_docs_path} (GitHub Pages copy)")
 # results.html, but embeds NO model data at all (not even a small JSON
 # payload): predictions.js's history/settle/report UI is pure localStorage,
 # it never needs engine.js or MODEL_DATA. Only the "log a new prediction"
-# form does (it needs a live matchup result), which is why that form stays
-# on the home page next to Predict and isn't offered on this page.
+# form does (it needs a live matchup result), which is why that form lives
+# on predict.html instead (see below), not offered on this page.
 predictions_template = (WEB_DIR / "predictions_template.html").read_text(encoding="utf-8")
 
 predictions_out = predictions_template.replace("__SHARED_STYLE__", shared_style)
@@ -89,3 +92,46 @@ print(f"wrote {predictions_site_path} ({predictions_site_path.stat().st_size / 1
 predictions_docs_path = docs_dir / "predictions.html"
 predictions_docs_path.write_text(predictions_out, encoding="utf-8")
 print(f"wrote {predictions_docs_path} (GitHub Pages copy)")
+
+# Standalone edge-calculator.html page -- same "no model needed" pattern as
+# predictions.html: paper_trade.js's history/settle/report UI is pure
+# localStorage. Only the "log a new edge calc" form needs a live matchup
+# result, which is why it lives on predict.html instead (see below).
+edge_calculator_template = (WEB_DIR / "edge_calculator_template.html").read_text(encoding="utf-8")
+
+edge_calculator_out = edge_calculator_template.replace("__SHARED_STYLE__", shared_style)
+edge_calculator_out = edge_calculator_out.replace("__PAPER_TRADE_JS__", paper_trade_js)
+
+edge_calculator_site_path = WEB_DIR / "edge-calculator.html"
+edge_calculator_site_path.write_text(edge_calculator_out, encoding="utf-8")
+print(f"wrote {edge_calculator_site_path} ({edge_calculator_site_path.stat().st_size / 1e6:.2f} MB)")
+
+edge_calculator_docs_path = docs_dir / "edge-calculator.html"
+edge_calculator_docs_path.write_text(edge_calculator_out, encoding="utf-8")
+print(f"wrote {edge_calculator_docs_path} (GitHub Pages copy)")
+
+# Standalone predict.html page -- the manual "search any two fighters"
+# picker plus results panel, moved off the home page. Unlike news/results/
+# predictions/edge-calculator, this one DOES need the full engine.js +
+# MODEL_DATA (it runs live inference), so it's a heavy page like the home
+# page -- that's unavoidable, prediction requires the model. Also mounts
+# the "add" halves of paper_trade.js and predictions.js (the log-a-pick/
+# log-an-edge forms), since this is the only page with a live matchup
+# result to log against. Reads ?a=&b=&rounds= query params on load so
+# fight-card "Call This Fight" links (which now point here) still work.
+predict_template = (WEB_DIR / "predict_template.html").read_text(encoding="utf-8")
+
+predict_out = predict_template.replace("__SHARED_STYLE__", shared_style)
+predict_out = predict_out.replace("__ENGINE_JS__", engine_js)
+predict_out = predict_out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
+predict_out = predict_out.replace("__PAPER_TRADE_JS__", paper_trade_js)
+predict_out = predict_out.replace("__PREDICTIONS_JS__", predictions_js)
+predict_out = predict_out.replace("__PREDICT_UI_JS__", predict_ui_js)
+
+predict_site_path = WEB_DIR / "predict.html"
+predict_site_path.write_text(predict_out, encoding="utf-8")
+print(f"wrote {predict_site_path} ({predict_site_path.stat().st_size / 1e6:.2f} MB)")
+
+predict_docs_path = docs_dir / "predict.html"
+predict_docs_path.write_text(predict_out, encoding="utf-8")
+print(f"wrote {predict_docs_path} (GitHub Pages copy)")
