@@ -93,10 +93,12 @@ predictions_docs_path = docs_dir / "predictions.html"
 predictions_docs_path.write_text(predictions_out, encoding="utf-8")
 print(f"wrote {predictions_docs_path} (GitHub Pages copy)")
 
-# Standalone edge-calculator.html page -- same "no model needed" pattern as
-# predictions.html: paper_trade.js's history/settle/report UI is pure
-# localStorage. Only the "log a new edge calc" form needs a live matchup
-# result, which is why it lives on predict.html instead (see below).
+# Standalone edge-calculator.html page -- both the "log a new edge calc" form
+# and the history/settle/report UI live here. The add-form needs a live
+# matchup result, which only predict.html ever computes (it's the only page
+# with engine.js + MODEL_DATA) -- predict_ui.js's runPrediction() persists
+# each result to localStorage via paper_trade.js's setMatchup(), and this
+# page's mountAdd() reads back whatever was most recently called.
 edge_calculator_template = (WEB_DIR / "edge_calculator_template.html").read_text(encoding="utf-8")
 
 edge_calculator_out = edge_calculator_template.replace("__SHARED_STYLE__", shared_style)
@@ -115,9 +117,11 @@ print(f"wrote {edge_calculator_docs_path} (GitHub Pages copy)")
 # predictions/edge-calculator, this one DOES need the full engine.js +
 # MODEL_DATA (it runs live inference), so it's a heavy page like the home
 # page -- that's unavoidable, prediction requires the model. Also mounts
-# the "add" halves of paper_trade.js and predictions.js (the log-a-pick/
-# log-an-edge forms), since this is the only page with a live matchup
-# result to log against. Reads ?a=&b=&rounds= query params on load so
+# predictions.js's "add" half (the log-a-pick form), since this is the only
+# page with a live matchup result to log against. paper_trade.js is embedded
+# too but never mounted here -- it just needs to be loaded so setMatchup()
+# can persist each result to localStorage for edge-calculator.html to read
+# (see the comment there). Reads ?a=&b=&rounds= query params on load so
 # fight-card "Call This Fight" links (which now point here) still work.
 predict_template = (WEB_DIR / "predict_template.html").read_text(encoding="utf-8")
 

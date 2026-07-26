@@ -25,6 +25,8 @@ __SHARED_STYLE__
     <a class="results-back-link" href="index.html">&larr; Back to This Week's Card</a>
   </div>
 
+  <section class="edge-add" id="edge-add-section"></section>
+
   <section id="edge-history-section"></section>
 
   <footer class="disclaimer">
@@ -38,5 +40,6 @@ __SHARED_STYLE__
 __PAPER_TRADE_JS__
 </script>
 <script>
+  window.PaperTrade.mountAdd("edge-add-section");
   window.PaperTrade.mountHistory("edge-history-section");
 </script>

@@ -12,6 +12,7 @@
 // that doesn't depend on browser storage surviving.
 (function () {
   const STORAGE_KEY = "ufc_paper_trades_v1";
+  const MATCHUP_STORAGE_KEY = "ufc_last_matchup_v1";
   const KELLY_FRACTION = 0.25;
   const METHOD_NAMES = { dec: "Decision", ko: "KO/TKO", sub: "Submission" };
 
@@ -115,6 +116,18 @@
     } catch (e) {
       storageOk = false;
     }
+  }
+  // Bridges a live matchup result from predict.html (the only page that runs
+  // the model) over to edge-calculator.html (a separate page load, so nothing
+  // in memory survives) -- setMatchup() writes here whenever a prediction is
+  // computed, and mountAdd() reads it back on load. Always the MOST RECENT
+  // call, not tied to any particular visit to either page.
+  function loadMatchupFromStorage() {
+    if (matchup) return;
+    try {
+      const raw = localStorage.getItem(MATCHUP_STORAGE_KEY);
+      if (raw) matchup = JSON.parse(raw);
+    } catch (e) { /* ignore -- add form just shows its empty state */ }
   }
   function nextBetId() {
     return `pt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -242,15 +255,17 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Rendering. Two independent mount points, same split as predictions.js:
-  // "add a bet" needs a LIVE matchup result (fed by predict_ui.js's
-  // setMatchup() call right after a prediction is made on predict.html), so
-  // it stays there. Viewing/settling EXISTING bets + the P&L report are pure
-  // localStorage, no model needed, so that half lives on its own
-  // edge-calculator.html page (or nowhere on the home page at all -- there's
-  // no compact teaser for this one, unlike My Predictions, since it's a
-  // calculator you visit when you need it, not a running tally to check in
-  // on).
+  // Rendering. Both halves -- add a bet, and view/settle existing bets -- live
+  // together on edge-calculator.html (no home-page presence at all, since
+  // it's a calculator you visit when you need it, not a running tally to
+  // check in on). The wrinkle: "add a bet" needs a LIVE matchup result, and
+  // only predict.html ever computes one (it's the only page with engine.js +
+  // MODEL_DATA). predict_ui.js's runPrediction() calls setMatchup() on every
+  // prediction, which persists it to localStorage (see loadMatchupFromStorage
+  // above) -- predict.html embeds this module purely for that side effect, it
+  // never mounts either UI half itself. edge-calculator.html's mountAdd()
+  // then picks up whatever was most recently called, from any prior visit to
+  // Predict, even a different browser session.
   // ---------------------------------------------------------------------------
   let addRoot = null;
   let historyRoot = null;
@@ -265,11 +280,11 @@
   function renderAddForm() {
     const wrap = el("div", "pt-add");
     if (!matchup) {
-      wrap.appendChild(el("div", "pt-empty-hint", "Call a matchup above to calculate an edge on it."));
+      wrap.appendChild(el("div", "pt-empty-hint", 'Call a matchup on the <a href="predict.html">Predict</a> page first -- your most recent call shows up here automatically.'));
       return wrap;
     }
     const r = matchup.result;
-    wrap.appendChild(el("div", "pt-matchup-label mono", `Logging for: ${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}`));
+    wrap.appendChild(el("div", "pt-matchup-label mono", `Logging for: ${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)} <span class="pt-matchup-source">(most recent call on Predict)</span>`));
 
     const marketRow = el("div", "pt-row");
     marketRow.innerHTML = `<label>Market</label>
@@ -470,20 +485,23 @@
     return box;
   }
 
-  // predict.html -- just the log-a-bet form, next to a live prediction.
+  // edge-calculator.html -- the log-a-bet form, backed by the most recent
+  // matchup called on predict.html (see loadMatchupFromStorage above).
   function renderAdd() {
     if (!addRoot) return;
     addRoot.innerHTML = "";
-    addRoot.appendChild(el("div", "section-header", '<div class="section-eyebrow">Real odds, real stakes</div><h2 class="section-title display">Edge Calculator</h2>'));
+    addRoot.appendChild(el("div", "section-header", "<div class=\"section-eyebrow\">Use the Model's Predictions to find an edge against the books</div><h2 class=\"section-title display\">Edge Calculator</h2>"));
     addRoot.appendChild(el("p", "tracker-note", "No historical odds dataset exists for method-of-victory or round-total props, so this computes edge/Kelly stake against the model's own probability and a sportsbook line you enter -- log it to see how your calculated edges would have played out."));
     addRoot.appendChild(renderAddForm());
   }
 
-  // edge-calculator.html -- pure localStorage, no model needed.
+  // edge-calculator.html -- pure localStorage, no model needed. Sits below
+  // renderAdd() on the same page now, so this just labels the log rather
+  // than repeating the page's own "Edge Calculator" title.
   function renderHistory() {
     if (!historyRoot) return;
     historyRoot.innerHTML = "";
-    historyRoot.appendChild(el("div", "section-header", '<h2 class="section-title display">Edge Calculator</h2>'));
+    historyRoot.appendChild(el("div", "section-header", '<h2 class="section-title display">Your Log</h2>'));
     historyRoot.appendChild(el("p", "tracker-note", "Your logged edge calculations and how they've settled -- profit tracked both flat-stake and fractional-Kelly."));
     historyRoot.appendChild(renderPending());
     historyRoot.appendChild(renderReport());
@@ -499,6 +517,7 @@
     mountAdd(rootId) {
       addRoot = document.getElementById(rootId);
       load();
+      loadMatchupFromStorage();
       renderAll();
     },
     mountHistory(rootId) {
@@ -508,6 +527,9 @@
     },
     setMatchup(scheduledRounds, result) {
       matchup = { scheduledRounds, result };
+      try {
+        localStorage.setItem(MATCHUP_STORAGE_KEY, JSON.stringify(matchup));
+      } catch (e) { /* ignore -- edge-calculator.html just won't see this one */ }
       renderAll();
     },
     importCsvText(text, mode = "merge") {
