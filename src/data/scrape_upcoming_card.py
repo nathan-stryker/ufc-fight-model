@@ -54,6 +54,7 @@ _last_results_payload(), which joins that snapshot against fights.csv to
 build the site's "Last Week's Results" section without a separate scraper)
 """
 import re
+import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -227,6 +228,14 @@ NAME_ALIASES = {
     # UFC Fight Night 282 -- not a guess. Direct UFCStats confirmation isn't
     # possible (the site's own bot-detection blocks a live lookup).
     "muhammad saidov": "muhammad said",
+    # normalize_name()'s NFKD+ascii-encode strips "ł" (U+0142) entirely
+    # rather than converting it to "l" -- unlike an accented letter (e.g.
+    # "á"), "ł" has no NFKD decomposition into a base letter + combining
+    # mark, so it just vanishes, turning "Błachowicz" into "Bachowicz"
+    # instead of "Blachowicz". Confirmed same fighter (former UFC light
+    # heavyweight champion, unambiguous), found on the UFC Fight Night 283
+    # card (2026-08-01) opposite Navajo Stirling.
+    "jan bachowicz": "jan blachowicz",
 }
 
 
@@ -350,6 +359,13 @@ def add_model_predictions(bouts):
 
 
 def main():
+    # Fighter names routinely carry diacritics (Uroš, Błachowicz, ...) that
+    # aren't representable in Windows' default cp1252 console encoding --
+    # this used to crash the summary print loop below AFTER all the real
+    # scraping/writing work had already finished successfully, making a
+    # fully-successful run look like a failure. errors="replace" degrades
+    # to "?" for anything truly unprintable rather than crashing.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     session = requests.Session()
     event = find_next_event(session)
 
