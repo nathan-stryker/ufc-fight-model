@@ -128,6 +128,14 @@ MANUAL = {
     # chose Serbia.
     "Vlasto Cepo": ("Slovakia", "SK"),
     "Nina Milosevic": ("Serbia", "RS"),
+    # Sherdog's own itemprop=nationality field says "United States" for him
+    # (he fights out of Anchorage, AK) but he was born and raised in Novi
+    # Sad, Serbia and is Serbian -- confirmed via web search (Wikipedia,
+    # EssentiallySports) after the user flagged the site showing the wrong
+    # flag. Not a matching bug (the automated search found the correct
+    # Sherdog profile, nickname "The Doctor" matches) -- Sherdog's own data
+    # conflates fights-out-of location with nationality here.
+    "Uros Medic": ("Serbia", "RS"),
 }
 
 

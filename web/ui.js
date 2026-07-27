@@ -234,11 +234,13 @@
           </div>
           <div class="fc-matchup">
             <div class="fc-fighter-block">
+              ${fA && fA.nickname ? `<div class="fc-nickname">"${escapeHtml(fA.nickname)}"</div>` : ""}
               <div class="fc-fighter">${badgeA}${rankChipHtml(b.rankA)}<span>${escapeHtml(b.nameA)}</span></div>
               ${formBadgesHtml(b.idA)}
             </div>
             <div class="fc-vs">vs</div>
             <div class="fc-fighter-block">
+              ${fB && fB.nickname ? `<div class="fc-nickname">"${escapeHtml(fB.nickname)}"</div>` : ""}
               <div class="fc-fighter">${badgeB}${rankChipHtml(b.rankB)}<span>${escapeHtml(b.nameB)}</span></div>
               ${formBadgesHtml(b.idB)}
             </div>
