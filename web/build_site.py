@@ -8,15 +8,16 @@ template = (WEB_DIR / "site_template.html").read_text(encoding="utf-8")
 engine_js = (WEB_DIR / "engine.js").read_text(encoding="utf-8")
 model_data_json = (WEB_DIR / "model_data.json").read_text(encoding="utf-8")
 ui_js = (WEB_DIR / "ui.js").read_text(encoding="utf-8")
-paper_trade_js = (WEB_DIR / "paper_trade.js").read_text(encoding="utf-8")
 predictions_js = (WEB_DIR / "predictions.js").read_text(encoding="utf-8")
 news_render_js = (WEB_DIR / "news_render.js").read_text(encoding="utf-8")
 results_render_js = (WEB_DIR / "results_render.js").read_text(encoding="utf-8")
 predict_ui_js = (WEB_DIR / "predict_ui.js").read_text(encoding="utf-8")
 
-# Home page no longer embeds paper_trade.js/predictions.js's ADD flows (those
-# moved to predict.html, see below) -- it only needs predictions.js, and only
-# for the compact sidebar teaser (mountHistory), not paper_trade.js at all.
+# Home page never embeds paper_trade.js -- it only needs predictions.js, and
+# only for the compact sidebar teaser (mountHistory). paper_trade.js isn't
+# embedded on ANY built page as of 2026-07-27 (Edge Calculator, its only
+# consumer, was pulled from the site -- see edge_calculator_template.html's
+# own comment) but the file stays in web/ as dormant source, not deleted.
 out = template.replace("__ENGINE_JS__", engine_js)
 out = out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
 out = out.replace("__PREDICTIONS_JS__", predictions_js)
@@ -93,25 +94,6 @@ predictions_docs_path = docs_dir / "predictions.html"
 predictions_docs_path.write_text(predictions_out, encoding="utf-8")
 print(f"wrote {predictions_docs_path} (GitHub Pages copy)")
 
-# Standalone edge-calculator.html page -- both the "log a new edge calc" form
-# and the history/settle/report UI live here. The add-form needs a live
-# matchup result, which only predict.html ever computes (it's the only page
-# with engine.js + MODEL_DATA) -- predict_ui.js's runPrediction() persists
-# each result to localStorage via paper_trade.js's setMatchup(), and this
-# page's mountAdd() reads back whatever was most recently called.
-edge_calculator_template = (WEB_DIR / "edge_calculator_template.html").read_text(encoding="utf-8")
-
-edge_calculator_out = edge_calculator_template.replace("__SHARED_STYLE__", shared_style)
-edge_calculator_out = edge_calculator_out.replace("__PAPER_TRADE_JS__", paper_trade_js)
-
-edge_calculator_site_path = WEB_DIR / "edge-calculator.html"
-edge_calculator_site_path.write_text(edge_calculator_out, encoding="utf-8")
-print(f"wrote {edge_calculator_site_path} ({edge_calculator_site_path.stat().st_size / 1e6:.2f} MB)")
-
-edge_calculator_docs_path = docs_dir / "edge-calculator.html"
-edge_calculator_docs_path.write_text(edge_calculator_out, encoding="utf-8")
-print(f"wrote {edge_calculator_docs_path} (GitHub Pages copy)")
-
 # Standalone predict.html page -- branded "Fantasy Matchup" in the nav, a
 # fun side toy (manual "pick any two fighters" picker + results panel) now
 # that the real fight card has its own inline "Make Your Pick" panel per
@@ -121,16 +103,15 @@ print(f"wrote {edge_calculator_docs_path} (GitHub Pages copy)")
 # requires the model. No My Predictions log-a-pick form here (removed --
 # pointless friction on a page that's just for fun, not meant to build a
 # track record); predictions.js isn't even loaded on this page anymore.
-# paper_trade.js IS still embedded, but never mounted here -- it just needs
-# to be loaded so setMatchup() can persist each result to localStorage for
-# edge-calculator.html to read (see the comment there). Reads ?a=&b=&
-# rounds= query params on load so a shared/bookmarked link still works.
+# Reads ?a=&b=&rounds= query params on load so a shared/bookmarked link
+# still works. (Edge Calculator, which this page used to hand results off
+# to via paper_trade.js's setMatchup(), was pulled from the site -- see
+# edge_calculator_template.html's own comment for why.)
 predict_template = (WEB_DIR / "predict_template.html").read_text(encoding="utf-8")
 
 predict_out = predict_template.replace("__SHARED_STYLE__", shared_style)
 predict_out = predict_out.replace("__ENGINE_JS__", engine_js)
 predict_out = predict_out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
-predict_out = predict_out.replace("__PAPER_TRADE_JS__", paper_trade_js)
 predict_out = predict_out.replace("__PREDICT_UI_JS__", predict_ui_js)
 
 predict_site_path = WEB_DIR / "predict.html"

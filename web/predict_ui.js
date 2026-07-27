@@ -170,16 +170,12 @@
   // shared/bookmarked ?a=&b=&rounds= link landing here) -- one place
   // computing a prediction and fanning it out to the results panel, so the
   // two entry points can never drift into showing different things for the
-  // same matchup. Also feeds PaperTrade.setMatchup() -- not to render
-  // anything here (this page has no Edge Calculator form of its own), just
-  // to persist the result to localStorage for edge-calculator.html to pick
-  // up (see the comment there). No MyPredictions involved at all -- the
-  // "log my prediction" form was removed from this page, it's just for fun.
+  // same matchup. No MyPredictions/PaperTrade handoff involved at all --
+  // this page is just for fun, not meant to build a track record.
   function runPrediction() {
     if (!selected.a || !selected.b) return;
     const result = predictFull(selected.a, selected.b, scheduledRounds, MODEL_DATA);
     renderResult(result);
-    if (window.PaperTrade) window.PaperTrade.setMatchup(scheduledRounds, result);
   }
 
   setupCorner("a");

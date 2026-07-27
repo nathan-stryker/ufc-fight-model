@@ -1,3 +1,17 @@
+<!--
+  DORMANT, not built -- pulled from the site 2026-07-27 per user request
+  ("it should not be auto-populating with the most recent fight done in
+  the fantasy matchup... remove that page for now"). build_site.py no
+  longer generates edge-calculator.html/docs/edge-calculator.html, and
+  no other page links here. Kept as source (not deleted) since "for now"
+  implies this may come back -- the bug was the automatic
+  predict.html -> localStorage -> this-page handoff (paper_trade.js's
+  setMatchup()/mountAdd()), which was removed from predict_ui.js/
+  predict_template.html when this page was pulled. If this page is
+  reinstated, that handoff needs a real fix (e.g. an explicit "send to
+  Edge Calculator" action instead of silently auto-populating from
+  whatever was last looked at), not just restoring the old wiring as-is.
+-->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Edge Calculator - Call the Card</title>

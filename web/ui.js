@@ -469,8 +469,8 @@
 
   // Sticky-nav scrollspy -- highlights "This Week's Card" while it's in
   // view. Every other nav link now goes off-page (news.html, results.html,
-  // predict.html, edge-calculator.html, predictions.html), so this is the
-  // only section left with an on-page anchor to track.
+  // predict.html, predictions.html), so this is the only section left with
+  // an on-page anchor to track.
   function setupScrollspy() {
     const nav = document.getElementById("site-nav");
     if (!nav || typeof IntersectionObserver === "undefined") return;
