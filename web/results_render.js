@@ -258,6 +258,64 @@
       </div>`;
   }
 
+  // Read-only peek at My Predictions' own localStorage log -- deliberately a
+  // small duplicate read here rather than embedding the whole predictions.js
+  // module on pages that don't otherwise need it (home page sidebar/
+  // results.html), same "duplicated, not shared" call already made for
+  // verdictText() across ui.js/predict_ui.js/predictions.js. Only ever reads;
+  // never writes/settles anything here, so a mismatched or corrupt entry can
+  // at worst just fail to match (falls back to "you didn't pick this one"),
+  // never corrupts the real log.
+  const MY_PREDICTIONS_STORAGE_KEY = "ufc_my_predictions_v1";
+  function loadMyPredictions() {
+    try {
+      const raw = localStorage.getItem(MY_PREDICTIONS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Scored against the WHOLE event (results.bouts), not just whatever slice
+  // opts.limit is currently showing -- a compact 4-bout sidebar teaser should
+  // still report accuracy for the full 12-bout card. Winner-only (matches the
+  // "9/12 correct winners" framing this was asked for) -- draws/no-contests
+  // are skipped on both sides, same "omit, don't guess" rule as everywhere
+  // else in this file. A user prediction counts as "for this fight" if its
+  // stored fighter names match the bout's pair in either order; no fuzzier
+  // matching than that is attempted.
+  function computeAccuracySummary(results) {
+    let modelN = 0, modelHits = 0;
+    let userN = 0, userHits = 0;
+    const myPreds = loadMyPredictions();
+    results.bouts.forEach((b) => {
+      if (b.outcome !== "a" && b.outcome !== "b") return;
+      const winnerName = b.outcome === "a" ? b.nameA : b.nameB;
+      if (b.modelPick) {
+        modelN++;
+        if (b.modelPick.side === b.outcome) modelHits++;
+      }
+      const pred = myPreds.find((p) =>
+        (p.fighter_a === b.nameA && p.fighter_b === b.nameB) ||
+        (p.fighter_a === b.nameB && p.fighter_b === b.nameA)
+      );
+      if (pred) {
+        userN++;
+        if (pred.picked_winner === winnerName) userHits++;
+      }
+    });
+    return { modelN, modelHits, userN, userHits };
+  }
+
+  function accuracySummaryHtml(results) {
+    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
+    if (modelN === 0 && userN === 0) return "";
+    const parts = [];
+    if (modelN > 0) parts.push(`Model called <strong>${modelHits}/${modelN}</strong> correct`);
+    if (userN > 0) parts.push(`You called <strong>${userHits}/${userN}</strong> correct`);
+    return `<div class="lr-accuracy-summary mono">${parts.join(" &middot; ")}</div>`;
+  }
+
   function wireStrikeToggles(sectionEl) {
     sectionEl.querySelectorAll(".lr-strike-toggle").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -291,6 +349,7 @@
         <div class="lr-eyebrow">${escapeHtml(opts.eyebrow || "Last Week's Results")}</div>
         <h2 class="lr-title display">${escapeHtml(opts.title || results.eventName)}</h2>
       </div>
+      ${accuracySummaryHtml(results)}
       <div class="lr-list">${rowsHtml}</div>
       ${seeMore}`;
     wireStrikeToggles(sectionEl);
