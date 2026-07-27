@@ -349,11 +349,64 @@
         <div class="lr-eyebrow">${escapeHtml(opts.eyebrow || "Last Week's Results")}</div>
         <h2 class="lr-title display">${escapeHtml(opts.title || results.eventName)}</h2>
       </div>
-      ${accuracySummaryHtml(results)}
+      ${opts.showAccuracySummaryLine === false ? "" : accuracySummaryHtml(results)}
       <div class="lr-list">${rowsHtml}</div>
       ${seeMore}`;
     wireStrikeToggles(sectionEl);
   }
 
-  window.ResultsRender = { renderLastResultsSection };
+  // The full results.html page moves this into its own right-rail table
+  // instead (see renderAccuracyTable below) -- results_template.html passes
+  // showAccuracySummaryLine: false so the inline sentence doesn't also show
+  // above the bout list, duplicating the same two numbers. The home page
+  // sidebar keeps the inline line (opts default, unchanged).
+  function accuracyTableHtml(results) {
+    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
+    const modelPct = modelN ? Math.round((modelHits / modelN) * 100) : null;
+    const userPct = userN ? Math.round((userHits / userN) * 100) : null;
+    return `
+      <div class="lr-header">
+        <div class="lr-eyebrow">Scorecard</div>
+        <h2 class="lr-title display">Last Week's Accuracy</h2>
+      </div>
+      <div class="acc-table">
+        <div class="acc-table-row acc-table-head">
+          <div class="acc-table-label"></div>
+          <div class="acc-table-cell">Correct</div>
+          <div class="acc-table-cell">Accuracy</div>
+        </div>
+        <div class="acc-table-row">
+          <div class="acc-table-label">Model</div>
+          <div class="acc-table-cell mono">${modelN ? `${modelHits}/${modelN}` : "&mdash;"}</div>
+          <div class="acc-table-cell mono">${modelPct != null ? modelPct + "%" : "&mdash;"}</div>
+        </div>
+        <div class="acc-table-row">
+          <div class="acc-table-label">You</div>
+          <div class="acc-table-cell mono">${userN ? `${userHits}/${userN}` : "&mdash;"}</div>
+          <div class="acc-table-cell mono">${userPct != null ? userPct + "%" : "&mdash;"}</div>
+        </div>
+      </div>
+      ${userN === 0 ? '<div class="acc-table-note">Log picks on Fantasy Matchup to see how you did.</div>' : ""}`;
+  }
+
+  // Own mount point (a separate sidebar aside, not inside last-results-
+  // section) since this lives in a different grid column on results.html --
+  // hides itself the same "omit, don't guess" way as everything else here if
+  // there's no event to score yet.
+  function renderAccuracyTable(sectionEl, results) {
+    if (!sectionEl) return;
+    if (!results || !results.bouts || !results.bouts.length) {
+      sectionEl.hidden = true;
+      return;
+    }
+    const { modelN, userN } = computeAccuracySummary(results);
+    if (modelN === 0 && userN === 0) {
+      sectionEl.hidden = true;
+      return;
+    }
+    sectionEl.hidden = false;
+    sectionEl.innerHTML = accuracyTableHtml(results);
+  }
+
+  window.ResultsRender = { renderLastResultsSection, renderAccuracyTable };
 })();

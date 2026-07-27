@@ -25,12 +25,20 @@ __SHARED_STYLE__
     <a class="results-back-link" href="index.html">&larr; Back to This Week's Card</a>
   </div>
 
+  <div class="layout">
+  <div class="main-col">
   <section class="results-section" id="last-results-section"></section>
+  </div>
+
+  <div class="sidebar-col">
+    <aside class="accuracy-sidebar" id="accuracy-summary-section"></aside>
+  </div>
 
   <footer class="disclaimer">
     Results are matched automatically from the same fight-history data this site trains its model
     on -- a bout only appears here once it's confirmed in that record.
   </footer>
+  </div>
 </div>
 
 <script>
@@ -46,5 +54,7 @@ __RESULTS_RENDER_JS__
     showModelPick: true,
     showFullStats: true,
     showStrikeMap: true,
+    showAccuracySummaryLine: false,
   });
+  window.ResultsRender.renderAccuracyTable(document.getElementById("accuracy-summary-section"), LAST_RESULTS_DATA);
 </script>

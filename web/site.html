@@ -349,6 +349,25 @@
   .lr-title { font-size: 1.05rem; margin: 0; }
   .lr-accuracy-summary { font-size: 0.78rem; color: var(--ink-dim); margin: -0.5rem 0 1rem; }
   .lr-accuracy-summary strong { color: var(--ink); font-weight: 700; }
+  /* results.html's right-rail table version of the same two numbers -- see
+     results_render.js's renderAccuracyTable(). Reuses .layout/.main-col/
+     .sidebar-col (defined above, originally built for the home page) rather
+     than a new grid, so results.html gets the same side-by-side breakpoint
+     behavior (stacks below the results list under 1040px) for free. */
+  .accuracy-sidebar { margin-bottom: 2.25rem; }
+  .acc-table { border-top: 1px solid var(--canvas-line); }
+  .acc-table-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--canvas-line);
+  }
+  .acc-table-head { color: var(--slate); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .acc-table-label { font-weight: 700; font-size: 0.85rem; }
+  .acc-table-cell { text-align: right; font-size: 0.9rem; min-width: 3.4rem; }
+  .acc-table-note { font-size: 0.75rem; color: var(--ink-dim); margin-top: 0.6rem; }
   .lr-list { display: flex; flex-direction: column; gap: 1rem; }
   .lr-row { border-top: 1px solid var(--canvas-line); padding-top: 0.75rem; }
   .lr-row:first-child { border-top: none; padding-top: 0; }
@@ -2352,13 +2371,66 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
         <div class="lr-eyebrow">${escapeHtml(opts.eyebrow || "Last Week's Results")}</div>
         <h2 class="lr-title display">${escapeHtml(opts.title || results.eventName)}</h2>
       </div>
-      ${accuracySummaryHtml(results)}
+      ${opts.showAccuracySummaryLine === false ? "" : accuracySummaryHtml(results)}
       <div class="lr-list">${rowsHtml}</div>
       ${seeMore}`;
     wireStrikeToggles(sectionEl);
   }
 
-  window.ResultsRender = { renderLastResultsSection };
+  // The full results.html page moves this into its own right-rail table
+  // instead (see renderAccuracyTable below) -- results_template.html passes
+  // showAccuracySummaryLine: false so the inline sentence doesn't also show
+  // above the bout list, duplicating the same two numbers. The home page
+  // sidebar keeps the inline line (opts default, unchanged).
+  function accuracyTableHtml(results) {
+    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
+    const modelPct = modelN ? Math.round((modelHits / modelN) * 100) : null;
+    const userPct = userN ? Math.round((userHits / userN) * 100) : null;
+    return `
+      <div class="lr-header">
+        <div class="lr-eyebrow">Scorecard</div>
+        <h2 class="lr-title display">Last Week's Accuracy</h2>
+      </div>
+      <div class="acc-table">
+        <div class="acc-table-row acc-table-head">
+          <div class="acc-table-label"></div>
+          <div class="acc-table-cell">Correct</div>
+          <div class="acc-table-cell">Accuracy</div>
+        </div>
+        <div class="acc-table-row">
+          <div class="acc-table-label">Model</div>
+          <div class="acc-table-cell mono">${modelN ? `${modelHits}/${modelN}` : "&mdash;"}</div>
+          <div class="acc-table-cell mono">${modelPct != null ? modelPct + "%" : "&mdash;"}</div>
+        </div>
+        <div class="acc-table-row">
+          <div class="acc-table-label">You</div>
+          <div class="acc-table-cell mono">${userN ? `${userHits}/${userN}` : "&mdash;"}</div>
+          <div class="acc-table-cell mono">${userPct != null ? userPct + "%" : "&mdash;"}</div>
+        </div>
+      </div>
+      ${userN === 0 ? '<div class="acc-table-note">Log picks on Fantasy Matchup to see how you did.</div>' : ""}`;
+  }
+
+  // Own mount point (a separate sidebar aside, not inside last-results-
+  // section) since this lives in a different grid column on results.html --
+  // hides itself the same "omit, don't guess" way as everything else here if
+  // there's no event to score yet.
+  function renderAccuracyTable(sectionEl, results) {
+    if (!sectionEl) return;
+    if (!results || !results.bouts || !results.bouts.length) {
+      sectionEl.hidden = true;
+      return;
+    }
+    const { modelN, userN } = computeAccuracySummary(results);
+    if (modelN === 0 && userN === 0) {
+      sectionEl.hidden = true;
+      return;
+    }
+    sectionEl.hidden = false;
+    sectionEl.innerHTML = accuracyTableHtml(results);
+  }
+
+  window.ResultsRender = { renderLastResultsSection, renderAccuracyTable };
 })();
 
 </script>
