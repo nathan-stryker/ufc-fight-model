@@ -421,6 +421,54 @@ def _fight_stats(round_stats, fight_id, id_a, id_b):
     return {"a": totals_a, "b": totals_b}
 
 
+def _backfill_missing_stats(existing_results):
+    """
+    A cached last_results snapshot (see the "keep existing" fallback in
+    main()) can predate round_stats.csv catching up with that event --
+    found for real 2026-07-27: the event's own bout results/outcomes were
+    already cached correctly, but every bout was missing strikes/stats
+    because the historical mirror hadn't yet published round-by-round data
+    when that snapshot was FIRST computed. Rather than staying permanently
+    stats-less until the whole event eventually rotates out of view, retry
+    computing _fight_stats() for any bout still missing it, using
+    round_stats.csv/fights.csv AS THEY ARE RIGHT NOW (which may well have
+    caught up since) -- matched by the bout's own idA/idB, same join
+    fights.csv already uses elsewhere, no dependency on last_card.csv at
+    all. No-ops instantly (one dict-key check per bout) once every bout
+    already has stats, so this is safe to run on every single export.
+    """
+    if not existing_results or not existing_results.get("bouts"):
+        return existing_results, 0
+    if all("stats" in b for b in existing_results["bouts"]):
+        return existing_results, 0
+
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+    round_stats = pd.read_csv(PROCESSED_DIR / "round_stats.csv")
+    filled = 0
+    for bout in existing_results["bouts"]:
+        if "stats" in bout:
+            continue
+        id_a, id_b = bout.get("idA"), bout.get("idB")
+        if not id_a or not id_b:
+            continue
+        match = fights[
+            ((fights["fighter_1_id"] == id_a) & (fights["fighter_2_id"] == id_b))
+            | ((fights["fighter_1_id"] == id_b) & (fights["fighter_2_id"] == id_a))
+        ]
+        if match.empty:
+            continue
+        stats = _fight_stats(round_stats, match.iloc[0]["fight_id"], id_a, id_b)
+        if not stats:
+            continue
+        bout["stats"] = stats
+        bout["strikes"] = {
+            "a": {"head": stats["b"]["headLanded"], "body": stats["b"]["bodyLanded"], "leg": stats["b"]["legLanded"]},
+            "b": {"head": stats["a"]["headLanded"], "body": stats["a"]["bodyLanded"], "leg": stats["a"]["legLanded"]},
+        }
+        filled += 1
+    return existing_results, filled
+
+
 def _last_results_payload():
     """
     "Last week's card" plus its actual results -- entirely derived from
@@ -634,8 +682,12 @@ def main():
             except (json.JSONDecodeError, OSError):
                 existing = None
             if existing:
+                existing, n_filled = _backfill_missing_stats(existing)
                 payload["last_results"] = existing
-                print(f"  last_results: fresh computation found nothing yet, kept existing '{existing['eventName']}'")
+                msg = f"  last_results: fresh computation found nothing yet, kept existing '{existing['eventName']}'"
+                if n_filled:
+                    msg += f" (backfilled strikes/stats for {n_filled} bout(s) now that round_stats.csv has them)"
+                print(msg)
 
     out_path = WEB_DIR / "model_data.json"
     with open(out_path, "w") as f:

@@ -16,21 +16,46 @@
 
   // Color-band thresholds per zone, NOT a single scale shared across zones
   // -- head strikes are far more common than leg strikes in a typical UFC
-  // fight (see the real distribution this was picked from: round_stats.csv
-  // medians are ~17 head / ~5 body / ~3 leg), so a shared scale would make
-  // every head count look "hot" and every leg count look "cool" regardless
-  // of how that fighter's night actually went. Each zone's own thresholds
-  // are roughly its 25th/50th/75th percentile across all fights on record.
-  const ZONE_THRESHOLDS = { head: [8, 18, 34], body: [2, 6, 12], leg: [2, 4, 9] };
+  // fight, so a shared scale would make every head count look "hot" and
+  // every leg count look "cool" regardless of how that fighter's night
+  // actually went. Each zone's own thresholds are its real 25th/50th/75th
+  // percentile across all historical fights (17,426 fighter-fight
+  // observations from round_stats.csv/fights.csv, computed directly, not
+  // guessed).
+  //
+  // Per-MINUTE absorbed rate, not raw totals -- a fight that goes 5 full
+  // rounds naturally accumulates more raw strikes than one that ends in
+  // 90 seconds, which made every long decision look artificially "bloody"
+  // and every quick finish look artificially "clean" regardless of how
+  // hard either fighter actually got hit. Only used to pick the color
+  // band -- the per-minute number itself is never displayed anywhere,
+  // the middle stat table still shows plain totals.
+  const ZONE_THRESHOLDS_PER_MIN = { head: [0.923, 1.824, 3.178], body: [0.2, 0.533, 1.0], leg: [0.067, 0.369, 0.842] };
   const ZONE_BAND_COLORS = ["var(--green)", "var(--gold)", "var(--bronze)", "var(--red)"];
 
-  function zoneColor(zone, count) {
-    const thresholds = ZONE_THRESHOLDS[zone];
+  function zoneColor(zone, count, durationMinutes) {
+    const perMin = durationMinutes > 0 ? count / durationMinutes : 0;
+    const thresholds = ZONE_THRESHOLDS_PER_MIN[zone];
     let band = 0;
     for (const t of thresholds) {
-      if (count >= t) band++;
+      if (perMin >= t) band++;
     }
     return ZONE_BAND_COLORS[band];
+  }
+
+  // Total fight time in minutes from the bout's own round/time (e.g.
+  // round=5, time="5:00" for a decision; round=2, time="3:38" for a
+  // finish) -- UFC rounds are always 5 minutes regardless of weight class
+  // or gender, only the SCHEDULED round count varies, so this is just
+  // (completed rounds) x 5 + the partial final round. Falls back to
+  // treating the final round as a full 5:00 if `time` is missing (rare,
+  // same "don't guess a specific value, use the safest assumption"
+  // approach as the rest of this payload).
+  function fightDurationMinutes(bout) {
+    const round = bout.round || 1;
+    if (!bout.time) return round * 5;
+    const [mm, ss] = String(bout.time).split(":").map(Number);
+    return (round - 1) * 5 + mm + (ss || 0) / 60;
   }
 
   // Real human body silhouette (public domain, Openclipart -- "Man body
@@ -58,20 +83,38 @@
   const SILHOUETTE_HEAD_BOTTOM = 227;
   const SILHOUETTE_HIP_LINE = 814;
   const SILHOUETTE_TOTAL_HEIGHT = 1629;
+  // Below the hip line, the silhouette's hands hang down alongside the
+  // upper legs (confirmed by sampling the actual path geometry: at
+  // y=814-925 the figure is three separate horizontal segments -- left
+  // hand, the two leg columns, right hand -- not two like above the hip
+  // line). A plain horizontal band there would count knuckle/wrist pixels
+  // as "leg", which is wrong -- hand strikes are body-zone strikes. Fixed
+  // by making the leg clip a narrower CENTRAL column (the two leg columns
+  // top out around x=145-460 at every y sampled from 814 down to the
+  // feet) and adding the two outer strips to the body clip instead, so
+  // hands fall under body coloring like the rest of the arm above them.
+  const SILHOUETTE_LEG_LEFT = 145;
+  const SILHOUETTE_LEG_RIGHT = 460;
   let silhouetteIdCounter = 0;
 
-  function bodyDiagramSvg(strikes) {
-    const headColor = zoneColor("head", strikes.head);
-    const bodyColor = zoneColor("body", strikes.body);
-    const legColor = zoneColor("leg", strikes.leg);
+  function bodyDiagramSvg(strikes, durationMinutes) {
+    const headColor = zoneColor("head", strikes.head, durationMinutes);
+    const bodyColor = zoneColor("body", strikes.body, durationMinutes);
+    const legColor = zoneColor("leg", strikes.leg, durationMinutes);
     const uid = `sil${silhouetteIdCounter++}`;
+    const legWidth = SILHOUETTE_LEG_RIGHT - SILHOUETTE_LEG_LEFT;
+    const belowHipHeight = SILHOUETTE_TOTAL_HEIGHT - SILHOUETTE_HIP_LINE;
     return `
       <svg class="lr-body-diagram" viewBox="${SILHOUETTE_VIEWBOX}" aria-hidden="true" focusable="false">
         <defs>
           <path id="${uid}-shape" d="${SILHOUETTE_PATH_D}"></path>
           <clipPath id="${uid}-head"><rect x="0" y="0" width="605" height="${SILHOUETTE_HEAD_BOTTOM}"></rect></clipPath>
-          <clipPath id="${uid}-body"><rect x="0" y="${SILHOUETTE_HEAD_BOTTOM}" width="605" height="${SILHOUETTE_HIP_LINE - SILHOUETTE_HEAD_BOTTOM}"></rect></clipPath>
-          <clipPath id="${uid}-legs"><rect x="0" y="${SILHOUETTE_HIP_LINE}" width="605" height="${SILHOUETTE_TOTAL_HEIGHT - SILHOUETTE_HIP_LINE}"></rect></clipPath>
+          <clipPath id="${uid}-body">
+            <rect x="0" y="${SILHOUETTE_HEAD_BOTTOM}" width="605" height="${SILHOUETTE_HIP_LINE - SILHOUETTE_HEAD_BOTTOM}"></rect>
+            <rect x="0" y="${SILHOUETTE_HIP_LINE}" width="${SILHOUETTE_LEG_LEFT}" height="${belowHipHeight}"></rect>
+            <rect x="${SILHOUETTE_LEG_RIGHT}" y="${SILHOUETTE_HIP_LINE}" width="${605 - SILHOUETTE_LEG_RIGHT}" height="${belowHipHeight}"></rect>
+          </clipPath>
+          <clipPath id="${uid}-legs"><rect x="${SILHOUETTE_LEG_LEFT}" y="${SILHOUETTE_HIP_LINE}" width="${legWidth}" height="${belowHipHeight}"></rect></clipPath>
         </defs>
         <use href="#${uid}-shape" fill="${headColor}" clip-path="url(#${uid}-head)"></use>
         <use href="#${uid}-shape" fill="${bodyColor}" clip-path="url(#${uid}-body)"></use>
@@ -79,11 +122,11 @@
       </svg>`;
   }
 
-  function strikeSideHtml(name, strikes) {
+  function strikeSideHtml(name, strikes, durationMinutes) {
     return `
       <div class="lr-strike-avatar">
         <div class="lr-strike-name">${escapeHtml(name)}</div>
-        ${bodyDiagramSvg(strikes)}
+        ${bodyDiagramSvg(strikes, durationMinutes)}
       </div>`;
   }
 
@@ -137,12 +180,13 @@
 
   function strikePanelHtml(bout, opts) {
     const showFullStats = opts.showFullStats && bout.stats;
+    const duration = fightDurationMinutes(bout);
     return `
       <div class="lr-strike-panel" hidden>
         <div class="lr-strike-layout">
-          ${strikeSideHtml(bout.nameA, bout.strikes.a)}
+          ${strikeSideHtml(bout.nameA, bout.strikes.a, duration)}
           ${showFullStats ? statsBlockHtml(bout.stats) : ""}
-          ${strikeSideHtml(bout.nameB, bout.strikes.b)}
+          ${strikeSideHtml(bout.nameB, bout.strikes.b, duration)}
         </div>
       </div>`;
   }
