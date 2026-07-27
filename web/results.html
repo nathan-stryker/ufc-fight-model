@@ -368,6 +368,18 @@
   .acc-table-label { font-weight: 700; font-size: 0.85rem; }
   .acc-table-cell { text-align: right; font-size: 0.9rem; min-width: 3.4rem; }
   .acc-table-note { font-size: 0.75rem; color: var(--ink-dim); margin-top: 0.6rem; }
+  /* One group per scorer (Model, You), each with its own Winner/Method/Round
+     rows -- this label sits above its group of 3 rows, not inside the grid,
+     same treatment as .lr-eyebrow (small caps, muted) but scoped narrower. */
+  .acc-table-group-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate);
+    margin-top: 1rem;
+  }
+  .acc-table-group-label:first-of-type { margin-top: 0.75rem; }
   .lr-list { display: flex; flex-direction: column; gap: 1rem; }
   .lr-row { border-top: 1px solid var(--canvas-line); padding-top: 0.75rem; }
   .lr-row:first-child { border-top: none; padding-top: 0; }
@@ -1386,43 +1398,89 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
     }
   }
 
+  // Same raw-string -> bucket mapping as predictions.js's own copy (which
+  // itself mirrors src/features/method_features.py's METHOD_BUCKET) --
+  // duplicated a third time here rather than imported, consistent with this
+  // file's existing "small read-only peek, no shared module" design. Needed
+  // to compare a bout's real `method` string against a picked/predicted
+  // "ko"/"sub"/"dec" bucket for method/round scoring below.
+  const METHOD_BUCKET = {
+    "KO/TKO": "ko",
+    "TKO - Doctor's Stoppage": "ko",
+    "Submission": "sub",
+    "Decision - Unanimous": "dec",
+    "Decision - Split": "dec",
+    "Decision - Majority": "dec",
+    // fights.csv always stores a qualified "Decision - X" form, but at least
+    // one currently-cached last_results snapshot has the bare "Decision"
+    // string instead (found by testing against real cached data, not
+    // guessed) -- unambiguous either way (any kind of decision is the "dec"
+    // bucket), so mapping it directly is safe, not a guess.
+    "Decision": "dec",
+  };
+
   // Scored against the WHOLE event (results.bouts), not just whatever slice
   // opts.limit is currently showing -- a compact 4-bout sidebar teaser should
-  // still report accuracy for the full 12-bout card. Winner-only (matches the
-  // "9/12 correct winners" framing this was asked for) -- draws/no-contests
-  // are skipped on both sides, same "omit, don't guess" rule as everywhere
-  // else in this file. A user prediction counts as "for this fight" if its
-  // stored fighter names match the bout's pair in either order; no fuzzier
-  // matching than that is attempted.
+  // still report accuracy for the full 12-bout card. Draws/no-contests are
+  // skipped entirely (no real winner to score against), same "omit, don't
+  // guess" rule as everywhere else in this file. A user prediction counts as
+  // "for this fight" if its stored fighter names match the bout's pair in
+  // either order; no fuzzier matching than that is attempted.
+  //
+  // Method/round scoring does NOT require the winner to have been called
+  // correctly first -- same convention predictions.js's own isCorrectMethod/
+  // isCorrectRound already use (a method/round pick is graded against the
+  // fight's real method/round on its own terms). Round is only scored when
+  // the actual fight didn't go to a decision (no single round applies to a
+  // decision) AND a round was actually picked/predicted.
   function computeAccuracySummary(results) {
-    let modelN = 0, modelHits = 0;
-    let userN = 0, userHits = 0;
+    const model = { winN: 0, winHits: 0, methodN: 0, methodHits: 0, roundN: 0, roundHits: 0 };
+    const user = { winN: 0, winHits: 0, methodN: 0, methodHits: 0, roundN: 0, roundHits: 0 };
     const myPreds = loadMyPredictions();
     results.bouts.forEach((b) => {
       if (b.outcome !== "a" && b.outcome !== "b") return;
       const winnerName = b.outcome === "a" ? b.nameA : b.nameB;
+      const actualBucket = METHOD_BUCKET[b.method] || null;
+
       if (b.modelPick) {
-        modelN++;
-        if (b.modelPick.side === b.outcome) modelHits++;
+        model.winN++;
+        if (b.modelPick.side === b.outcome) model.winHits++;
+        if (actualBucket) {
+          model.methodN++;
+          if (b.modelPick.method === actualBucket) model.methodHits++;
+        }
+        if (actualBucket && actualBucket !== "dec" && b.modelPick.round != null && b.round != null) {
+          model.roundN++;
+          if (b.modelPick.round === b.round) model.roundHits++;
+        }
       }
+
       const pred = myPreds.find((p) =>
         (p.fighter_a === b.nameA && p.fighter_b === b.nameB) ||
         (p.fighter_a === b.nameB && p.fighter_b === b.nameA)
       );
       if (pred) {
-        userN++;
-        if (pred.picked_winner === winnerName) userHits++;
+        user.winN++;
+        if (pred.picked_winner === winnerName) user.winHits++;
+        if (pred.picked_method && actualBucket) {
+          user.methodN++;
+          if (pred.picked_method === actualBucket) user.methodHits++;
+        }
+        if (pred.picked_method && pred.picked_round && actualBucket && actualBucket !== "dec" && b.round != null) {
+          user.roundN++;
+          if (String(pred.picked_round) === String(b.round)) user.roundHits++;
+        }
       }
     });
-    return { modelN, modelHits, userN, userHits };
+    return { model, user };
   }
 
   function accuracySummaryHtml(results) {
-    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
-    if (modelN === 0 && userN === 0) return "";
+    const { model, user } = computeAccuracySummary(results);
+    if (model.winN === 0 && user.winN === 0) return "";
     const parts = [];
-    if (modelN > 0) parts.push(`Model called <strong>${modelHits}/${modelN}</strong> correct`);
-    if (userN > 0) parts.push(`You called <strong>${userHits}/${userN}</strong> correct`);
+    if (model.winN > 0) parts.push(`Model called <strong>${model.winHits}/${model.winN}</strong> correct`);
+    if (user.winN > 0) parts.push(`You called <strong>${user.winHits}/${user.winN}</strong> correct`);
     return `<div class="lr-accuracy-summary mono">${parts.join(" &middot; ")}</div>`;
   }
 
@@ -1470,10 +1528,46 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
   // showAccuracySummaryLine: false so the inline sentence doesn't also show
   // above the bout list, duplicating the same two numbers. The home page
   // sidebar keeps the inline line (opts default, unchanged).
+  function pct(hits, n) {
+    return n ? Math.round((hits / n) * 100) + "%" : "&mdash;";
+  }
+  function frac(hits, n) {
+    return n ? `${hits}/${n}` : "&mdash;";
+  }
+
+  // One 3-row group per scorer (Winner/Method/Round), not 3 columns -- a
+  // 300px sidebar has room for a label + two numbers per row, not six
+  // numbers crammed into one row. Method/round rows still show "--" (not
+  // 0/0) when nothing was ever called on that market, same convention as
+  // the rest of this table.
+  function accuracyGroupHtml(label, stats) {
+    return `
+      <div class="acc-table-group-label">${escapeHtml(label)}</div>
+      <div class="acc-table-row">
+        <div class="acc-table-label">Winner</div>
+        <div class="acc-table-cell mono">${frac(stats.winHits, stats.winN)}</div>
+        <div class="acc-table-cell mono">${pct(stats.winHits, stats.winN)}</div>
+      </div>
+      <div class="acc-table-row">
+        <div class="acc-table-label">Method</div>
+        <div class="acc-table-cell mono">${frac(stats.methodHits, stats.methodN)}</div>
+        <div class="acc-table-cell mono">${pct(stats.methodHits, stats.methodN)}</div>
+      </div>
+      <div class="acc-table-row">
+        <div class="acc-table-label">Round</div>
+        <div class="acc-table-cell mono">${frac(stats.roundHits, stats.roundN)}</div>
+        <div class="acc-table-cell mono">${pct(stats.roundHits, stats.roundN)}</div>
+      </div>`;
+  }
+
+  // The full results.html page moves this into its own right-rail table
+  // instead (see renderAccuracyTable below) -- results_template.html passes
+  // showAccuracySummaryLine: false so the inline sentence doesn't also show
+  // above the bout list, duplicating the same two numbers. The home page
+  // sidebar keeps the inline line (opts default, unchanged), winner-only --
+  // no room for six rows in a 300px teaser.
   function accuracyTableHtml(results) {
-    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
-    const modelPct = modelN ? Math.round((modelHits / modelN) * 100) : null;
-    const userPct = userN ? Math.round((userHits / userN) * 100) : null;
+    const { model, user } = computeAccuracySummary(results);
     return `
       <div class="lr-header">
         <div class="lr-eyebrow">Scorecard</div>
@@ -1485,18 +1579,10 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
           <div class="acc-table-cell">Correct</div>
           <div class="acc-table-cell">Accuracy</div>
         </div>
-        <div class="acc-table-row">
-          <div class="acc-table-label">Model</div>
-          <div class="acc-table-cell mono">${modelN ? `${modelHits}/${modelN}` : "&mdash;"}</div>
-          <div class="acc-table-cell mono">${modelPct != null ? modelPct + "%" : "&mdash;"}</div>
-        </div>
-        <div class="acc-table-row">
-          <div class="acc-table-label">You</div>
-          <div class="acc-table-cell mono">${userN ? `${userHits}/${userN}` : "&mdash;"}</div>
-          <div class="acc-table-cell mono">${userPct != null ? userPct + "%" : "&mdash;"}</div>
-        </div>
+        ${accuracyGroupHtml("Model", model)}
+        ${accuracyGroupHtml("You", user)}
       </div>
-      ${userN === 0 ? '<div class="acc-table-note">Log picks on Fantasy Matchup to see how you did.</div>' : ""}`;
+      ${user.winN === 0 ? '<div class="acc-table-note">Log picks on Fantasy Matchup to see how you did.</div>' : ""}`;
   }
 
   // Own mount point (a separate sidebar aside, not inside last-results-
@@ -1509,8 +1595,8 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
       sectionEl.hidden = true;
       return;
     }
-    const { modelN, userN } = computeAccuracySummary(results);
-    if (modelN === 0 && userN === 0) {
+    const { model, user } = computeAccuracySummary(results);
+    if (model.winN === 0 && user.winN === 0) {
       sectionEl.hidden = true;
       return;
     }
@@ -1523,6 +1609,619 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
 
 </script>
 <script>
+// Client-side "My Predictions" log -- deliberately NOT betting-affiliated:
+// no odds, no edge, no stake sizing, just "what do you personally think will
+// happen." Reuses the same mounting/localStorage/CSV-backup pattern as
+// paper_trade.js (see that file for the reasoning), but its own separate
+// storage key and CSV schema so the two logs never mix.
+(function () {
+  const STORAGE_KEY = "ufc_my_predictions_v1";
+  const METHOD_NAMES = { dec: "Decision", ko: "KO/TKO", sub: "Submission" };
+
+  const FIELDS = [
+    "pred_id", "logged_at", "event", "fighter_a", "fighter_b", "scheduled_rounds",
+    "picked_winner", "picked_method", "picked_round",
+    "model_winner", "model_method", "model_round",
+    "note", "status", "settled_at",
+    "actual_winner", "actual_method", "actual_round",
+    "correct_winner", "correct_method", "correct_round",
+  ];
+
+  // --- CSV (identical implementation to paper_trade.js -- kept duplicated
+  // rather than shared, it's ~30 lines and the two logs are meant to be
+  // fully independent files a user could hand off separately) ---
+  function csvEscape(v) {
+    const s = v === null || v === undefined ? "" : String(v);
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+  function toCsv(rows) {
+    const lines = [FIELDS.join(",")];
+    rows.forEach((r) => lines.push(FIELDS.map((f) => csvEscape(r[f])).join(",")));
+    return lines.join("\r\n");
+  }
+  function parseCsv(text) {
+    const rows = [];
+    let i = 0, field = "", row = [], inQuotes = false;
+    const pushField = () => { row.push(field); field = ""; };
+    const pushRow = () => { pushField(); rows.push(row); row = []; };
+    while (i < text.length) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQuotes = true; i++; continue; }
+      if (c === ",") { pushField(); i++; continue; }
+      if (c === "\r") { i++; continue; }
+      if (c === "\n") { pushRow(); i++; continue; }
+      field += c; i++;
+    }
+    if (field.length || row.length) pushRow();
+    if (rows.length === 0) return [];
+    const header = rows[0];
+    return rows.slice(1).filter((r) => r.length === header.length && r.some((v) => v !== "")).map((r) => {
+      const obj = {};
+      header.forEach((h, idx) => { obj[h] = r[idx]; });
+      return obj;
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function pct(x) {
+    return x == null ? "n/a" : (x * 100).toFixed(0) + "%";
+  }
+
+  // --- state ---
+  let preds = [];
+  let matchup = null; // { scheduledRounds, result }
+  let storageOk = true;
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      preds = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      storageOk = false;
+      preds = [];
+    }
+  }
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(preds));
+    } catch (e) {
+      storageOk = false;
+    }
+  }
+  function nextId() {
+    return `mp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  // Same top-pick derivation as ui.js's renderResult() verdict line -- kept
+  // as an independent copy here (not cross-module coupled) since it's just
+  // reading fields already on the result object, not re-deriving probabilities.
+  function modelVerdict(r) {
+    const aWinner = r.probAWins >= 0.5;
+    const winner = aWinner ? r.nameA : r.nameB;
+    const methodRanked = Object.entries(r.method).sort((x, y) => y[1] - x[1]);
+    const method = methodRanked[0][0];
+    let round = "";
+    if (method !== "dec") {
+      const roundRanked = Object.entries(r.roundGivenFinish).sort((x, y) => y[1] - x[1]);
+      if (roundRanked.length) round = roundRanked[0][0];
+    }
+    return { winner, method, round };
+  }
+
+  function addPrediction(matchupObj, form) {
+    const r = matchupObj.result;
+    const mv = modelVerdict(r);
+    const pickedWinnerName = form.side === "a" ? r.nameA : r.nameB;
+    const pred = {
+      pred_id: nextId(),
+      logged_at: new Date().toISOString(),
+      event: form.event, fighter_a: r.nameA, fighter_b: r.nameB,
+      scheduled_rounds: matchupObj.scheduledRounds,
+      picked_winner: pickedWinnerName,
+      picked_method: form.method || "",
+      picked_round: form.round || "",
+      model_winner: mv.winner, model_method: mv.method, model_round: mv.round,
+      note: form.note || "",
+      status: "pending", settled_at: "",
+      actual_winner: "", actual_method: "", actual_round: "",
+      correct_winner: "", correct_method: "", correct_round: "",
+    };
+    preds.push(pred);
+    save();
+    return pred;
+  }
+
+  // Recomputed fresh from the raw picked_*/actual_* fields every time,
+  // rather than trusted from stored correct_* flags -- a real bug found via
+  // testing: JSON round-trips a JS boolean fine, but a CSV round-trip turns
+  // it into the STRING "true"/"false", and a naive `=== true` check on a
+  // re-imported row silently stops counting a genuinely correct pick as
+  // correct. Returns null for "not applicable" (no pick made, or a decision
+  // has no round to grade).
+  function isCorrectWinner(p) {
+    return p.picked_winner === p.actual_winner;
+  }
+  function isCorrectMethod(p) {
+    if (!p.picked_method) return null;
+    return p.picked_method === p.actual_method;
+  }
+  function isCorrectRound(p) {
+    if (!p.picked_method || !p.picked_round || p.actual_method === "dec") return null;
+    return String(p.picked_round) === String(p.actual_round);
+  }
+
+  function settlePrediction(predId, actual) {
+    const p = preds.find((x) => String(x.pred_id) === String(predId));
+    if (!p) return;
+    p.actual_winner = actual.winner;
+    p.actual_method = actual.method;
+    p.actual_round = actual.method === "dec" ? "" : actual.round;
+    p.status = "settled";
+    p.settled_at = new Date().toISOString();
+    // Stored for readability if the CSV is opened directly -- report math
+    // below never trusts these back, it recomputes from picked_*/actual_*.
+    p.correct_winner = isCorrectWinner(p);
+    p.correct_method = isCorrectMethod(p);
+    p.correct_round = isCorrectRound(p);
+    save();
+  }
+
+  // Same raw-string -> bucket mapping as src/features/method_features.py's
+  // METHOD_BUCKET, duplicated here (not imported -- this is a JS file with
+  // no build step tying it to the Python source) so a bout's real `method`
+  // string (as shipped in last_results_data.json) can be compared against
+  // a prediction's picked_method ("ko"/"sub"/"dec"). An unrecognized raw
+  // string (a method text this list doesn't cover) intentionally does NOT
+  // fall back to a guess -- see autoSettleFromResults below.
+  const METHOD_BUCKET = {
+    "KO/TKO": "ko",
+    "TKO - Doctor's Stoppage": "ko",
+    "Submission": "sub",
+    "Decision - Unanimous": "dec",
+    "Decision - Split": "dec",
+    "Decision - Majority": "dec",
+    // fights.csv always stores a qualified "Decision - X" form, but at least
+    // one currently-cached last_results snapshot has the bare "Decision"
+    // string instead (found by testing against real cached data, not
+    // guessed) -- unambiguous either way (any kind of decision is the "dec"
+    // bucket), so mapping it directly is safe, not a guess.
+    "Decision": "dec",
+  };
+
+  // Auto-settles any PENDING prediction whose fighter pair matches a bout in
+  // `bouts` (a Last Week's Results payload) that already has a real,
+  // determinate outcome -- lets a logged prediction mark itself correct/
+  // incorrect the moment its fight's real result is already known to the
+  // site, instead of leaving it "pending" forever until the user manually
+  // re-enters a result they can already see on Last Week's Results. Skips
+  // (does NOT guess) a bout that's a draw/no-contest, or whose method string
+  // isn't one of the recognized buckets above -- same "omit, don't guess"
+  // rule as the rest of this project's data handling. Idempotent: already-
+  // settled predictions are filtered out up front, so calling this again on
+  // a later page load (nothing new to settle) is a harmless no-op. Called
+  // from ui.js (home page) and results_template.html (results.html) --
+  // wherever Last Week's Results data is available.
+  function autoSettleFromResults(bouts) {
+    if (!bouts || !bouts.length) return 0;
+    load();
+    let settledCount = 0;
+    preds.filter((p) => p.status === "pending").forEach((p) => {
+      const bout = bouts.find((b) =>
+        (b.nameA === p.fighter_a && b.nameB === p.fighter_b) ||
+        (b.nameA === p.fighter_b && b.nameB === p.fighter_a)
+      );
+      if (!bout) return;
+      if (bout.outcome !== "a" && bout.outcome !== "b") return;
+      const bucket = METHOD_BUCKET[bout.method];
+      if (!bucket) return;
+      const winnerName = bout.outcome === "a" ? bout.nameA : bout.nameB;
+      settlePrediction(p.pred_id, { winner: winnerName, method: bucket, round: bout.round });
+      settledCount++;
+    });
+    return settledCount;
+  }
+
+  function deletePrediction(predId) {
+    preds = preds.filter((p) => String(p.pred_id) !== String(predId));
+    save();
+  }
+
+  function computeReport() {
+    const settled = preds.filter((p) => p.status === "settled");
+    const n = settled.length;
+    const winnerHits = settled.filter((p) => isCorrectWinner(p)).length;
+    const methodCalled = settled.filter((p) => isCorrectMethod(p) !== null);
+    const methodHits = methodCalled.filter((p) => isCorrectMethod(p) === true).length;
+    const roundCalled = settled.filter((p) => isCorrectRound(p) !== null);
+    const roundHits = roundCalled.filter((p) => isCorrectRound(p) === true).length;
+    const agreedWithModel = settled.filter((p) => p.picked_winner === p.model_winner).length;
+    return {
+      n,
+      winnerAcc: n ? winnerHits / n : null,
+      methodAcc: methodCalled.length ? methodHits / methodCalled.length : null,
+      methodN: methodCalled.length,
+      roundAcc: roundCalled.length ? roundHits / roundCalled.length : null,
+      roundN: roundCalled.length,
+      agreedWithModelRate: n ? agreedWithModel / n : null,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Three mount points, not one. Viewing/settling EXISTING predictions and
+  // the track-record report are pure localStorage reads, no model needed at
+  // all, so that half lives on its own lightweight predictions.html page (or
+  // as a compact teaser in the home page's sidebar) -- mountHistory(),
+  // unchanged by this comment. "Add a prediction" always needs a LIVE
+  // matchup result, but now has two independent call sites for that: the
+  // singleton Fantasy Matchup page (predict.html, a manual "pick any two
+  // fighters" toy -- mountAdd()/setMatchup(), module-global `matchup`), and
+  // the real fight card's own per-bout "Make Your Pick" panel, which already
+  // has its own live result computed on page load for every predictable
+  // bout (see ui.js's predictFull() call in boutRowHtml()) -- no picker
+  // needed there at all. mountCardPick() takes that result directly, no
+  // module-global involved, so any number of fight-card rows can have their
+  // own independent pick form open at once.
+  let addRoot = null;
+  let historyRoot = null;
+  let historyOpts = {};
+
+  function el(tag, className, html) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  // Builds the actual pick form (winner/method/round/event/note + submit
+  // button) for a given {scheduledRounds, result} matchup -- used both by
+  // the singleton Fantasy Matchup page (matchup fed via setMatchup()) and
+  // by the fight card's per-bout "Make Your Pick" panels (one independent
+  // instance per expanded row, matchup fixed at mount time). Classnames,
+  // not ids, on the inputs -- multiple instances can be mounted on the same
+  // page at once (several expanded fight-card rows), and querySelector
+  // scoped to `wrap` finds the right descendant either way, but duplicate
+  // ids across simultaneous instances would still be invalid HTML.
+  function buildPickFormBase(matchupObj) {
+    const wrap = el("div", "pt-add");
+    const r = matchupObj.result;
+    wrap.appendChild(el("div", "pt-matchup-label mono", `Predicting: ${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}`));
+
+    const winnerRow = el("div", "pt-row", `<label>Winner</label>
+      <select class="mp-side">
+        <option value="a">${escapeHtml(r.nameA)}</option>
+        <option value="b">${escapeHtml(r.nameB)}</option>
+      </select>`);
+    wrap.appendChild(winnerRow);
+
+    const methodRow = el("div", "pt-row", `<label>Method</label>
+      <select class="mp-method">
+        <option value="">No pick (winner only)</option>
+        <option value="dec">Decision</option>
+        <option value="ko">KO/TKO</option>
+        <option value="sub">Submission</option>
+      </select>`);
+    wrap.appendChild(methodRow);
+
+    const roundOptions = Array.from({ length: matchupObj.scheduledRounds }, (_, i) => i + 1)
+      .map((n) => `<option value="${n}">Round ${n}</option>`).join("");
+    const roundRow = el("div", "pt-row", `<label>Round</label>
+      <select class="mp-round">
+        <option value="">No pick (any round)</option>
+        ${roundOptions}
+      </select>`);
+    roundRow.hidden = true;
+    wrap.appendChild(roundRow);
+
+    wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" class="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
+    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="optional -- why you think that"></div>`));
+
+    const addBtn = el("button", "predict-btn pt-add-btn", "Log My Prediction");
+    addBtn.type = "button";
+    wrap.appendChild(addBtn);
+
+    const methodSel = methodRow.querySelector(".mp-method");
+    methodSel.addEventListener("change", () => {
+      roundRow.hidden = methodSel.value === "" || methodSel.value === "dec";
+    });
+
+    function readForm() {
+      return {
+        side: wrap.querySelector(".mp-side").value,
+        method: methodSel.value,
+        round: roundRow.hidden ? "" : wrap.querySelector(".mp-round").value,
+        event: wrap.querySelector(".mp-event").value.trim(),
+        note: wrap.querySelector(".mp-note").value.trim(),
+      };
+    }
+
+    return { wrap, addBtn, readForm };
+  }
+
+  // Fantasy Matchup page (singleton, module-global `matchup`) -- logging
+  // just re-renders the whole add section, which rebuilds a fresh empty
+  // form against the same matchup (lets you log a second/corrected pick
+  // without extra clicks).
+  function renderAddForm() {
+    if (!matchup) {
+      const empty = el("div", "pt-add");
+      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
+      return empty;
+    }
+    const { wrap, addBtn, readForm } = buildPickFormBase(matchup);
+    addBtn.addEventListener("click", () => {
+      addPrediction(matchup, readForm());
+      renderAll();
+    });
+    return wrap;
+  }
+
+  // Fight-card row (one independent instance per expanded bout, matchup
+  // fixed at mount time, no module-global involved) -- logging shows an
+  // inline confirmation instead of resetting the form, since there's no
+  // surrounding renderAdd() to rebuild this specific DOM subtree the way
+  // the singleton page has.
+  function buildCardPickForm(matchupObj) {
+    const { wrap, addBtn, readForm } = buildPickFormBase(matchupObj);
+    addBtn.addEventListener("click", () => {
+      const pred = addPrediction(matchupObj, readForm());
+      wrap.innerHTML = "";
+      wrap.appendChild(el("div", "pt-logged-confirm", `Logged: ${escapeHtml(pickSummary(pred))} <a href="predictions.html">View in My Predictions &rarr;</a>`));
+      renderAll(); // refreshes the sidebar teaser's pending count elsewhere on this same page, if mounted
+    });
+    return wrap;
+  }
+
+  function pickSummary(p) {
+    let s = p.picked_winner;
+    if (p.picked_method) {
+      s += ` by ${METHOD_NAMES[p.picked_method]}`;
+      if (p.picked_round) s += `, Round ${p.picked_round}`;
+    }
+    return s;
+  }
+
+  function modelSummary(p) {
+    let s = `${p.model_winner} by ${METHOD_NAMES[p.model_method]}`;
+    if (p.model_method !== "dec" && p.model_round) s += `, Round ${p.model_round}`;
+    return s;
+  }
+
+  function renderPending() {
+    const pending = preds.filter((p) => p.status === "pending");
+    const box = el("div", "pt-log");
+    box.appendChild(el("div", "tape-title", "<span>Pending predictions</span>"));
+    if (pending.length === 0) {
+      box.appendChild(el("div", "pt-empty-hint", "No pending predictions logged yet."));
+      return box;
+    }
+    const table = el("div", "pt-table");
+    pending.forEach((p) => {
+      const row = el("div", "pt-table-row");
+      row.innerHTML = `
+        <div class="pt-cell pt-cell-main">
+          <div class="pt-selection">${escapeHtml(pickSummary(p))}</div>
+          <div class="pt-sub mono">${escapeHtml(p.event)} &middot; model said ${escapeHtml(modelSummary(p))}</div>
+        </div>
+        <div class="pt-cell pt-actions-cell"></div>`;
+      const actions = row.querySelector(".pt-actions-cell");
+
+      const settleBtn = el("button", "clear-btn pt-settle-btn", "Enter Result");
+      settleBtn.type = "button";
+      const form = el("div", "pt-row");
+      form.hidden = true;
+      form.innerHTML = `
+        <select class="mp-actual-side"><option value="${escapeHtml(p.fighter_a)}">${escapeHtml(p.fighter_a)}</option><option value="${escapeHtml(p.fighter_b)}">${escapeHtml(p.fighter_b)}</option></select>
+        <select class="mp-actual-method"><option value="dec">Decision</option><option value="ko">KO/TKO</option><option value="sub">Submission</option></select>
+        <select class="mp-actual-round">${Array.from({ length: p.scheduled_rounds }, (_, i) => i + 1).map((n) => `<option value="${n}">Round ${n}</option>`).join("")}</select>
+        <button class="clear-btn mp-save-btn" type="button">Save</button>`;
+      const methodSel = form.querySelector(".mp-actual-method");
+      const roundSel = form.querySelector(".mp-actual-round");
+      methodSel.addEventListener("change", () => { roundSel.style.display = methodSel.value === "dec" ? "none" : ""; });
+
+      settleBtn.addEventListener("click", () => { form.hidden = !form.hidden; });
+      form.querySelector(".mp-save-btn").addEventListener("click", () => {
+        settlePrediction(p.pred_id, {
+          winner: form.querySelector(".mp-actual-side").value,
+          method: methodSel.value,
+          round: roundSel.value,
+        });
+        renderAll();
+      });
+
+      const del = el("button", "clear-btn pt-delete-btn", "&times;");
+      del.type = "button";
+      del.title = "Remove";
+      del.addEventListener("click", () => { deletePrediction(p.pred_id); renderAll(); });
+
+      actions.appendChild(settleBtn);
+      actions.appendChild(del);
+      table.appendChild(row);
+      table.appendChild(form);
+    });
+    box.appendChild(table);
+    return box;
+  }
+
+  function renderReport() {
+    const rep = computeReport();
+    const box = el("div", "pt-report");
+    box.appendChild(el("div", "tape-title", "<span>Your track record</span>"));
+    if (rep.n === 0) {
+      box.appendChild(el("div", "pt-empty-hint", "No settled predictions yet -- results show up here once fights happen and you enter what actually happened."));
+      return box;
+    }
+    const summary = el("div", "pt-summary mono");
+    summary.innerHTML = `
+      n=${rep.n} settled &middot; winner accuracy ${pct(rep.winnerAcc)}<br>
+      method accuracy ${pct(rep.methodAcc)} (${rep.methodN} called)<br>
+      round accuracy ${pct(rep.roundAcc)} (${rep.roundN} called)<br>
+      picked the same WINNER as the model ${pct(rep.agreedWithModelRate)} of the time
+      (this compares winner only, not method/round -- see each row's "model said" note for the full comparison)`;
+    box.appendChild(summary);
+    if (rep.n < 20) {
+      box.appendChild(el("div", "pt-note", "Fewer than 20 settled predictions -- treat this as noise for now."));
+    }
+    return box;
+  }
+
+  function renderActions() {
+    const box = el("div", "pt-actions-row");
+    const exportBtn = el("button", "clear-btn", "Download backup (CSV)");
+    exportBtn.type = "button";
+    exportBtn.addEventListener("click", async () => {
+      const csv = toCsv(preds);
+      if (window.claude && window.claude.downloads) {
+        try {
+          await window.claude.downloads.save({ filename: "my_predictions.csv", data: csv });
+          return;
+        } catch (e) { /* fall through to manual download */ }
+      }
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "my_predictions.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    const importBtn = el("button", "clear-btn", "Restore from file");
+    importBtn.type = "button";
+    const fileInput = el("input");
+    fileInput.type = "file"; fileInput.accept = ".csv"; fileInput.hidden = true;
+    importBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const count = window.MyPredictions.importCsvText(reader.result, "merge");
+        renderAll();
+        alert(`Restored ${count} prediction(s) from ${file.name}.`);
+      };
+      reader.readAsText(file);
+    });
+
+    box.appendChild(exportBtn);
+    box.appendChild(importBtn);
+    box.appendChild(fileInput);
+    if (!storageOk) {
+      box.appendChild(el("div", "pt-note", "Browser storage isn't available here, so nothing auto-saves between visits -- use the backup/restore buttons every session."));
+    }
+    return box;
+  }
+
+  // Home page's Predict section -- just the log-a-pick form, nothing else,
+  // so a fresh matchup result always has somewhere to log a pick against.
+  function renderAdd() {
+    if (!addRoot) return;
+    addRoot.innerHTML = "";
+    addRoot.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
+    addRoot.appendChild(renderAddForm());
+  }
+
+  // Compact teaser (home page sidebar, historyOpts.compact) vs. the full
+  // predictions.html page (everything: pending list, settle/delete, report,
+  // export/import) -- same underlying data either way, no model needed for
+  // any of this, unlike renderAdd() above.
+  function renderHistoryTeaser() {
+    const rep = computeReport();
+    const pendingCount = preds.filter((p) => p.status === "pending").length;
+    const box = el("div");
+    box.appendChild(el("div", "lr-header", '<h2 class="lr-title display">My Predictions</h2>'));
+    if (preds.length === 0) {
+      box.appendChild(el("div", "pt-empty-hint", "Call a matchup and log your own pick to start building a track record."));
+    } else {
+      const summary = el("div", "mp-teaser-summary mono");
+      summary.innerHTML = rep.n
+        ? `${pendingCount} pending &middot; ${pct(rep.winnerAcc)} winner accuracy (${rep.n} settled)`
+        : `${pendingCount} pending &middot; no settled predictions yet`;
+      box.appendChild(summary);
+    }
+    const seeMore = document.createElement("a");
+    seeMore.className = "lr-see-more";
+    seeMore.href = "predictions.html";
+    seeMore.textContent = "See Full History →";
+    box.appendChild(seeMore);
+    return box;
+  }
+
+  function renderHistoryFull() {
+    const box = el("div");
+    box.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
+    box.appendChild(renderPending());
+    box.appendChild(renderReport());
+    box.appendChild(renderActions());
+    return box;
+  }
+
+  function renderHistory() {
+    if (!historyRoot) return;
+    historyRoot.innerHTML = "";
+    historyRoot.appendChild(historyOpts.compact ? renderHistoryTeaser() : renderHistoryFull());
+  }
+
+  function renderAll() {
+    renderAdd();
+    renderHistory();
+  }
+
+  window.MyPredictions = {
+    mountAdd(rootId) {
+      addRoot = document.getElementById(rootId);
+      load();
+      renderAll();
+    },
+    mountHistory(rootId, opts) {
+      historyRoot = document.getElementById(rootId);
+      historyOpts = opts || {};
+      load();
+      renderAll();
+    },
+    setMatchup(scheduledRounds, result) {
+      matchup = { scheduledRounds, result };
+      renderAll();
+    },
+    mountCardPick(rootEl, matchupObj) {
+      if (!rootEl) return;
+      load();
+      rootEl.innerHTML = "";
+      rootEl.appendChild(buildCardPickForm(matchupObj));
+    },
+    autoSettleFromResults,
+    importCsvText(text, mode = "merge") {
+      const rows = parseCsv(text);
+      if (mode === "replace") {
+        preds = rows;
+      } else {
+        const byId = new Map(preds.map((p) => [String(p.pred_id), p]));
+        rows.forEach((r) => byId.set(String(r.pred_id), r));
+        preds = Array.from(byId.values());
+      }
+      save();
+      return rows.length;
+    },
+  };
+})();
+
+</script>
+<script>
+  // Settle any pending My Predictions picks against this card's now-known
+  // real results BEFORE rendering the accuracy table -- a visitor who logs
+  // predictions but never opens the home page (or hasn't since this event
+  // happened) still gets them auto-settled the moment they view this page.
+  if (window.MyPredictions && LAST_RESULTS_DATA) {
+    window.MyPredictions.autoSettleFromResults(LAST_RESULTS_DATA.bouts);
+  }
   window.ResultsRender.renderLastResultsSection(document.getElementById("last-results-section"), LAST_RESULTS_DATA, {
     eyebrow: "Full Card Results",
     title: LAST_RESULTS_DATA ? LAST_RESULTS_DATA.eventName : "Last Week's Results",

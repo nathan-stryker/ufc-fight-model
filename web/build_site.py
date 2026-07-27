@@ -58,7 +58,10 @@ news_docs_path.write_text(news_out, encoding="utf-8")
 print(f"wrote {news_docs_path} (GitHub Pages copy)")
 
 # Standalone results.html page -- same pattern as news.html: shares the
-# main template's CSS, embeds only the small last_results_data.json.
+# main template's CSS, embeds only the small last_results_data.json. Also
+# embeds predictions.js (unlike news.html) so the accuracy sidebar's
+# auto-settle call can actually write to the My Predictions localStorage
+# log, not just read it -- see results_template.html's own script block.
 results_template = (WEB_DIR / "results_template.html").read_text(encoding="utf-8")
 results_data_path = WEB_DIR / "last_results_data.json"
 results_data_json = results_data_path.read_text(encoding="utf-8") if results_data_path.exists() else "null"
@@ -66,6 +69,7 @@ results_data_json = results_data_path.read_text(encoding="utf-8") if results_dat
 results_out = results_template.replace("__SHARED_STYLE__", shared_style)
 results_out = results_out.replace("__LAST_RESULTS_DATA__", f"const LAST_RESULTS_DATA = {results_data_json};")
 results_out = results_out.replace("__RESULTS_RENDER_JS__", results_render_js)
+results_out = results_out.replace("__PREDICTIONS_JS__", predictions_js)
 
 results_site_path = WEB_DIR / "results.html"
 results_site_path.write_text(results_out, encoding="utf-8")

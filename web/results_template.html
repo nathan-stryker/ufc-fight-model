@@ -48,6 +48,16 @@ __LAST_RESULTS_DATA__
 __RESULTS_RENDER_JS__
 </script>
 <script>
+__PREDICTIONS_JS__
+</script>
+<script>
+  // Settle any pending My Predictions picks against this card's now-known
+  // real results BEFORE rendering the accuracy table -- a visitor who logs
+  // predictions but never opens the home page (or hasn't since this event
+  // happened) still gets them auto-settled the moment they view this page.
+  if (window.MyPredictions && LAST_RESULTS_DATA) {
+    window.MyPredictions.autoSettleFromResults(LAST_RESULTS_DATA.bouts);
+  }
   window.ResultsRender.renderLastResultsSection(document.getElementById("last-results-section"), LAST_RESULTS_DATA, {
     eyebrow: "Full Card Results",
     title: LAST_RESULTS_DATA ? LAST_RESULTS_DATA.eventName : "Last Week's Results",

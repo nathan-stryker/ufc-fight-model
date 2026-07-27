@@ -276,43 +276,89 @@
     }
   }
 
+  // Same raw-string -> bucket mapping as predictions.js's own copy (which
+  // itself mirrors src/features/method_features.py's METHOD_BUCKET) --
+  // duplicated a third time here rather than imported, consistent with this
+  // file's existing "small read-only peek, no shared module" design. Needed
+  // to compare a bout's real `method` string against a picked/predicted
+  // "ko"/"sub"/"dec" bucket for method/round scoring below.
+  const METHOD_BUCKET = {
+    "KO/TKO": "ko",
+    "TKO - Doctor's Stoppage": "ko",
+    "Submission": "sub",
+    "Decision - Unanimous": "dec",
+    "Decision - Split": "dec",
+    "Decision - Majority": "dec",
+    // fights.csv always stores a qualified "Decision - X" form, but at least
+    // one currently-cached last_results snapshot has the bare "Decision"
+    // string instead (found by testing against real cached data, not
+    // guessed) -- unambiguous either way (any kind of decision is the "dec"
+    // bucket), so mapping it directly is safe, not a guess.
+    "Decision": "dec",
+  };
+
   // Scored against the WHOLE event (results.bouts), not just whatever slice
   // opts.limit is currently showing -- a compact 4-bout sidebar teaser should
-  // still report accuracy for the full 12-bout card. Winner-only (matches the
-  // "9/12 correct winners" framing this was asked for) -- draws/no-contests
-  // are skipped on both sides, same "omit, don't guess" rule as everywhere
-  // else in this file. A user prediction counts as "for this fight" if its
-  // stored fighter names match the bout's pair in either order; no fuzzier
-  // matching than that is attempted.
+  // still report accuracy for the full 12-bout card. Draws/no-contests are
+  // skipped entirely (no real winner to score against), same "omit, don't
+  // guess" rule as everywhere else in this file. A user prediction counts as
+  // "for this fight" if its stored fighter names match the bout's pair in
+  // either order; no fuzzier matching than that is attempted.
+  //
+  // Method/round scoring does NOT require the winner to have been called
+  // correctly first -- same convention predictions.js's own isCorrectMethod/
+  // isCorrectRound already use (a method/round pick is graded against the
+  // fight's real method/round on its own terms). Round is only scored when
+  // the actual fight didn't go to a decision (no single round applies to a
+  // decision) AND a round was actually picked/predicted.
   function computeAccuracySummary(results) {
-    let modelN = 0, modelHits = 0;
-    let userN = 0, userHits = 0;
+    const model = { winN: 0, winHits: 0, methodN: 0, methodHits: 0, roundN: 0, roundHits: 0 };
+    const user = { winN: 0, winHits: 0, methodN: 0, methodHits: 0, roundN: 0, roundHits: 0 };
     const myPreds = loadMyPredictions();
     results.bouts.forEach((b) => {
       if (b.outcome !== "a" && b.outcome !== "b") return;
       const winnerName = b.outcome === "a" ? b.nameA : b.nameB;
+      const actualBucket = METHOD_BUCKET[b.method] || null;
+
       if (b.modelPick) {
-        modelN++;
-        if (b.modelPick.side === b.outcome) modelHits++;
+        model.winN++;
+        if (b.modelPick.side === b.outcome) model.winHits++;
+        if (actualBucket) {
+          model.methodN++;
+          if (b.modelPick.method === actualBucket) model.methodHits++;
+        }
+        if (actualBucket && actualBucket !== "dec" && b.modelPick.round != null && b.round != null) {
+          model.roundN++;
+          if (b.modelPick.round === b.round) model.roundHits++;
+        }
       }
+
       const pred = myPreds.find((p) =>
         (p.fighter_a === b.nameA && p.fighter_b === b.nameB) ||
         (p.fighter_a === b.nameB && p.fighter_b === b.nameA)
       );
       if (pred) {
-        userN++;
-        if (pred.picked_winner === winnerName) userHits++;
+        user.winN++;
+        if (pred.picked_winner === winnerName) user.winHits++;
+        if (pred.picked_method && actualBucket) {
+          user.methodN++;
+          if (pred.picked_method === actualBucket) user.methodHits++;
+        }
+        if (pred.picked_method && pred.picked_round && actualBucket && actualBucket !== "dec" && b.round != null) {
+          user.roundN++;
+          if (String(pred.picked_round) === String(b.round)) user.roundHits++;
+        }
       }
     });
-    return { modelN, modelHits, userN, userHits };
+    return { model, user };
   }
 
   function accuracySummaryHtml(results) {
-    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
-    if (modelN === 0 && userN === 0) return "";
+    const { model, user } = computeAccuracySummary(results);
+    if (model.winN === 0 && user.winN === 0) return "";
     const parts = [];
-    if (modelN > 0) parts.push(`Model called <strong>${modelHits}/${modelN}</strong> correct`);
-    if (userN > 0) parts.push(`You called <strong>${userHits}/${userN}</strong> correct`);
+    if (model.winN > 0) parts.push(`Model called <strong>${model.winHits}/${model.winN}</strong> correct`);
+    if (user.winN > 0) parts.push(`You called <strong>${user.winHits}/${user.winN}</strong> correct`);
     return `<div class="lr-accuracy-summary mono">${parts.join(" &middot; ")}</div>`;
   }
 
@@ -360,10 +406,46 @@
   // showAccuracySummaryLine: false so the inline sentence doesn't also show
   // above the bout list, duplicating the same two numbers. The home page
   // sidebar keeps the inline line (opts default, unchanged).
+  function pct(hits, n) {
+    return n ? Math.round((hits / n) * 100) + "%" : "&mdash;";
+  }
+  function frac(hits, n) {
+    return n ? `${hits}/${n}` : "&mdash;";
+  }
+
+  // One 3-row group per scorer (Winner/Method/Round), not 3 columns -- a
+  // 300px sidebar has room for a label + two numbers per row, not six
+  // numbers crammed into one row. Method/round rows still show "--" (not
+  // 0/0) when nothing was ever called on that market, same convention as
+  // the rest of this table.
+  function accuracyGroupHtml(label, stats) {
+    return `
+      <div class="acc-table-group-label">${escapeHtml(label)}</div>
+      <div class="acc-table-row">
+        <div class="acc-table-label">Winner</div>
+        <div class="acc-table-cell mono">${frac(stats.winHits, stats.winN)}</div>
+        <div class="acc-table-cell mono">${pct(stats.winHits, stats.winN)}</div>
+      </div>
+      <div class="acc-table-row">
+        <div class="acc-table-label">Method</div>
+        <div class="acc-table-cell mono">${frac(stats.methodHits, stats.methodN)}</div>
+        <div class="acc-table-cell mono">${pct(stats.methodHits, stats.methodN)}</div>
+      </div>
+      <div class="acc-table-row">
+        <div class="acc-table-label">Round</div>
+        <div class="acc-table-cell mono">${frac(stats.roundHits, stats.roundN)}</div>
+        <div class="acc-table-cell mono">${pct(stats.roundHits, stats.roundN)}</div>
+      </div>`;
+  }
+
+  // The full results.html page moves this into its own right-rail table
+  // instead (see renderAccuracyTable below) -- results_template.html passes
+  // showAccuracySummaryLine: false so the inline sentence doesn't also show
+  // above the bout list, duplicating the same two numbers. The home page
+  // sidebar keeps the inline line (opts default, unchanged), winner-only --
+  // no room for six rows in a 300px teaser.
   function accuracyTableHtml(results) {
-    const { modelN, modelHits, userN, userHits } = computeAccuracySummary(results);
-    const modelPct = modelN ? Math.round((modelHits / modelN) * 100) : null;
-    const userPct = userN ? Math.round((userHits / userN) * 100) : null;
+    const { model, user } = computeAccuracySummary(results);
     return `
       <div class="lr-header">
         <div class="lr-eyebrow">Scorecard</div>
@@ -375,18 +457,10 @@
           <div class="acc-table-cell">Correct</div>
           <div class="acc-table-cell">Accuracy</div>
         </div>
-        <div class="acc-table-row">
-          <div class="acc-table-label">Model</div>
-          <div class="acc-table-cell mono">${modelN ? `${modelHits}/${modelN}` : "&mdash;"}</div>
-          <div class="acc-table-cell mono">${modelPct != null ? modelPct + "%" : "&mdash;"}</div>
-        </div>
-        <div class="acc-table-row">
-          <div class="acc-table-label">You</div>
-          <div class="acc-table-cell mono">${userN ? `${userHits}/${userN}` : "&mdash;"}</div>
-          <div class="acc-table-cell mono">${userPct != null ? userPct + "%" : "&mdash;"}</div>
-        </div>
+        ${accuracyGroupHtml("Model", model)}
+        ${accuracyGroupHtml("You", user)}
       </div>
-      ${userN === 0 ? '<div class="acc-table-note">Log picks on Fantasy Matchup to see how you did.</div>' : ""}`;
+      ${user.winN === 0 ? '<div class="acc-table-note">Log picks on Fantasy Matchup to see how you did.</div>' : ""}`;
   }
 
   // Own mount point (a separate sidebar aside, not inside last-results-
@@ -399,8 +473,8 @@
       sectionEl.hidden = true;
       return;
     }
-    const { modelN, userN } = computeAccuracySummary(results);
-    if (modelN === 0 && userN === 0) {
+    const { model, user } = computeAccuracySummary(results);
+    if (model.winN === 0 && user.winN === 0) {
       sectionEl.hidden = true;
       return;
     }

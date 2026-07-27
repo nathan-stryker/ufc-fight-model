@@ -368,6 +368,18 @@
   .acc-table-label { font-weight: 700; font-size: 0.85rem; }
   .acc-table-cell { text-align: right; font-size: 0.9rem; min-width: 3.4rem; }
   .acc-table-note { font-size: 0.75rem; color: var(--ink-dim); margin-top: 0.6rem; }
+  /* One group per scorer (Model, You), each with its own Winner/Method/Round
+     rows -- this label sits above its group of 3 rows, not inside the grid,
+     same treatment as .lr-eyebrow (small caps, muted) but scoped narrower. */
+  .acc-table-group-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate);
+    margin-top: 1rem;
+  }
+  .acc-table-group-label:first-of-type { margin-top: 0.75rem; }
   .lr-list { display: flex; flex-direction: column; gap: 1rem; }
   .lr-row { border-top: 1px solid var(--canvas-line); padding-top: 0.75rem; }
   .lr-row:first-child { border-top: none; padding-top: 0; }
@@ -1265,6 +1277,61 @@
     save();
   }
 
+  // Same raw-string -> bucket mapping as src/features/method_features.py's
+  // METHOD_BUCKET, duplicated here (not imported -- this is a JS file with
+  // no build step tying it to the Python source) so a bout's real `method`
+  // string (as shipped in last_results_data.json) can be compared against
+  // a prediction's picked_method ("ko"/"sub"/"dec"). An unrecognized raw
+  // string (a method text this list doesn't cover) intentionally does NOT
+  // fall back to a guess -- see autoSettleFromResults below.
+  const METHOD_BUCKET = {
+    "KO/TKO": "ko",
+    "TKO - Doctor's Stoppage": "ko",
+    "Submission": "sub",
+    "Decision - Unanimous": "dec",
+    "Decision - Split": "dec",
+    "Decision - Majority": "dec",
+    // fights.csv always stores a qualified "Decision - X" form, but at least
+    // one currently-cached last_results snapshot has the bare "Decision"
+    // string instead (found by testing against real cached data, not
+    // guessed) -- unambiguous either way (any kind of decision is the "dec"
+    // bucket), so mapping it directly is safe, not a guess.
+    "Decision": "dec",
+  };
+
+  // Auto-settles any PENDING prediction whose fighter pair matches a bout in
+  // `bouts` (a Last Week's Results payload) that already has a real,
+  // determinate outcome -- lets a logged prediction mark itself correct/
+  // incorrect the moment its fight's real result is already known to the
+  // site, instead of leaving it "pending" forever until the user manually
+  // re-enters a result they can already see on Last Week's Results. Skips
+  // (does NOT guess) a bout that's a draw/no-contest, or whose method string
+  // isn't one of the recognized buckets above -- same "omit, don't guess"
+  // rule as the rest of this project's data handling. Idempotent: already-
+  // settled predictions are filtered out up front, so calling this again on
+  // a later page load (nothing new to settle) is a harmless no-op. Called
+  // from ui.js (home page) and results_template.html (results.html) --
+  // wherever Last Week's Results data is available.
+  function autoSettleFromResults(bouts) {
+    if (!bouts || !bouts.length) return 0;
+    load();
+    let settledCount = 0;
+    preds.filter((p) => p.status === "pending").forEach((p) => {
+      const bout = bouts.find((b) =>
+        (b.nameA === p.fighter_a && b.nameB === p.fighter_b) ||
+        (b.nameA === p.fighter_b && b.nameB === p.fighter_a)
+      );
+      if (!bout) return;
+      if (bout.outcome !== "a" && bout.outcome !== "b") return;
+      const bucket = METHOD_BUCKET[bout.method];
+      if (!bucket) return;
+      const winnerName = bout.outcome === "a" ? bout.nameA : bout.nameB;
+      settlePrediction(p.pred_id, { winner: winnerName, method: bucket, round: bout.round });
+      settledCount++;
+    });
+    return settledCount;
+  }
+
   function deletePrediction(predId) {
     preds = preds.filter((p) => String(p.pred_id) !== String(predId));
     save();
@@ -1631,6 +1698,7 @@
       rootEl.innerHTML = "";
       rootEl.appendChild(buildCardPickForm(matchupObj));
     },
+    autoSettleFromResults,
     importCsvText(text, mode = "merge") {
       const rows = parseCsv(text);
       if (mode === "replace") {
