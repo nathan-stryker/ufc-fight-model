@@ -47,14 +47,23 @@ from src.data.scrape_nationality import HEADERS, REQUEST_DELAY_SECONDS, find_she
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
-# find_sherdog_url()'s automated search (exact name, camelCase-split,
-# reversed-name) only catches systematic FORMAT mismatches -- it can't find
-# a fighter listed under a materially different name (a full legal name vs.
-# the short form our data uses). Same class of problem as
-# manual_nationality_overrides.py, just for THIS script's specific need (a
-# resolvable Sherdog URL, not just a known nationality). Each entry
-# confirmed by hand -- verified against the fighter's own nickname on the
-# page, not guessed. Extend as new debut fighters hit this same gap.
+# find_sherdog_url()'s automated search covers two distinct failure modes:
+# (1) a fighter listed under a materially different name (a full legal name
+# vs. the short form our data uses) -- find_sherdog_url() returns None, we
+# fill the gap. (2) MULTIPLE fighters sharing the exact same name -- Sherdog
+# has no relevance ranking, so find_sherdog_url() returns the first exact
+# match in page order, which is not necessarily the right person (found the
+# hard way: "Michael Oliveira" matched a near-empty profile with no
+# nickname/fights instead of the real "PQD / The Missile", 9-0, because the
+# wrong one simply appeared earlier in Sherdog's search results). Checked
+# FIRST in main(), ahead of find_sherdog_url(), for exactly this reason --
+# a manual entry must be able to override a "successful" but wrong
+# automated match, not just fill in when automated search finds nothing.
+# Same class of problem as manual_nationality_overrides.py, just for THIS
+# script's specific need (a resolvable Sherdog URL, not just a known
+# nationality). Each entry confirmed by hand -- verified against the
+# fighter's own nickname/record on the page, not guessed. Extend as new
+# debut fighters hit either gap.
 MANUAL_SHERDOG_URLS = {
     # Sherdog lists him under his full given name; confirmed via matching
     # nickname "El Chapo" (UFC Fight Night 283 card, 2026-08-01).
@@ -62,6 +71,11 @@ MANUAL_SHERDOG_URLS = {
     # Sherdog lists her under her full given name; confirmed via matching
     # nickname "Queen Beast" (UFC Fight Night 283 card, 2026-08-01).
     "nina milosevic": "https://www.sherdog.com/fighter/Nina-Nikolija-Milosevic-399822",
+    # Name collision: Sherdog has several unrelated "Michael Oliveira"
+    # profiles. Confirmed via matching nickname "PQD / The Missile" and a
+    # 9-0 record ending in a Dana White's Contender Series win, matching
+    # what the user reported by hand (UFC Fight Night 283 card, 2026-08-01).
+    "michael oliveira": "https://www.sherdog.com/fighter/Michael-Oliveira-400985",
 }
 
 
@@ -178,10 +192,10 @@ def main():
     all_rows = []
     for i, row in enumerate(debut_fighters.itertuples(), 1):
         try:
-            url = find_sherdog_url(session, row.name)
-            time.sleep(REQUEST_DELAY_SECONDS)
+            url = MANUAL_SHERDOG_URLS.get(normalize_name(row.name))
             if url is None:
-                url = MANUAL_SHERDOG_URLS.get(normalize_name(row.name))
+                url = find_sherdog_url(session, row.name)
+                time.sleep(REQUEST_DELAY_SECONDS)
             if url is None:
                 print(f"[{i}/{len(debut_fighters)}] {row.name} -> no exact Sherdog match, no pre-UFC record available")
                 continue
