@@ -304,15 +304,46 @@
     });
   }
 
+  // Formats one row of MODEL_DATA.prefight_records[id].fights (see
+  // export_web_model.py's _prefight_records_payload) for the debut bio
+  // card's expandable pro-record panel. Pre-UFC fights only, from Sherdog
+  // -- see src.data.scrape_prefight_history's docstring for why this is
+  // the same, only human-readable, view of the exact data predict.py/
+  // engine.js already use to compute a debut fighter's win/finish-rate
+  // features.
+  function prefightRowHtml(f) {
+    const resultLabel = { win: "W", loss: "L", nc: "NC", other: "-" }[f.result] || "-";
+    const detailParts = [];
+    if (f.method) detailParts.push(f.method);
+    if (f.round) detailParts.push(`R${f.round}`);
+    if (f.event) detailParts.push(f.event);
+    if (f.date) detailParts.push(formatMonthYear(f.date));
+    return `
+      <div class="debut-fight-row">
+        <span class="debut-fight-result ${escapeHtml(f.result)}">${resultLabel}</span>
+        <span class="debut-fight-body">
+          <span class="debut-fight-opp">${f.opponent ? "vs " + escapeHtml(f.opponent) : "Opponent unlisted"}</span>
+          <span class="debut-fight-detail mono">${escapeHtml(detailParts.join(" · "))}</span>
+        </span>
+      </div>`;
+  }
+
+  function formatMonthYear(isoDate) {
+    const d = new Date(isoDate + "T00:00:00");
+    if (isNaN(d.getTime())) return isoDate;
+    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  }
+
   // Meet the Debut Fighters -- spotlights anyone on this week's card with
   // zero recorded UFC fights, using the exact same "UFC Debut" signal
   // formBadgesHtml() above already uses (MODEL_DATA.recent_results[id]
   // resolving to a defined-but-empty array -- undefined means "never
-  // looked up", not "debut"). Only bio fields (age/height/reach/stance/
-  // flag/weight class) get shown, since that's genuinely all there is for
-  // a fighter with no fight history to compute rolling-form stats from.
-  // Degrades to hidden if nobody on this week's card is a debut, same
-  // pattern as every other data-dependent home-page section.
+  // looked up", not "debut"). Bio fields (age/height/reach/stance/flag/
+  // weight class) plus, when on file, a real pre-UFC pro record scraped
+  // from Sherdog (MODEL_DATA.prefight_records -- see
+  // src.data.scrape_prefight_history) shown as an expandable panel, same
+  // "genuinely all there is to show" honesty as the rest of this card:
+  // no record on file just means the summary line and toggle don't render.
   function renderDebutFighters() {
     const section = document.getElementById("debut-fighters");
     if (!section) return;
@@ -338,7 +369,8 @@
     }
 
     const todayDays = todayEpochDays();
-    const cardsHtml = debuts.map((d) => {
+    const prefightRecords = MODEL_DATA.prefight_records || {};
+    const cardsHtml = debuts.map((d, i) => {
       const f = d.id ? byId.get(d.id) : null;
       const badge = f ? flagBadgeHtml(f.iso_code) : `<div class="fighter-badge-empty"></div>`;
       const metaParts = [];
@@ -346,6 +378,18 @@
       if (f && f.height_in != null) metaParts.push(`${Math.floor(f.height_in / 12)}'${Math.round(f.height_in % 12)}"`);
       if (f && f.reach_in != null) metaParts.push(`${f.reach_in}" reach`);
       if (f && f.stance) metaParts.push(f.stance);
+
+      const record = d.id ? prefightRecords[d.id] : null;
+      const panelId = `debut-record-${i}`;
+      const recordHtml = record && record.fights.length
+        ? `
+          <div class="debut-record-summary">Pro record ${record.wins}-${record.losses}</div>
+          <button type="button" class="debut-record-toggle" aria-expanded="false" aria-controls="${panelId}">Show Fights</button>
+          <div class="debut-record-panel" id="${panelId}" hidden>
+            ${record.fights.map(prefightRowHtml).join("")}
+          </div>`
+        : "";
+
       return `
         <div class="debut-card">
           <div class="debut-badge">${badge}</div>
@@ -354,6 +398,7 @@
           ${metaParts.length ? `<div class="debut-meta mono">${escapeHtml(metaParts.join(" - "))}</div>` : ""}
           ${d.weightClass ? `<div class="debut-division mono">${escapeHtml(d.weightClass)}</div>` : ""}
           <div class="debut-opponent">Faces <strong>${escapeHtml(d.opponent)}</strong> this week</div>
+          ${recordHtml}
         </div>`;
     }).join("");
 
@@ -362,6 +407,17 @@
         <h2 class="section-title display">Meet the Debut Fighters</h2>
       </div>
       <div class="debut-grid">${cardsHtml}</div>`;
+
+    section.querySelectorAll(".debut-record-toggle").forEach((btn) => {
+      const panel = document.getElementById(btn.getAttribute("aria-controls"));
+      if (!panel) return;
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+        btn.textContent = expanded ? "Show Fights" : "Hide Fights";
+        panel.hidden = expanded;
+      });
+    });
   }
 
   // Weekly-scraped headlines (src/data/scrape_news.py -> export_web_model.py's

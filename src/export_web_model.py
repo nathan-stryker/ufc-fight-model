@@ -320,6 +320,60 @@ def _recent_results_payload(upcoming_card_payload, n=5):
     return results
 
 
+def _prefight_records_payload(upcoming_card_payload):
+    """
+    Pre-UFC fight history for debut fighters on the upcoming card (see
+    src.data.scrape_prefight_history / prefight_snapshot.py, which already
+    turns this same file into shrunk numeric features for the model --
+    this is the human-readable version of the same data, for the "Meet the
+    Debut Fighters" bio cards). Scoped to just upcoming-card fighters, same
+    convention as _recent_results_payload.
+
+    Only debut fighters have any rows in prefight_history.csv at all (see
+    scrape_prefight_history.py's get_debut_fighters()), so no separate
+    elo-is-null check is needed here the way export_fighters() needs one --
+    a fighter_id simply not appearing in this dict means either they're not
+    a debut fighter, or we looked and found no pre-UFC record on file
+    (same "omit, don't guess" convention as recent_results).
+    """
+    if not upcoming_card_payload:
+        return {}
+    path = PROCESSED_DIR / "prefight_history.csv"
+    if not path.exists():
+        return {}
+    history = pd.read_csv(path, parse_dates=["event_date"])
+    if history.empty:
+        return {}
+
+    fighter_ids = {
+        fid
+        for b in upcoming_card_payload["bouts"]
+        for fid in (b["idA"], b["idB"])
+        if fid
+    }
+
+    records = {}
+    for fid, grp in history[history["fighter_id"].isin(fighter_ids)].groupby("fighter_id"):
+        grp = grp.sort_values("event_date", ascending=False)
+        decided = grp[grp["result"].isin(["win", "loss"])]
+        fights = []
+        for _, row in grp.iterrows():
+            fights.append({
+                "opponent": row["opponent_name"] if pd.notna(row["opponent_name"]) else None,
+                "event": row["event"] if pd.notna(row["event"]) else None,
+                "date": row["event_date"].strftime("%Y-%m-%d") if pd.notna(row["event_date"]) else None,
+                "result": row["result"],
+                "method": row["method_raw"] if pd.notna(row["method_raw"]) else None,
+                "round": int(row["round"]) if pd.notna(row["round"]) else None,
+            })
+        records[fid] = {
+            "wins": int((decided["result"] == "win").sum()),
+            "losses": int((decided["result"] == "loss").sum()),
+            "fights": fights,
+        }
+    return records
+
+
 def _strikes_absorbed(round_stats, fight_id, id_a, id_b):
     """
     Total significant strikes landed to the head/body/legs across every
@@ -540,6 +594,7 @@ def main():
     payload["flags"] = _flags_payload(flag_codes)
     payload["upcoming_card"] = _upcoming_card_payload()
     payload["recent_results"] = _recent_results_payload(payload["upcoming_card"])
+    payload["prefight_records"] = _prefight_records_payload(payload["upcoming_card"])
     payload["news"] = _news_payload()
     payload["last_results"] = _last_results_payload()
     # A None here means "not confirmed yet" (see _last_results_payload's

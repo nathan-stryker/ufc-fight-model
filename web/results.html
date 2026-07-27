@@ -654,6 +654,34 @@
   .debut-opponent { font-size: 0.76rem; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed var(--canvas-line); }
   .debut-opponent strong { color: var(--ink); }
 
+  /* Pro record panel -- real pre-UFC fight history (Sherdog, see
+     src.data.scrape_prefight_history), only rendered when on file.
+     Collapsed by default so a 15-20 fight regional record doesn't dwarf
+     the compact bio card grid above it. */
+  .debut-record-summary { font-size: 0.76rem; font-weight: 700; margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed var(--canvas-line); }
+  .debut-record-toggle {
+    display: block; margin: 0.35rem auto 0; padding: 0;
+    background: none; border: none; border-bottom: 1px solid var(--gold);
+    color: var(--gold); font-family: inherit; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer;
+  }
+  .debut-record-toggle:hover { opacity: 0.8; }
+  .debut-record-panel { margin-top: 0.6rem; text-align: left; max-height: 16rem; overflow-y: auto; }
+  .debut-fight-row {
+    display: flex; align-items: baseline; gap: 0.45rem;
+    padding: 0.35rem 0; border-top: 1px solid var(--canvas-line);
+  }
+  .debut-fight-row:first-child { border-top: none; }
+  .debut-fight-result {
+    flex: none; width: 1.4rem; text-align: center; font-size: 0.68rem; font-weight: 700;
+    color: var(--ink-dim);
+  }
+  .debut-fight-result.win { color: var(--green); }
+  .debut-fight-result.loss { color: var(--red); }
+  .debut-fight-body { min-width: 0; flex: 1; }
+  .debut-fight-opp { display: block; font-size: 0.74rem; font-weight: 700; }
+  .debut-fight-detail { display: block; font-size: 0.64rem; color: var(--ink-dim); margin-top: 0.1rem; }
+
   .matchup {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
