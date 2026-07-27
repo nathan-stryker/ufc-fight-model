@@ -84,11 +84,6 @@
       <div class="lr-strike-avatar">
         <div class="lr-strike-name">${escapeHtml(name)}</div>
         ${bodyDiagramSvg(strikes)}
-        <div class="lr-strike-numbers">
-          <span><i class="lr-swatch" style="background:${zoneColor("head", strikes.head)}"></i>Head ${strikes.head}</span>
-          <span><i class="lr-swatch" style="background:${zoneColor("body", strikes.body)}"></i>Body ${strikes.body}</span>
-          <span><i class="lr-swatch" style="background:${zoneColor("leg", strikes.leg)}"></i>Leg ${strikes.leg}</span>
-        </div>
       </div>`;
   }
 

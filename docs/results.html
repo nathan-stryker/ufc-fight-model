@@ -424,9 +424,6 @@
   .lr-strike-avatar { flex: 0 0 5.5rem; min-width: 0; text-align: center; }
   .lr-strike-name { font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lr-body-diagram { width: 100%; max-width: 64px; height: auto; }
-  .lr-body-diagram ellipse, .lr-body-diagram rect { transition: fill 200ms ease; }
-  .lr-strike-numbers { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.4rem; font-size: 0.7rem; color: var(--ink-dim); }
-  .lr-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 0.35rem; }
   .results-page .lr-strike-layout { max-width: 640px; margin: 0 auto; }
   .results-page .lr-body-diagram { max-width: 90px; }
 
@@ -1170,11 +1167,6 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
       <div class="lr-strike-avatar">
         <div class="lr-strike-name">${escapeHtml(name)}</div>
         ${bodyDiagramSvg(strikes)}
-        <div class="lr-strike-numbers">
-          <span><i class="lr-swatch" style="background:${zoneColor("head", strikes.head)}"></i>Head ${strikes.head}</span>
-          <span><i class="lr-swatch" style="background:${zoneColor("body", strikes.body)}"></i>Body ${strikes.body}</span>
-          <span><i class="lr-swatch" style="background:${zoneColor("leg", strikes.leg)}"></i>Leg ${strikes.leg}</span>
-        </div>
       </div>`;
   }
 
