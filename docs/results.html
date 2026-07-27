@@ -1317,11 +1317,14 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
     const tierLabel = TIER_LABEL[bout.tier];
     // Only offered when round_stats.csv actually had rows for this fight --
     // never fabricated, same "omit, don't guess" rule as everything else
-    // this section shows (see export_web_model.py's _fight_stats()).
-    const strikeToggle = bout.strikes
+    // this section shows (see export_web_model.py's _fight_stats()). Also
+    // gated on opts.showStrikeMap -- the home page's compact sidebar widget
+    // wants just the plain result line, no strike map at all (feedback:
+    // "should just show the fight results"), so it omits this option.
+    const strikeToggle = opts.showStrikeMap && bout.strikes
       ? `<button class="lr-strike-toggle" type="button" aria-expanded="false">View Strike Map</button>`
       : "";
-    const strikePanel = bout.strikes ? strikePanelHtml(bout, opts) : "";
+    const strikePanel = opts.showStrikeMap && bout.strikes ? strikePanelHtml(bout, opts) : "";
     return `
       <div class="lr-row">
         <div class="lr-row-header">
@@ -1384,5 +1387,6 @@ const LAST_RESULTS_DATA = {"eventName":"UFC Fight Night 282 - Ankalaev vs. Gusko
     title: LAST_RESULTS_DATA ? LAST_RESULTS_DATA.eventName : "Last Week's Results",
     showModelPick: true,
     showFullStats: true,
+    showStrikeMap: true,
   });
 </script>
