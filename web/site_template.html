@@ -646,6 +646,26 @@
     letter-spacing: 0.06em;
     margin-right: 0.4rem;
   }
+  /* Your own logged pick -- same treatment as .fc-model-pick (centered,
+     dashed rule above) but in green, so it reads as "this is yours" at a
+     glance rather than being confused with the model's own line right
+     above it. Always in the DOM (see ui.js's myPickHtml), just hidden via
+     the [hidden] attribute until a pick actually exists for this bout. */
+  .fc-my-pick {
+    grid-column: 1 / -1;
+    font-size: 0.78rem;
+    text-align: center;
+    padding-top: 0.4rem;
+    margin-top: 0.4rem;
+    border-top: 1px dashed var(--canvas-line);
+  }
+  .fc-my-pick-label {
+    color: var(--green);
+    text-transform: uppercase;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    margin-right: 0.4rem;
+  }
   /* Inline "Make Your Pick" -- expand-per-fight accordion so a full
      12+ bout card stays scannable, matching the same toggle/panel pattern
      already built for the Results page's strike maps (see .lr-strike-
@@ -1044,6 +1064,12 @@
   .pt-matchup-source { color: var(--ink-dim); font-weight: normal; }
   .pt-logged-confirm { color: var(--green); font-size: 0.85rem; }
   .pt-logged-confirm a { color: inherit; }
+  /* Shown instead of the pick form once a pending pick already exists for
+     this matchup (buildLockedPickView in predictions.js) -- one active
+     pick per fight, so this is the ONLY thing offered here besides a way
+     out ("Remove pick") back to a blank form. */
+  .pt-locked .pt-logged-confirm { margin-bottom: 0.75rem; }
+  .pt-remove-pick-btn { font-size: 0.75rem; }
   .pt-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
   .pt-row[hidden] { display: none; }
   .pt-row label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); width: 8.5rem; flex-shrink: 0; }

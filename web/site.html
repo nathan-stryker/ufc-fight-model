@@ -646,6 +646,26 @@
     letter-spacing: 0.06em;
     margin-right: 0.4rem;
   }
+  /* Your own logged pick -- same treatment as .fc-model-pick (centered,
+     dashed rule above) but in green, so it reads as "this is yours" at a
+     glance rather than being confused with the model's own line right
+     above it. Always in the DOM (see ui.js's myPickHtml), just hidden via
+     the [hidden] attribute until a pick actually exists for this bout. */
+  .fc-my-pick {
+    grid-column: 1 / -1;
+    font-size: 0.78rem;
+    text-align: center;
+    padding-top: 0.4rem;
+    margin-top: 0.4rem;
+    border-top: 1px dashed var(--canvas-line);
+  }
+  .fc-my-pick-label {
+    color: var(--green);
+    text-transform: uppercase;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    margin-right: 0.4rem;
+  }
   /* Inline "Make Your Pick" -- expand-per-fight accordion so a full
      12+ bout card stays scannable, matching the same toggle/panel pattern
      already built for the Results page's strike maps (see .lr-strike-
@@ -1044,6 +1064,12 @@
   .pt-matchup-source { color: var(--ink-dim); font-weight: normal; }
   .pt-logged-confirm { color: var(--green); font-size: 0.85rem; }
   .pt-logged-confirm a { color: inherit; }
+  /* Shown instead of the pick form once a pending pick already exists for
+     this matchup (buildLockedPickView in predictions.js) -- one active
+     pick per fight, so this is the ONLY thing offered here besides a way
+     out ("Remove pick") back to a blank form. */
+  .pt-locked .pt-logged-confirm { margin-bottom: 0.75rem; }
+  .pt-remove-pick-btn { font-size: 0.75rem; }
   .pt-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
   .pt-row[hidden] { display: none; }
   .pt-row label { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); width: 8.5rem; flex-shrink: 0; }
@@ -1507,8 +1533,28 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
     return { winner, method, round };
   }
 
+  // Only matches a PENDING prediction, not a settled one -- a settled pick
+  // means that exact fight already happened and got graded, so a future
+  // rematch between the same two fighters (rare but real in MMA) must still
+  // be pickable, not silently blocked by an old, already-resolved pick for
+  // the same name pair. One active (pending) pick per fight is the actual
+  // rule being enforced, not "ever predicted this pair once."
+  function findPendingPredictionByFighters(nameA, nameB) {
+    return preds.find((p) => p.status === "pending" && (
+      (p.fighter_a === nameA && p.fighter_b === nameB) ||
+      (p.fighter_a === nameB && p.fighter_b === nameA)
+    ));
+  }
+
+  // Defense in depth: the UI (buildPickSection below) already refuses to
+  // show a submittable form once a pending pick exists for this matchup, so
+  // this branch should be unreachable in normal use -- but guarding here too
+  // means a duplicate can never get created even via a stale/cached form
+  // that didn't get the memo (e.g. two tabs open at once).
   function addPrediction(matchupObj, form) {
     const r = matchupObj.result;
+    const existing = findPendingPredictionByFighters(r.nameA, r.nameB);
+    if (existing) return existing;
     const mv = modelVerdict(r);
     const pickedWinnerName = form.side === "a" ? r.nameA : r.nameB;
     const pred = {
@@ -1736,15 +1782,39 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
     return { wrap, addBtn, readForm };
   }
 
-  // Fantasy Matchup page (singleton, module-global `matchup`) -- logging
-  // just re-renders the whole add section, which rebuilds a fresh empty
-  // form against the same matchup (lets you log a second/corrected pick
-  // without extra clicks).
+  // Shown INSTEAD of the pick form whenever a pending prediction already
+  // exists for this matchup -- one active pick per fight, enforced by never
+  // even offering a second form, not just by rejecting a second submit.
+  // "Remove pick" is the escape hatch for a genuine correction (fat-
+  // fingered the wrong round, changed your mind) -- deletes the pick and
+  // hands back to `opts.onChange` to decide what to re-render in its place.
+  function buildLockedPickView(pred, opts) {
+    const wrap = el("div", "pt-add pt-locked");
+    wrap.appendChild(el("div", "pt-matchup-label mono", `${escapeHtml(pred.fighter_a)} vs ${escapeHtml(pred.fighter_b)}`));
+    wrap.appendChild(el("div", "pt-logged-confirm", `Your pick: ${escapeHtml(pickSummary(pred))}`));
+    const removeBtn = el("button", "clear-btn pt-remove-pick-btn", "Remove pick");
+    removeBtn.type = "button";
+    removeBtn.addEventListener("click", () => {
+      deletePrediction(pred.pred_id);
+      if (opts && opts.onChange) opts.onChange();
+    });
+    wrap.appendChild(removeBtn);
+    return wrap;
+  }
+
+  // Fantasy Matchup page (singleton, module-global `matchup`) -- shows the
+  // locked view (not a blank form) once a pending pick exists for the
+  // current matchup, same one-pick-per-fight rule as the fight-card panels
+  // below. Removing the pick falls back to a fresh form via renderAll().
   function renderAddForm() {
     if (!matchup) {
       const empty = el("div", "pt-add");
       empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
       return empty;
+    }
+    const existing = findPendingPredictionByFighters(matchup.result.nameA, matchup.result.nameB);
+    if (existing) {
+      return buildLockedPickView(existing, { onChange: renderAll });
     }
     const { wrap, addBtn, readForm } = buildPickFormBase(matchup);
     addBtn.addEventListener("click", () => {
@@ -1755,17 +1825,30 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
   }
 
   // Fight-card row (one independent instance per expanded bout, matchup
-  // fixed at mount time, no module-global involved) -- logging shows an
-  // inline confirmation instead of resetting the form, since there's no
-  // surrounding renderAdd() to rebuild this specific DOM subtree the way
-  // the singleton page has.
-  function buildCardPickForm(matchupObj) {
+  // fixed at mount time, no module-global involved). Re-checks for an
+  // existing pending pick every time this is called -- including on a
+  // fresh page load, not just right after submitting in the same session --
+  // so a prediction made last week still shows as "Your pick: ..." instead
+  // of a blank form the next time this row is expanded. opts.onChange lets
+  // the caller (ui.js) refresh the row's own always-visible pick summary
+  // line and toggle-button label after a pick is added or removed here.
+  function buildCardPickSection(matchupObj, opts) {
+    const existing = findPendingPredictionByFighters(matchupObj.result.nameA, matchupObj.result.nameB);
+    if (existing) {
+      return buildLockedPickView(existing, {
+        onChange: () => {
+          if (opts && opts.rootEl) mountCardPick(opts.rootEl, matchupObj, opts);
+          renderAll(); // refreshes the sidebar teaser's pending count elsewhere on this same page, if mounted
+          if (opts && opts.onChange) opts.onChange();
+        },
+      });
+    }
     const { wrap, addBtn, readForm } = buildPickFormBase(matchupObj);
     addBtn.addEventListener("click", () => {
-      const pred = addPrediction(matchupObj, readForm());
-      wrap.innerHTML = "";
-      wrap.appendChild(el("div", "pt-logged-confirm", `Logged: ${escapeHtml(pickSummary(pred))} <a href="predictions.html">View in My Predictions &rarr;</a>`));
-      renderAll(); // refreshes the sidebar teaser's pending count elsewhere on this same page, if mounted
+      addPrediction(matchupObj, readForm());
+      if (opts && opts.rootEl) mountCardPick(opts.rootEl, matchupObj, opts);
+      renderAll();
+      if (opts && opts.onChange) opts.onChange();
     });
     return wrap;
   }
@@ -1964,6 +2047,17 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
     renderHistory();
   }
 
+  // Standalone (not an inline method) so buildCardPickSection can call it
+  // recursively -- re-mounting the same rootEl in place is how a "Remove
+  // pick" or a fresh submit swaps between the locked view and the form
+  // without needing the caller to re-render the whole fight card.
+  function mountCardPick(rootEl, matchupObj, opts) {
+    if (!rootEl) return;
+    load();
+    rootEl.innerHTML = "";
+    rootEl.appendChild(buildCardPickSection(matchupObj, { ...(opts || {}), rootEl }));
+  }
+
   window.MyPredictions = {
     mountAdd(rootId) {
       addRoot = document.getElementById(rootId);
@@ -1980,11 +2074,17 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
       matchup = { scheduledRounds, result };
       renderAll();
     },
-    mountCardPick(rootEl, matchupObj) {
-      if (!rootEl) return;
+    mountCardPick,
+    // Read-only lookup for ui.js's always-visible "Your pick: ..." line on
+    // each fight-card row -- reloads from storage every call so it reflects
+    // whatever's actually saved, not a stale in-memory snapshot. Pending
+    // only (see findPendingPredictionByFighters) so an old settled pick from
+    // a past meeting between the same two fighters doesn't wrongly show up
+    // under a future rematch.
+    getPickSummaryFor(nameA, nameB) {
       load();
-      rootEl.innerHTML = "";
-      rootEl.appendChild(buildCardPickForm(matchupObj));
+      const p = findPendingPredictionByFighters(nameA, nameB);
+      return p ? pickSummary(p) : null;
     },
     autoSettleFromResults,
     importCsvText(text, mode = "merge") {
@@ -2786,8 +2886,16 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
         const result = predictFull(fA, fB, callRounds, MODEL_DATA);
         boutResults.push({ result, scheduledRounds: callRounds });
         modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
+        // Always visible (not hidden behind the toggle) so a prediction you
+        // logged last visit -- or five minutes ago -- still shows on the
+        // card without having to re-open "Make Your Pick" to find it. Empty/
+        // hidden by default; refreshRowChrome() in the wiring below fills it
+        // in from My Predictions' own localStorage log, which is the only
+        // source of truth for this (never guessed or re-derived here).
+        const myPickHtml = `<div class="fc-my-pick mono" hidden><span class="fc-my-pick-label">Your pick</span> <span class="fc-my-pick-text"></span></div>`;
         action = `
-          <button class="fc-predict-toggle" type="button" aria-expanded="false">Make Your Pick</button>
+          ${myPickHtml}
+          <button class="fc-predict-toggle" type="button" aria-expanded="false" data-default-label="Make Your Pick">Make Your Pick</button>
           <div class="fc-predict-panel" hidden>
             ${predictBreakdownHtml(result)}
             <div class="fc-pick-mount"></div>
@@ -2876,14 +2984,35 @@ const MODEL_DATA = {"total_fights":8641,"win_model":{"features":["elo_diff","hei
       const panel = btn.nextElementSibling;
       if (!panel || !panel.classList.contains("fc-predict-panel")) return;
       const matchupObj = boutResults[i];
+      const myPickLine = btn.previousElementSibling && btn.previousElementSibling.classList.contains("fc-my-pick")
+        ? btn.previousElementSibling
+        : null;
       let mounted = false;
+
+      // Reflects the current My Predictions state onto this row's always-
+      // visible summary line and the toggle's own default (collapsed)
+      // label -- called on initial paint and again any time a pick is
+      // added/removed inside the panel below, via mountCardPick's onChange.
+      function refreshRowChrome() {
+        const summary = window.MyPredictions && window.MyPredictions.getPickSummaryFor
+          ? window.MyPredictions.getPickSummaryFor(matchupObj.result.nameA, matchupObj.result.nameB)
+          : null;
+        if (myPickLine) {
+          myPickLine.hidden = !summary;
+          if (summary) myPickLine.querySelector(".fc-my-pick-text").textContent = summary;
+        }
+        btn.dataset.defaultLabel = summary ? "Change Pick" : "Make Your Pick";
+        if (btn.getAttribute("aria-expanded") !== "true") btn.textContent = btn.dataset.defaultLabel;
+      }
+      refreshRowChrome();
+
       btn.addEventListener("click", () => {
         const expanded = btn.getAttribute("aria-expanded") === "true";
         btn.setAttribute("aria-expanded", String(!expanded));
-        btn.textContent = expanded ? "Make Your Pick" : "Hide";
+        btn.textContent = expanded ? btn.dataset.defaultLabel : "Hide";
         panel.hidden = expanded;
         if (!expanded && !mounted && window.MyPredictions) {
-          window.MyPredictions.mountCardPick(panel.querySelector(".fc-pick-mount"), matchupObj);
+          window.MyPredictions.mountCardPick(panel.querySelector(".fc-pick-mount"), matchupObj, { onChange: refreshRowChrome });
           mounted = true;
         }
       });

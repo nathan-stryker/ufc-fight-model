@@ -202,8 +202,16 @@
         const result = predictFull(fA, fB, callRounds, MODEL_DATA);
         boutResults.push({ result, scheduledRounds: callRounds });
         modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
+        // Always visible (not hidden behind the toggle) so a prediction you
+        // logged last visit -- or five minutes ago -- still shows on the
+        // card without having to re-open "Make Your Pick" to find it. Empty/
+        // hidden by default; refreshRowChrome() in the wiring below fills it
+        // in from My Predictions' own localStorage log, which is the only
+        // source of truth for this (never guessed or re-derived here).
+        const myPickHtml = `<div class="fc-my-pick mono" hidden><span class="fc-my-pick-label">Your pick</span> <span class="fc-my-pick-text"></span></div>`;
         action = `
-          <button class="fc-predict-toggle" type="button" aria-expanded="false">Make Your Pick</button>
+          ${myPickHtml}
+          <button class="fc-predict-toggle" type="button" aria-expanded="false" data-default-label="Make Your Pick">Make Your Pick</button>
           <div class="fc-predict-panel" hidden>
             ${predictBreakdownHtml(result)}
             <div class="fc-pick-mount"></div>
@@ -292,14 +300,35 @@
       const panel = btn.nextElementSibling;
       if (!panel || !panel.classList.contains("fc-predict-panel")) return;
       const matchupObj = boutResults[i];
+      const myPickLine = btn.previousElementSibling && btn.previousElementSibling.classList.contains("fc-my-pick")
+        ? btn.previousElementSibling
+        : null;
       let mounted = false;
+
+      // Reflects the current My Predictions state onto this row's always-
+      // visible summary line and the toggle's own default (collapsed)
+      // label -- called on initial paint and again any time a pick is
+      // added/removed inside the panel below, via mountCardPick's onChange.
+      function refreshRowChrome() {
+        const summary = window.MyPredictions && window.MyPredictions.getPickSummaryFor
+          ? window.MyPredictions.getPickSummaryFor(matchupObj.result.nameA, matchupObj.result.nameB)
+          : null;
+        if (myPickLine) {
+          myPickLine.hidden = !summary;
+          if (summary) myPickLine.querySelector(".fc-my-pick-text").textContent = summary;
+        }
+        btn.dataset.defaultLabel = summary ? "Change Pick" : "Make Your Pick";
+        if (btn.getAttribute("aria-expanded") !== "true") btn.textContent = btn.dataset.defaultLabel;
+      }
+      refreshRowChrome();
+
       btn.addEventListener("click", () => {
         const expanded = btn.getAttribute("aria-expanded") === "true";
         btn.setAttribute("aria-expanded", String(!expanded));
-        btn.textContent = expanded ? "Make Your Pick" : "Hide";
+        btn.textContent = expanded ? btn.dataset.defaultLabel : "Hide";
         panel.hidden = expanded;
         if (!expanded && !mounted && window.MyPredictions) {
-          window.MyPredictions.mountCardPick(panel.querySelector(".fc-pick-mount"), matchupObj);
+          window.MyPredictions.mountCardPick(panel.querySelector(".fc-pick-mount"), matchupObj, { onChange: refreshRowChrome });
           mounted = true;
         }
       });
