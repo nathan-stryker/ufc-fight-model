@@ -9,16 +9,10 @@ for (const tier of ["last5", "career"]) {
     for (const m of METHODS) METHOD_DIST_FIELDS.push(`${tier}_${outcome}_${m}`);
   }
 }
-const WIN_SNAPSHOT_FIELDS = [
-  "elo", "fights_entering", "win_pct_entering", "finish_rate_entering", "current_streak_entering",
+const RATE_STAT_FIELDS = [
   "sig_str_landed_per_min", "sig_str_absorbed_per_min", "sig_str_acc",
   "td_avg_per15", "td_acc", "td_def", "sub_att_per15", "ctrl_pct",
 ];
-const DEBUT_DEFAULTS = {
-  elo: BASE_RATING, fights_entering: 0, win_pct_entering: NaN, finish_rate_entering: NaN,
-  current_streak_entering: 0, sig_str_landed_per_min: NaN, sig_str_absorbed_per_min: NaN,
-  sig_str_acc: NaN, td_avg_per15: NaN, td_acc: NaN, td_def: NaN, sub_att_per15: NaN, ctrl_pct: NaN,
-};
 
 // ---------------------------------------------------------------------------
 // Fighter data indexing
@@ -102,23 +96,48 @@ function todayEpochDays() {
   return Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / MS_PER_DAY);
 }
 
+// Fallback is field-INDEPENDENT, not one atomic "debut defaults" block --
+// a UFC debut fighter can have a real pre-UFC record (see
+// src.features.prefight_snapshot on the Python side, which export_web_model.py
+// bakes into fights_entering/win_pct_entering/finish_rate_entering/
+// current_streak_entering/last_fight_epoch_days even though elo stays null)
+// without having a UFC-calibrated Elo or any strike/grappling data. Each
+// field checks its OWN presence rather than branching once on a single
+// "hasSnapshot" flag, so a fighter can be "experienced" (real record-based
+// stats) and "debut" (BASE_RATING elo, NaN strike stats) at the same time.
+// Must stay numerically identical to predict.py's build_feature_row() --
+// this project has had two prior silent JS/Python drift bugs from exactly
+// this kind of fallback logic.
 function buildWinFeats(f, todayDays) {
-  const hasSnapshot = f.elo !== null && f.elo !== undefined;
   const feats = {};
-  if (!hasSnapshot) {
-    Object.assign(feats, DEBUT_DEFAULTS);
-    feats.layoff_days_entering = NaN;
-  } else {
-    for (const k of WIN_SNAPSHOT_FIELDS) feats[k] = f[k] === null ? NaN : f[k];
+
+  const hasExperience = f.fights_entering !== null && f.fights_entering !== undefined;
+  if (hasExperience) {
+    feats.fights_entering = f.fights_entering;
+    feats.win_pct_entering = f.win_pct_entering === null ? NaN : f.win_pct_entering;
+    feats.finish_rate_entering = f.finish_rate_entering === null ? NaN : f.finish_rate_entering;
+    feats.current_streak_entering = f.current_streak_entering === null ? NaN : f.current_streak_entering;
     feats.layoff_days_entering = f.last_fight_epoch_days != null ? todayDays - f.last_fight_epoch_days : NaN;
+  } else {
+    feats.fights_entering = 0;
+    feats.win_pct_entering = NaN;
+    feats.finish_rate_entering = NaN;
+    feats.current_streak_entering = 0;
+    feats.layoff_days_entering = NaN;
   }
+
+  const hasEloHistory = f.elo !== null && f.elo !== undefined;
+  feats.elo = hasEloHistory ? f.elo : BASE_RATING;
+
+  for (const k of RATE_STAT_FIELDS) feats[k] = f[k] === null || f[k] === undefined ? NaN : f[k];
+
   feats.height_in = f.height_in === null || f.height_in === undefined ? NaN : f.height_in;
   feats.reach_in = f.reach_in === null || f.reach_in === undefined ? NaN : f.reach_in;
   feats.age_years = f.dob_epoch_days != null ? (todayDays - f.dob_epoch_days) / 365.25 : NaN;
   for (const cat of ["orthodox", "southpaw", "switch"]) {
     feats[`stance_${cat}`] = f.stance && f.stance.toLowerCase() === cat ? 1.0 : 0.0;
   }
-  feats._isDebut = !hasSnapshot;
+  feats._isDebut = !hasEloHistory;
   return feats;
 }
 

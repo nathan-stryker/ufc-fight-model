@@ -8,6 +8,7 @@ rows (A vs B and B vs A) so the model cannot learn a spurious corner bias.
 
 Run: python -m src.features.build_features
 """
+import json
 import re
 from pathlib import Path
 
@@ -435,6 +436,13 @@ def main():
     long_df = build_long_history(fights, fight_stats)
     priors = compute_population_priors(long_df)
     print("population priors (shrinkage targets):", {k: round(v, 4) for k, v in priors.items()})
+
+    # Written standalone (not just used in-memory here) so
+    # src.features.prefight_snapshot can reuse the IDENTICAL win_pct/
+    # finish_rate shrinkage targets for debut fighters' pre-UFC record,
+    # instead of recomputing (or worse, drifting from) this exact number.
+    with open(PROCESSED_DIR / "population_priors.json", "w") as f:
+        json.dump(priors, f)
 
     long_df = add_pre_fight_career_features(long_df, priors)
     long_df = attach_static_attributes(long_df, fighters)

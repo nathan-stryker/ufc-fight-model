@@ -20,6 +20,7 @@ import pandas as pd
 from src.data.scrape_nationality import ACTIVE_WINDOW_MONTHS
 from src.features.build_features import FEATURE_COLS
 from src.features.method_features import ALIGNMENT_COLS, METHODS
+from src.features.prefight_snapshot import build_debut_snapshots
 
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED_DIR = ROOT / "data" / "processed"
@@ -181,6 +182,33 @@ def export_fighters():
     epoch = pd.Timestamp("1970-01-01")
     df["dob_epoch_days"] = (df["dob"] - epoch).dt.days
     df["last_fight_epoch_days"] = (df["last_fight_date"] - epoch).dt.days
+
+    # Real pre-UFC record for debut fighters (see src.data.scrape_prefight_history
+    # / src.features.prefight_snapshot) -- overrides ONLY the experience/record
+    # fields (fights_entering, win_pct_entering, finish_rate_entering,
+    # current_streak_entering, last_fight_epoch_days) for a fighter whose "elo"
+    # is still null (i.e. still a genuine UFC debut, no fighter_snapshot.csv
+    # row). elo itself and the strike/grappling rate fields are deliberately
+    # left untouched -- see that module's docstring for why. Degrades to a
+    # no-op if the scraper hasn't run yet (prefight_history.csv missing) or
+    # this fighter has no pre-UFC record on file, same as before this existed.
+    prefight_history_path = PROCESSED_DIR / "prefight_history.csv"
+    priors_path = PROCESSED_DIR / "population_priors.json"
+    if prefight_history_path.exists() and priors_path.exists():
+        prefight_history = pd.read_csv(prefight_history_path, parse_dates=["event_date"])
+        with open(priors_path) as f:
+            population_priors = json.load(f)
+        debut_snapshots = build_debut_snapshots(prefight_history, population_priors, pd.Timestamp(datetime.now().date()))
+        for fid, snap in debut_snapshots.items():
+            mask = (df["fighter_id"] == fid) & df["elo"].isna()
+            if not mask.any():
+                continue
+            df.loc[mask, "fights_entering"] = snap["fights_entering"]
+            df.loc[mask, "win_pct_entering"] = snap["win_pct_entering"]
+            df.loc[mask, "finish_rate_entering"] = snap["finish_rate_entering"]
+            df.loc[mask, "current_streak_entering"] = snap["current_streak_entering"]
+            if pd.notna(snap["last_fight_date"]):
+                df.loc[mask, "last_fight_epoch_days"] = (pd.Timestamp(snap["last_fight_date"]) - epoch).days
 
     def clean(v):
         if pd.isna(v):
