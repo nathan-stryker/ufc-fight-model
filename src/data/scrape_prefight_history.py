@@ -134,19 +134,56 @@ def _parse_date(text):
         return None
 
 
+PRO_SECTION_LABEL = "FIGHT HISTORY - PRO"
+
+
+def _pro_fight_tables(soup):
+    """
+    Sherdog fighter pages can carry up to three separately-labeled fight
+    history tables in document order: "FIGHT HISTORY - PRO", "FIGHT HISTORY
+    - PRO EXHIBITION", and "FIGHT HISTORY - AMATEUR" (confirmed by hand on
+    Vlasto Cepo's page: 18 pro / 2 exhibition / 2 amateur rows, all under
+    the same table.new_table.fighter class with nothing in the table markup
+    itself distinguishing which section a row belongs to). Only the PRO
+    section is a fighter's actual professional record -- exhibition bouts
+    aren't competitive, and amateur results are a different, lower level of
+    competition entirely. Blindly grabbing every table.new_table.fighter on
+    the page (the original approach) silently mixed all three together,
+    inflating win/loss/experience counts with fights that don't belong in
+    a "pro record" at all -- caught by the user hand-checking a fighter's
+    shown record against what they actually knew (a wrong-record bug,
+    same failure mode as the earlier wrong-fighter-matched bug: nothing in
+    the pipeline's own output looked broken).
+
+    Section labels appear as sibling `div.slanted_title` elements
+    interleaved with the tables in the same document order, so a single
+    forward pass tracking "am I currently inside the PRO section" is
+    sufficient -- no need to assume a fixed section count or order.
+    """
+    tables = []
+    in_pro_section = False
+    for el in soup.select("div.slanted_title, table.new_table.fighter"):
+        if el.name == "div":
+            in_pro_section = el.get_text(strip=True) == PRO_SECTION_LABEL
+        elif in_pro_section:
+            tables.append(el)
+    return tables
+
+
 def parse_fight_history(html):
     """
-    Parses every table.new_table.fighter module on a Sherdog fighter page
+    Parses only the "FIGHT HISTORY - PRO" table(s) on a Sherdog fighter page
     (there can be more than one -- Sherdog sometimes splits a long record
-    across multiple tables/eras) into one flat list of pre-UFC fight rows.
-    Reads specific child elements (the result <span>, the event's own
-    itemprop=award <span>, the method's own <b> tag) rather than the
+    across multiple tables/eras) into one flat list of pre-UFC fight rows --
+    see _pro_fight_tables() for why amateur/exhibition tables must be
+    excluded. Reads specific child elements (the result <span>, the event's
+    own itemprop=award <span>, the method's own <b> tag) rather than the
     concatenated cell text, which glues the event name to its date and the
     method to the referee's name with no separating whitespace.
     """
     soup = BeautifulSoup(html, "html.parser")
     rows = []
-    for table in soup.select("table.new_table.fighter"):
+    for table in _pro_fight_tables(soup):
         for tr in table.select("tr"):
             cells = tr.select("td")
             if len(cells) != 6:
