@@ -374,14 +374,16 @@ def _prefight_records_payload(upcoming_card_payload):
     return records
 
 
-def _strikes_absorbed(round_stats, fight_id, id_a, id_b):
+def _fight_stats(round_stats, fight_id, id_a, id_b):
     """
-    Total significant strikes landed to the head/body/legs across every
-    round of one fight, from EACH fighter's own perspective as strikes
-    they ABSORBED (i.e. fighter A's absorbed total is fighter B's landed
-    total, and vice versa) -- round_stats.csv only records what a fighter
-    landed, never a separate "absorbed" column, so this is just relabeling
-    the opponent's own landed total.
+    Full per-fighter fight-level stat totals, summed across every round in
+    round_stats.csv for one fight -- feeds the "Last Week's Results" page's
+    strike-map panel: two body-diagram avatars (colored by strikes each
+    fighter ABSORBED, i.e. the OTHER corner's landed total -- round_stats.csv
+    only ever records what a fighter landed, never a separate "absorbed"
+    column) plus a fuller middle stat comparison (sig. strikes by target,
+    takedowns, control time, sub attempts, knockdowns) using each fighter's
+    own LANDED totals.
 
     Returns None (not zeros) if this fight has no round_stats.csv rows at
     all, so the frontend can distinguish "genuinely a scoreless round"
@@ -392,21 +394,31 @@ def _strikes_absorbed(round_stats, fight_id, id_a, id_b):
     if mine.empty:
         return None
 
-    def landed(fighter_id):
+    def totals(fighter_id):
         rows = mine[mine["fighter_id"] == fighter_id]
         return {
-            "head": int(rows["head_landed"].sum()),
-            "body": int(rows["body_landed"].sum()),
-            "leg": int(rows["leg_landed"].sum()),
+            "sigStrLanded": int(rows["sig_str_landed"].sum()),
+            "sigStrAttempted": int(rows["sig_str_attempted"].sum()),
+            "headLanded": int(rows["head_landed"].sum()),
+            "headAttempted": int(rows["head_attempted"].sum()),
+            "bodyLanded": int(rows["body_landed"].sum()),
+            "bodyAttempted": int(rows["body_attempted"].sum()),
+            "legLanded": int(rows["leg_landed"].sum()),
+            "legAttempted": int(rows["leg_attempted"].sum()),
+            "tdLanded": int(rows["td_landed"].sum()),
+            "tdAttempted": int(rows["td_attempted"].sum()),
+            "subAtt": int(rows["sub_att"].sum()),
+            "kd": int(rows["kd"].sum()),
+            "ctrlSec": int(rows["ctrl_sec"].sum()),
         }
 
-    landed_a, landed_b = landed(id_a), landed(id_b)
+    totals_a, totals_b = totals(id_a), totals(id_b)
     # Both empty means this fight_id matched but neither corner's id
     # appears in round_stats.csv (shouldn't happen if fights.csv and
     # round_stats.csv come from the same source, but don't guess if it does).
-    if not any(landed_a.values()) and not any(landed_b.values()):
+    if not any(totals_a.values()) and not any(totals_b.values()):
         return None
-    return {"a": landed_b, "b": landed_a}  # A absorbs what B landed, and vice versa
+    return {"a": totals_a, "b": totals_b}
 
 
 def _last_results_payload():
@@ -421,7 +433,7 @@ def _last_results_payload():
     latest historical data -- see load_data.py), that snapshot's event has
     already happened, so its bouts should now have real results sitting in
     fights.csv. This just joins the two on the fighter-id pair. Per-bout
-    strike breakdowns (see _strikes_absorbed()) come from the SAME
+    strike/stat breakdowns (see _fight_stats()) come from the SAME
     round_stats.csv already built for training, from the SAME raw mirror
     data -- no separate scrape for that either.
 
@@ -482,9 +494,18 @@ def _last_results_payload():
             "round": int(fight["round"]) if pd.notna(fight["round"]) else None,
             "time": fight["time"] if pd.notna(fight["time"]) else None,
         }
-        strikes = _strikes_absorbed(round_stats, fight["fight_id"], id_a, id_b)
-        if strikes:
-            bout["strikes"] = strikes
+        stats = _fight_stats(round_stats, fight["fight_id"], id_a, id_b)
+        if stats:
+            bout["stats"] = stats
+            # Derived, not separately scraped: A's absorbed total for a zone
+            # IS B's landed total for that same zone, and vice versa -- kept
+            # as its own "strikes" key (rather than making the frontend
+            # re-derive it) since the two body-diagram avatars need exactly
+            # this shape and nothing else.
+            bout["strikes"] = {
+                "a": {"head": stats["b"]["headLanded"], "body": stats["b"]["bodyLanded"], "leg": stats["b"]["legLanded"]},
+                "b": {"head": stats["a"]["headLanded"], "body": stats["a"]["bodyLanded"], "leg": stats["a"]["legLanded"]},
+            }
         # What the model actually called BEFORE the fight happened (computed
         # at scrape time by scrape_upcoming_card.py's add_model_predictions(),
         # carried through the last_card.csv snapshot) -- a real prediction

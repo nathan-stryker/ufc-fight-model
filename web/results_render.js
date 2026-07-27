@@ -52,9 +52,10 @@
 
   function strikeSideHtml(name, strikes) {
     return `
-      <div class="lr-strike-side">
+      <div class="lr-strike-avatar">
         <div class="lr-strike-name">${escapeHtml(name)}</div>
         ${bodyDiagramSvg(strikes)}
+        <div class="lr-strike-caption-small">Absorbed</div>
         <div class="lr-strike-numbers">
           <span><i class="lr-swatch" style="background:${zoneColor("head", strikes.head)}"></i>Head ${strikes.head}</span>
           <span><i class="lr-swatch" style="background:${zoneColor("body", strikes.body)}"></i>Body ${strikes.body}</span>
@@ -63,12 +64,61 @@
       </div>`;
   }
 
-  function strikePanelHtml(bout) {
+  function fmtCtrl(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  // One "tale of the tape" style row for the fuller fight-stat comparison
+  // (see export_web_model.py's _fight_stats()) -- aDisplay/bDisplay are
+  // whatever text should actually show (e.g. "14/32" for a landed/attempted
+  // pair, or a formatted control-time clock), while aShare/bShare (raw
+  // numbers, not display strings) drive the proportional bar between them
+  // so a 0-0 stat (e.g. neither fighter attempted a takedown) renders an
+  // even, non-misleading 50/50 split rather than a divide-by-zero bar.
+  function statRowHtml(label, aShare, bShare, aDisplay, bDisplay) {
+    const total = aShare + bShare;
+    const aPct = total > 0 ? (aShare / total) * 100 : 50;
+    const bPct = 100 - aPct;
+    return `
+      <div class="lr-stat-row">
+        <div class="lr-stat-value lr-stat-value-a mono">${escapeHtml(aDisplay)}</div>
+        <div class="lr-stat-mid">
+          <div class="lr-stat-label">${escapeHtml(label)}</div>
+          <div class="lr-stat-bar"><div class="lr-stat-bar-a" style="width:${aPct}%"></div><div class="lr-stat-bar-b" style="width:${bPct}%"></div></div>
+        </div>
+        <div class="lr-stat-value lr-stat-value-b mono">${escapeHtml(bDisplay)}</div>
+      </div>`;
+  }
+
+  // Each fighter's own LANDED totals (offense), side by side -- distinct
+  // from the two body-diagram avatars above/beside this block, which show
+  // strikes each fighter ABSORBED (the opponent's landed total). Only
+  // rendered on the full results.html page (opts.showFullStats), not the
+  // home page's compact sidebar widget -- see strikePanelHtml() below.
+  function statsBlockHtml(stats) {
+    const a = stats.a, b = stats.b;
+    const rows = [
+      statRowHtml("Sig. Strikes", a.sigStrLanded, b.sigStrLanded, `${a.sigStrLanded}/${a.sigStrAttempted}`, `${b.sigStrLanded}/${b.sigStrAttempted}`),
+      statRowHtml("Head Strikes", a.headLanded, b.headLanded, `${a.headLanded}/${a.headAttempted}`, `${b.headLanded}/${b.headAttempted}`),
+      statRowHtml("Body Strikes", a.bodyLanded, b.bodyLanded, `${a.bodyLanded}/${a.bodyAttempted}`, `${b.bodyLanded}/${b.bodyAttempted}`),
+      statRowHtml("Leg Strikes", a.legLanded, b.legLanded, `${a.legLanded}/${a.legAttempted}`, `${b.legLanded}/${b.legAttempted}`),
+      statRowHtml("Takedowns", a.tdLanded, b.tdLanded, `${a.tdLanded}/${a.tdAttempted}`, `${b.tdLanded}/${b.tdAttempted}`),
+      statRowHtml("Control Time", a.ctrlSec, b.ctrlSec, fmtCtrl(a.ctrlSec), fmtCtrl(b.ctrlSec)),
+      statRowHtml("Sub. Attempts", a.subAtt, b.subAtt, String(a.subAtt), String(b.subAtt)),
+      statRowHtml("Knockdowns", a.kd, b.kd, String(a.kd), String(b.kd)),
+    ].join("");
+    return `<div class="lr-stats-block">${rows}</div>`;
+  }
+
+  function strikePanelHtml(bout, opts) {
+    const showFullStats = opts.showFullStats && bout.stats;
     return `
       <div class="lr-strike-panel" hidden>
-        <div class="lr-strike-caption">Significant strikes absorbed</div>
-        <div class="lr-strike-sides">
+        <div class="lr-strike-layout">
           ${strikeSideHtml(bout.nameA, bout.strikes.a)}
+          ${showFullStats ? statsBlockHtml(bout.stats) : ""}
           ${strikeSideHtml(bout.nameB, bout.strikes.b)}
         </div>
       </div>`;
@@ -119,11 +169,11 @@
     const tierLabel = TIER_LABEL[bout.tier];
     // Only offered when round_stats.csv actually had rows for this fight --
     // never fabricated, same "omit, don't guess" rule as everything else
-    // this section shows (see export_web_model.py's _strikes_absorbed()).
+    // this section shows (see export_web_model.py's _fight_stats()).
     const strikeToggle = bout.strikes
       ? `<button class="lr-strike-toggle" type="button" aria-expanded="false">View Strike Map</button>`
       : "";
-    const strikePanel = bout.strikes ? strikePanelHtml(bout) : "";
+    const strikePanel = bout.strikes ? strikePanelHtml(bout, opts) : "";
     return `
       <div class="lr-row">
         <div class="lr-row-header">

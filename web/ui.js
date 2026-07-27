@@ -452,6 +452,10 @@
   function renderLastResults() {
     const section = document.getElementById("last-results-section");
     if (!section || !window.ResultsRender) return;
+    // Deliberately no showFullStats here (unlike results.html/results_template.html)
+    // -- this section renders in a narrow sidebar column, no room for the
+    // fuller tale-of-the-tape stat comparison alongside the strike-map
+    // avatars. Still gets the avatars themselves, just not the middle block.
     window.ResultsRender.renderLastResultsSection(section, MODEL_DATA.last_results, {
       limit: 4,
       seeMoreHref: "results.html",
