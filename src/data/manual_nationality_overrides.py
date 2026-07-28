@@ -147,6 +147,9 @@ MANUAL = {
     "Marina Spasic": ("Serbia", "RS"),
     "Noah Gugnon": ("France", "FR"),
     "Milos Janicic": ("Montenegro", "ME"),
+    # Replaced Max Gimenis as Jovan Leka's opponent (Poppeck stepped in) --
+    # another true UFC debut with no prior row here, same as the three above.
+    "Alexander Poppeck": ("Germany", "DE"),
 }
 
 
