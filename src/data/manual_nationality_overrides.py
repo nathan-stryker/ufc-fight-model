@@ -121,12 +121,15 @@ MANUAL = {
     "Zhu Kangjie": ("China", "CN"),
     # Both genuinely multi-national -- confirmed via web search, then a
     # direct question to the user rather than picking one automatically
-    # (same policy as every other entry in this file). Vlasto Cepo: born
-    # in Serbia, but sources describe him as now representing Slovakia.
-    # Nina Milosevic: ties to Serbia (birth, IMMAF national team), Sweden
-    # (her own stated identity), and Australia (where she trains) -- user
-    # chose Serbia.
-    "Vlasto Cepo": ("Slovakia", "SK"),
+    # (same policy as every other entry in this file). Vlasto Cepo: born in
+    # Serbia; sources described him as now representing Slovakia, which is
+    # what the user originally picked -- they later corrected themselves
+    # ("vlasto cepo should have a serbian flag i know you asked me before
+    # my bad") back to Serbia, so that's the value that sticks. Nina
+    # Milosevic: ties to Serbia (birth, IMMAF national team), Sweden (her
+    # own stated identity), and Australia (where she trains) -- user chose
+    # Serbia.
+    "Vlasto Cepo": ("Serbia", "RS"),
     "Nina Milosevic": ("Serbia", "RS"),
     # Sherdog's own itemprop=nationality field says "United States" for him
     # (he fights out of Anchorage, AK) but he was born and raised in Novi
@@ -136,6 +139,14 @@ MANUAL = {
     # Sherdog profile, nickname "The Doctor" matches) -- Sherdog's own data
     # conflates fights-out-of location with nationality here.
     "Uros Medic": ("Serbia", "RS"),
+    # Three brand new UFC debut fighters (added to this week's card after
+    # ufc.com hadn't posted it yet -- see the upcoming_card.csv patch),
+    # never scraped by scrape_nationality.py at all since they weren't on
+    # any "active" roster before this card. User-supplied directly, same as
+    # every other entry in this file.
+    "Marina Spasic": ("Serbia", "RS"),
+    "Noah Gugnon": ("France", "FR"),
+    "Milos Janicic": ("Montenegro", "ME"),
 }
 
 
@@ -144,20 +155,43 @@ def main():
     df = pd.read_csv(path)
     before = df["iso_code"].notna().sum()
 
-    applied, not_found = 0, []
+    # scrape_nationality.py only ever processes the "active" roster (fought
+    # within the last ACTIVE_WINDOW_MONTHS) -- a fighter making their actual
+    # UFC debut this week has NO row here at all yet, not just a blank
+    # iso_code, so a plain update-by-name (the original behavior) would
+    # silently no-op for them. Falls back to inserting a brand new row,
+    # resolving fighter_id from fighters.csv by exact name (fine here since
+    # every name below was confirmed by hand against a specific real
+    # fighter, same as the update path already assumes).
+    fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv")[["fighter_id", "name"]]
+
+    applied, inserted, not_found = 0, 0, []
+    new_rows = []
     for name, (nat, iso) in MANUAL.items():
         mask = df["name"] == name
-        if not mask.any():
+        if mask.any():
+            df.loc[mask, "nationality"] = nat
+            df.loc[mask, "iso_code"] = iso
+            df.loc[mask, "sherdog_url"] = "manual"
+            applied += 1
+            continue
+        fmatch = fighters[fighters["name"] == name]
+        if fmatch.empty:
             not_found.append(name)
             continue
-        df.loc[mask, "nationality"] = nat
-        df.loc[mask, "iso_code"] = iso
-        df.loc[mask, "sherdog_url"] = "manual"
-        applied += 1
+        new_rows.append({
+            "fighter_id": fmatch.iloc[0]["fighter_id"], "name": name,
+            "sherdog_url": "manual", "nationality": nat, "iso_code": iso,
+        })
+        inserted += 1
+
+    if new_rows:
+        df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
 
     after = df["iso_code"].notna().sum()
     df.to_csv(path, index=False)
-    print(f"applied {applied}/{len(MANUAL)} (not found in current active roster: {not_found})")
+    print(f"updated {applied} existing row(s), inserted {inserted} new row(s) "
+          f"(not found in fighters.csv at all: {not_found})")
     print(f"matched: {before} -> {after} / {len(df)}")
 
 
