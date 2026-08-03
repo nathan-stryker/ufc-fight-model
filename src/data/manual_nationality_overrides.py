@@ -153,6 +153,11 @@ MANUAL = {
     # Replaced Josias Musasa as Mark Vologdin's opponent -- another true
     # UFC debut, same pattern as every other late card change this week.
     "Borislav Nikolic": ("Serbia", "RS"),
+    # New card, UFC Fight Night 284 (Gamrot vs. Salkilld) -- three more true
+    # UFC debuts with no prior row here, user-supplied directly.
+    "Jose Montanha": ("Brazil", "BR"),
+    "Jessie Rosas": ("Mexico", "MX"),
+    "Richie Miranda": ("United States", "US"),
 }
 
 
