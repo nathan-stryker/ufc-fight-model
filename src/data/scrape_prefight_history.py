@@ -76,6 +76,15 @@ MANUAL_SHERDOG_URLS = {
     # 9-0 record ending in a Dana White's Contender Series win, matching
     # what the user reported by hand (UFC Fight Night 283 card, 2026-08-01).
     "michael oliveira": "https://www.sherdog.com/fighter/Michael-Oliveira-400985",
+    # Name collision: our own upcoming_card.csv fix used "Jose Montanha"
+    # (the name UFC.com/fighters.csv use for him), but Sherdog itself lists
+    # him under his legal name "Jose Luiz" with "Montanha" as a nickname --
+    # the automated search for "Jose Montanha" matched a completely
+    # different, unrelated fighter (7-fight vs. 1-fight record). Confirmed
+    # by matching the specific loss (decision to Richard Jacobi, 2022) the
+    # user reported -- real record is 6-1, not the wrong profile's 0-1
+    # (UFC Fight Night 284 card, 2026-08-08).
+    "jose montanha": "https://www.sherdog.com/fighter/Jose-Luiz-398299",
 }
 
 
