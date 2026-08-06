@@ -158,6 +158,12 @@ MANUAL = {
     "Jose Montanha": ("Brazil", "BR"),
     "Jessie Rosas": ("Mexico", "MX"),
     "Richie Miranda": ("United States", "US"),
+    # Added to this week's card as the opening (lowest-billed) fight -- both
+    # true UFC debuts, per the user. Gigi Canuto in particular didn't even
+    # have a fighters.csv row until a fresh pull of the raw UFCStats mirror
+    # picked her up (see load_data.py rerun same session).
+    "Gigi Canuto": ("Brazil", "BR"),
+    "Carol Foro": ("Brazil", "BR"),
 }
 
 

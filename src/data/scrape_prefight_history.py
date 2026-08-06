@@ -85,6 +85,13 @@ MANUAL_SHERDOG_URLS = {
     # user reported -- real record is 6-1, not the wrong profile's 0-1
     # (UFC Fight Night 284 card, 2026-08-08).
     "jose montanha": "https://www.sherdog.com/fighter/Jose-Luiz-398299",
+    # Same "legal name vs. ring name" gap, not a collision this time --
+    # UFCStats lists her as "Gigi Canuto" (her nickname), but Sherdog lists
+    # her under her legal name "Giovanna Canuto" ("GiGi/Diamond" as
+    # nickname), so the plain-name search found nothing at all. Confirmed
+    # record (7-1, loss to Natalia Kuziutina) matches what the user
+    # reported (UFC Fight Night 284 card, 2026-08-08).
+    "gigi canuto": "https://www.sherdog.com/fighter/Giovanna-Canuto-380339",
 }
 
 
