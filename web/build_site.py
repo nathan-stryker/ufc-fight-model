@@ -31,6 +31,12 @@ print(f"wrote {out_path} ({out_path.stat().st_size / 1e6:.2f} MB)")
 
 docs_dir = WEB_DIR.parent / "docs"
 docs_dir.mkdir(exist_ok=True)
+# This is a hand-built static site, not a Jekyll site -- GitHub Pages runs
+# docs/ through Jekyll by default unless this marker is present, and Jekyll
+# processing a large, non-Jekyll HTML payload occasionally caused mysterious
+# "Page build failed" errors with no useful detail (hit this directly,
+# 2026-08-06). Recreated on every build so it can never be silently lost.
+(docs_dir / ".nojekyll").touch()
 docs_path = docs_dir / "index.html"
 docs_path.write_text(out, encoding="utf-8")
 print(f"wrote {docs_path} (GitHub Pages copy)")
