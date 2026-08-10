@@ -19,16 +19,6 @@
   // --- CSV (identical implementation to paper_trade.js -- kept duplicated
   // rather than shared, it's ~30 lines and the two logs are meant to be
   // fully independent files a user could hand off separately) ---
-  function csvEscape(v) {
-    const s = v === null || v === undefined ? "" : String(v);
-    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  }
-  function toCsv(rows) {
-    const lines = [FIELDS.join(",")];
-    rows.forEach((r) => lines.push(FIELDS.map((f) => csvEscape(r[f])).join(",")));
-    return lines.join("\r\n");
-  }
   function parseCsv(text) {
     const rows = [];
     let i = 0, field = "", row = [], inQuotes = false;
@@ -451,137 +441,6 @@
     return s;
   }
 
-  function modelSummary(p) {
-    let s = `${p.model_winner} by ${METHOD_NAMES[p.model_method]}`;
-    if (p.model_method !== "dec" && p.model_round) s += `, Round ${p.model_round}`;
-    return s;
-  }
-
-  function renderPending() {
-    const pending = preds.filter((p) => p.status === "pending");
-    const box = el("div", "pt-log");
-    box.appendChild(el("div", "tape-title", "<span>Pending predictions</span>"));
-    if (pending.length === 0) {
-      box.appendChild(el("div", "pt-empty-hint", "No pending predictions logged yet."));
-      return box;
-    }
-    const table = el("div", "pt-table");
-    pending.forEach((p) => {
-      const row = el("div", "pt-table-row");
-      row.innerHTML = `
-        <div class="pt-cell pt-cell-main">
-          <div class="pt-selection">${escapeHtml(pickSummary(p))}</div>
-          <div class="pt-sub mono">${escapeHtml(p.event)} &middot; model said ${escapeHtml(modelSummary(p))}</div>
-        </div>
-        <div class="pt-cell pt-actions-cell"></div>`;
-      const actions = row.querySelector(".pt-actions-cell");
-
-      const settleBtn = el("button", "clear-btn pt-settle-btn", "Enter Result");
-      settleBtn.type = "button";
-      const form = el("div", "pt-row");
-      form.hidden = true;
-      form.innerHTML = `
-        <select class="mp-actual-side"><option value="${escapeHtml(p.fighter_a)}">${escapeHtml(p.fighter_a)}</option><option value="${escapeHtml(p.fighter_b)}">${escapeHtml(p.fighter_b)}</option></select>
-        <select class="mp-actual-method"><option value="dec">Decision</option><option value="ko">KO/TKO</option><option value="sub">Submission</option></select>
-        <select class="mp-actual-round">${Array.from({ length: p.scheduled_rounds }, (_, i) => i + 1).map((n) => `<option value="${n}">Round ${n}</option>`).join("")}</select>
-        <button class="clear-btn mp-save-btn" type="button">Save</button>`;
-      const methodSel = form.querySelector(".mp-actual-method");
-      const roundSel = form.querySelector(".mp-actual-round");
-      methodSel.addEventListener("change", () => { roundSel.style.display = methodSel.value === "dec" ? "none" : ""; });
-
-      settleBtn.addEventListener("click", () => { form.hidden = !form.hidden; });
-      form.querySelector(".mp-save-btn").addEventListener("click", () => {
-        settlePrediction(p.pred_id, {
-          winner: form.querySelector(".mp-actual-side").value,
-          method: methodSel.value,
-          round: roundSel.value,
-        });
-        renderAll();
-      });
-
-      const del = el("button", "clear-btn pt-delete-btn", "&times;");
-      del.type = "button";
-      del.title = "Remove";
-      del.addEventListener("click", () => { deletePrediction(p.pred_id); renderAll(); });
-
-      actions.appendChild(settleBtn);
-      actions.appendChild(del);
-      table.appendChild(row);
-      table.appendChild(form);
-    });
-    box.appendChild(table);
-    return box;
-  }
-
-  function renderReport() {
-    const rep = computeReport();
-    const box = el("div", "pt-report");
-    box.appendChild(el("div", "tape-title", "<span>Your track record</span>"));
-    if (rep.n === 0) {
-      box.appendChild(el("div", "pt-empty-hint", "No settled predictions yet -- results show up here once fights happen and you enter what actually happened."));
-      return box;
-    }
-    const summary = el("div", "pt-summary mono");
-    summary.innerHTML = `
-      n=${rep.n} settled &middot; winner accuracy ${pct(rep.winnerAcc)}<br>
-      method accuracy ${pct(rep.methodAcc)} (${rep.methodN} called)<br>
-      round accuracy ${pct(rep.roundAcc)} (${rep.roundN} called)<br>
-      model's round-of-finish accuracy ${pct(rep.modelRoundAcc)} (${rep.modelRoundN} called)<br>
-      picked the same WINNER as the model ${pct(rep.agreedWithModelRate)} of the time
-      (this compares winner only, not method/round -- see each row's "model said" note for the full comparison)`;
-    box.appendChild(summary);
-    if (rep.n < 20) {
-      box.appendChild(el("div", "pt-note", "Fewer than 20 settled predictions -- treat this as noise for now."));
-    }
-    return box;
-  }
-
-  function renderActions() {
-    const box = el("div", "pt-actions-row");
-    const exportBtn = el("button", "clear-btn", "Download backup (CSV)");
-    exportBtn.type = "button";
-    exportBtn.addEventListener("click", async () => {
-      const csv = toCsv(preds);
-      if (window.claude && window.claude.downloads) {
-        try {
-          await window.claude.downloads.save({ filename: "my_predictions.csv", data: csv });
-          return;
-        } catch (e) { /* fall through to manual download */ }
-      }
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "my_predictions.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    const importBtn = el("button", "clear-btn", "Restore from file");
-    importBtn.type = "button";
-    const fileInput = el("input");
-    fileInput.type = "file"; fileInput.accept = ".csv"; fileInput.hidden = true;
-    importBtn.addEventListener("click", () => fileInput.click());
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const count = window.MyPredictions.importCsvText(reader.result, "merge");
-        renderAll();
-        alert(`Restored ${count} prediction(s) from ${file.name}.`);
-      };
-      reader.readAsText(file);
-    });
-
-    box.appendChild(exportBtn);
-    box.appendChild(importBtn);
-    box.appendChild(fileInput);
-    if (!storageOk) {
-      box.appendChild(el("div", "pt-note", "Browser storage isn't available here, so nothing auto-saves between visits -- use the backup/restore buttons every session."));
-    }
-    return box;
-  }
-
   // Home page's Predict section -- just the log-a-pick form, nothing else,
   // so a fresh matchup result always has somewhere to log a pick against.
   function renderAdd() {
@@ -591,10 +450,13 @@
     addRoot.appendChild(renderAddForm());
   }
 
-  // Compact teaser (home page sidebar, historyOpts.compact) vs. the full
-  // predictions.html page (everything: pending list, settle/delete, report,
-  // export/import) -- same underlying data either way, no model needed for
-  // any of this, unlike renderAdd() above.
+  // Home page sidebar only now -- the standalone predictions.html page
+  // (pending list, settle/delete, full report, CSV export/import) was
+  // removed as redundant once Last Week's Results started showing the
+  // model's own accuracy (see accuracyGroupHtml in results_render.js).
+  // Individual picks still live on their fight-card row (mountCardPick,
+  // "Remove pick") and still auto-settle against real results, so this
+  // teaser is just a running scoreboard, not the only way to see a pick.
   function renderHistoryTeaser() {
     const rep = computeReport();
     const pendingCount = preds.filter((p) => p.status === "pending").length;
@@ -609,27 +471,13 @@
         : `${pendingCount} pending &middot; no settled predictions yet`;
       box.appendChild(summary);
     }
-    const seeMore = document.createElement("a");
-    seeMore.className = "lr-see-more";
-    seeMore.href = "predictions.html";
-    seeMore.textContent = "See Full History →";
-    box.appendChild(seeMore);
-    return box;
-  }
-
-  function renderHistoryFull() {
-    const box = el("div");
-    box.appendChild(el("div", "section-header", '<h2 class="section-title display">My Predictions</h2>'));
-    box.appendChild(renderPending());
-    box.appendChild(renderReport());
-    box.appendChild(renderActions());
     return box;
   }
 
   function renderHistory() {
     if (!historyRoot) return;
     historyRoot.innerHTML = "";
-    historyRoot.appendChild(historyOpts.compact ? renderHistoryTeaser() : renderHistoryFull());
+    historyRoot.appendChild(renderHistoryTeaser());
   }
 
   function renderAll() {

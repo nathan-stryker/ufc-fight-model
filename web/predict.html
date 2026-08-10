@@ -1047,10 +1047,13 @@
   .edge-add .section-eyebrow { color: var(--green); }
   .tracker-note { color: var(--ink-dim); font-size: 0.8rem; line-height: 1.5; margin: 0 0 1.25rem; }
 
-  /* Compact "My Predictions" sidebar teaser (home page) -- just a quick
-     stat line + link out to predictions.html, unlike the News/Results
-     teasers this doesn't show actual list content since the interesting
-     part (settling a pending pick) needs its own room, not a 300px column. */
+  /* Compact "My Predictions" sidebar teaser (home page) -- just a running
+     pending-count/winner-accuracy line. The standalone predictions.html
+     page (pending list, settle/delete, full report, CSV backup) was
+     removed as redundant once Last Week's Results started showing the
+     model's own accuracy -- individual picks are still made and removed
+     inline on each fight-card row (buildCardPickSection/buildLockedPickView
+     below), this teaser just totals them up. */
   .predictions-sidebar {
     background: var(--canvas-raised);
     border: 1px solid var(--canvas-line);
@@ -1061,7 +1064,6 @@
   .pt-empty-hint { color: var(--ink-dim); font-size: 0.85rem; padding: 0.5rem 0; }
   .pt-add { background: var(--canvas-raised); border: 1px solid var(--canvas-line); padding: 1rem; margin-bottom: 1.5rem; }
   .pt-matchup-label { font-size: 0.85rem; color: var(--gold); margin-bottom: 0.75rem; }
-  .pt-matchup-source { color: var(--ink-dim); font-weight: normal; }
   .pt-logged-confirm { color: var(--green); font-size: 0.85rem; }
   .pt-logged-confirm a { color: inherit; }
   /* Shown instead of the pick form once a pending pick already exists for
@@ -1078,30 +1080,6 @@
     font-family: inherit; font-size: 0.9rem; padding: 0.35rem 0.5rem; flex: 1; min-width: 0;
   }
   .pt-add-btn { margin-top: 0.5rem; }
-  .pt-error { color: var(--red); font-size: 0.8rem; margin-top: 0.5rem; }
-  .pt-log { margin-bottom: 1.5rem; }
-  .pt-table-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto auto auto;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid var(--canvas-line);
-    font-size: 0.82rem;
-  }
-  @media (max-width: 640px) {
-    .pt-table-row { grid-template-columns: 1fr; gap: 0.25rem; }
-  }
-  .pt-selection { font-weight: 700; }
-  .pt-sub { color: var(--ink-dim); font-size: 0.75rem; }
-  .pt-actions-cell { display: flex; gap: 0.4rem; align-items: center; }
-  .pt-settle-btn, .pt-delete-btn { border: 1px solid var(--canvas-line); padding: 0.25rem 0.5rem; }
-  .pt-delete-btn { color: var(--red); }
-  .pt-report { margin-bottom: 1.5rem; }
-  .pt-summary { font-size: 0.9rem; line-height: 1.7; margin-bottom: 0.75rem; }
-  .pt-market-row { font-size: 0.8rem; color: var(--ink-dim); }
-  .pt-note { color: var(--ink-dim); font-size: 0.75rem; font-style: italic; margin-top: 0.5rem; }
-  .pt-actions-row { display: flex; gap: 1.25rem; flex-wrap: wrap; }
 </style>
 
 <div class="page">
@@ -1119,7 +1097,6 @@
     <a href="news.html">News</a>
     <a href="results.html">Last Week's Results</a>
     <a href="predict.html" class="active" data-nav="predict-section">Fantasy Matchup</a>
-    <a href="predictions.html">My Predictions</a>
   </nav>
 
   <div class="results-page-header">
