@@ -164,6 +164,9 @@ MANUAL = {
     # picked her up (see load_data.py rerun same session).
     "Gigi Canuto": ("Brazil", "BR"),
     "Carol Foro": ("Brazil", "BR"),
+    # New card, UFC 330 (Makhachev vs. Garry) -- another true UFC debut with
+    # no prior row here, user-supplied directly.
+    "Lucas Fernando": ("Brazil", "BR"),
 }
 
 
