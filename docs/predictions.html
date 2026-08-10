@@ -1306,6 +1306,17 @@
     if (!p.picked_method || !p.picked_round || p.actual_method === "dec") return null;
     return String(p.picked_round) === String(p.actual_round);
   }
+  // Same idea as isCorrectRound but grades the MODEL's round-of-finish call
+  // (model_round) instead of your own pick. model_round is only ever set
+  // when the model's top method pick was itself a finish (see
+  // modelVerdict() -- round is left "" when method === "dec"), so the
+  // model_method check below is really just belt-and-suspenders; the
+  // actual_method === "dec" check is the one that matters (nothing to grade
+  // a round against when the real fight went the distance).
+  function isCorrectModelRound(p) {
+    if (p.model_method === "dec" || !p.model_round || p.actual_method === "dec") return null;
+    return String(p.model_round) === String(p.actual_round);
+  }
 
   function settlePrediction(predId, actual) {
     const p = preds.find((x) => String(x.pred_id) === String(predId));
@@ -1391,6 +1402,8 @@
     const methodHits = methodCalled.filter((p) => isCorrectMethod(p) === true).length;
     const roundCalled = settled.filter((p) => isCorrectRound(p) !== null);
     const roundHits = roundCalled.filter((p) => isCorrectRound(p) === true).length;
+    const modelRoundCalled = settled.filter((p) => isCorrectModelRound(p) !== null);
+    const modelRoundHits = modelRoundCalled.filter((p) => isCorrectModelRound(p) === true).length;
     const agreedWithModel = settled.filter((p) => p.picked_winner === p.model_winner).length;
     return {
       n,
@@ -1399,6 +1412,8 @@
       methodN: methodCalled.length,
       roundAcc: roundCalled.length ? roundHits / roundCalled.length : null,
       roundN: roundCalled.length,
+      modelRoundAcc: modelRoundCalled.length ? modelRoundHits / modelRoundCalled.length : null,
+      modelRoundN: modelRoundCalled.length,
       agreedWithModelRate: n ? agreedWithModel / n : null,
     };
   }
@@ -1649,6 +1664,7 @@
       n=${rep.n} settled &middot; winner accuracy ${pct(rep.winnerAcc)}<br>
       method accuracy ${pct(rep.methodAcc)} (${rep.methodN} called)<br>
       round accuracy ${pct(rep.roundAcc)} (${rep.roundN} called)<br>
+      model's round-of-finish accuracy ${pct(rep.modelRoundAcc)} (${rep.modelRoundN} called)<br>
       picked the same WINNER as the model ${pct(rep.agreedWithModelRate)} of the time
       (this compares winner only, not method/round -- see each row's "model said" note for the full comparison)`;
     box.appendChild(summary);
