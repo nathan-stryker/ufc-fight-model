@@ -167,6 +167,9 @@ MANUAL = {
     # New card, UFC 330 (Makhachev vs. Garry) -- another true UFC debut with
     # no prior row here, user-supplied directly.
     "Lucas Fernando": ("Brazil", "BR"),
+    # Same card -- late addition (Charles Johnson's opponent swap), another
+    # true UFC debut, user-supplied directly.
+    "Eduardo Henrique": ("Brazil", "BR"),
 }
 
 

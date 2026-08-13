@@ -92,6 +92,13 @@ MANUAL_SHERDOG_URLS = {
     # record (7-1, loss to Natalia Kuziutina) matches what the user
     # reported (UFC Fight Night 284 card, 2026-08-08).
     "gigi canuto": "https://www.sherdog.com/fighter/Giovanna-Canuto-380339",
+    # Not a name gap this time -- UFCStats itself lists him under his
+    # nickname "Eduardo Chapolin" (real UFCStats fighter_id, physical
+    # attributes on file), but his ring/UFC-listed name is "Eduardo
+    # Henrique" (upcoming_card.csv uses the latter). A plain search for
+    # "Eduardo Henrique" is a common-enough name to risk a collision, so
+    # pinned by hand instead (UFC 330 card, 2026-08-15).
+    "eduardo henrique": "https://www.sherdog.com/fighter/Eduardo-Henrique-199575",
 }
 
 
