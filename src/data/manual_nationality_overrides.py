@@ -170,6 +170,12 @@ MANUAL = {
     # Same card -- late addition (Charles Johnson's opponent swap), another
     # true UFC debut, user-supplied directly.
     "Eduardo Henrique": ("Brazil", "BR"),
+    # New card, UFC Fight Night 285 (Hernandez vs. Rodrigues) -- four more
+    # fighters with no prior row here, user-supplied directly.
+    "Terrance Chatman": ("United States", "US"),
+    "Anthony Wint": ("United States", "US"),
+    "Ryan Kuse": ("United States", "US"),
+    "Stan Dorsainvil": ("United States", "US"),
 }
 
 

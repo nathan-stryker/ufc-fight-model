@@ -99,6 +99,11 @@ MANUAL_SHERDOG_URLS = {
     # "Eduardo Henrique" is a common-enough name to risk a collision, so
     # pinned by hand instead (UFC 330 card, 2026-08-15).
     "eduardo henrique": "https://www.sherdog.com/fighter/Eduardo-Henrique-199575",
+    # Same "legal name vs. ring name" gap as Gigi/Giovanna Canuto -- UFCStats
+    # lists him as "Stan Dorsainvil", Sherdog has him under his full legal
+    # first name "Stanley Dorsainvil" ("The Drill" nickname matches), so the
+    # plain-name search found nothing (UFC Fight Night 285 card, 2026-08-22).
+    "stan dorsainvil": "https://www.sherdog.com/fighter/Stanley-Dorsainvil-371512",
 }
 
 
