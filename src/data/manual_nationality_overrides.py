@@ -176,6 +176,12 @@ MANUAL = {
     "Anthony Wint": ("United States", "US"),
     "Ryan Kuse": ("United States", "US"),
     "Stan Dorsainvil": ("United States", "US"),
+    # New card, UFC Fight Night 286 (Nurmagomedov vs. Song) -- no prior row
+    # here, user-supplied directly. Keyed by "Cameron Nelson" (fighters.csv/
+    # UFCStats' name) rather than "Cam Nelson" (upcoming_card.csv/UFC.com's
+    # display name) since this script's insert-by-name fallback matches
+    # against fighters.csv.
+    "Cameron Nelson": ("Canada", "CA"),
 }
 
 
