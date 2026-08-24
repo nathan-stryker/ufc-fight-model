@@ -626,7 +626,19 @@ def _flags_payload(codes):
             print(f"  warning: no cached flag for '{code}' -- run `python -m src.fetch_flags` first")
             continue
         svg = path.read_text(encoding="utf-8")
-        svg = re.sub(r'\s+id="[^"]*"', "", svg)  # drop the id attr -- unused, avoids duplicate-id if a country repeats
+        # Only drop the ROOT element's id ("flag-icons-xx", every file's own
+        # unique prefix -- avoids a duplicate DOM id if a country repeats
+        # across two badges on the same page). A blanket `id="..."` strip
+        # here is a real bug, not just unused cruft: ~1 in 4 flags (China,
+        # US, and 19 others) define inner shapes once in <defs>/<marker> and
+        # repeat them via <use xlink:href="#id">/marker-mid="url(#id)" --
+        # stripping THAT id leaves the reference pointing at nothing, so the
+        # shape silently doesn't render at all. Hit this directly: China's
+        # 5 stars (id="cn-a", referenced 5x) vanished, leaving just the red
+        # field -- reported as the flag "just appears to be red, nothing
+        # else". Anchored to the specific "flag-icons-" prefix (confirmed
+        # against all 84 cached files) so inner ids are never touched.
+        svg = re.sub(r'\s+id="flag-icons-[^"]*"', "", svg)
         # flag-icons ships every flag as a 4:3 viewBox with no preserveAspectRatio,
         # which defaults to "xMidYMid meet" -- the CSS (.fc-badge svg etc.) sets
         # object-fit: cover, but that property has no effect on an inline <svg>
