@@ -627,6 +627,18 @@ def _flags_payload(codes):
             continue
         svg = path.read_text(encoding="utf-8")
         svg = re.sub(r'\s+id="[^"]*"', "", svg)  # drop the id attr -- unused, avoids duplicate-id if a country repeats
+        # flag-icons ships every flag as a 4:3 viewBox with no preserveAspectRatio,
+        # which defaults to "xMidYMid meet" -- the CSS (.fc-badge svg etc.) sets
+        # object-fit: cover, but that property has no effect on an inline <svg>
+        # (only on replaced elements like <img>), so every badge whose box isn't
+        # EXACTLY 4:3 was letterboxing: thin gaps on the sides showing the badge's
+        # background-color instead of flag. Barely visible on flags with light
+        # colors at the edge, glaring on a solid edge-to-edge color like China's
+        # red field (reported directly against China's flag looking "off").
+        # "slice" makes the SVG actually crop-to-fill like CSS cover does, so this
+        # is a real fix for every flag, not just China's -- China's was just the
+        # most visually obvious case.
+        svg = re.sub(r"^<svg ", '<svg preserveAspectRatio="xMidYMid slice" ', svg, count=1)
         flags[code.upper()] = svg.strip()
     return flags
 
