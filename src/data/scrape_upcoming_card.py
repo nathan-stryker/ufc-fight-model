@@ -246,18 +246,39 @@ def normalize_name(name):
     return re.sub(r"\s+", " ", s).strip()
 
 
+# Sherdog lists these under the UFC organization's own event calendar, but
+# they're prospect/qualifying tournaments feeding into the roster, not an
+# actual numbered UFC card -- their fighters aren't on our roster and the
+# site's "This Week's Card" is meant to be the real fight card. Found for
+# real 2026-08-24: "UFC - Road to UFC Season 5: Shanghai Semifinals" sorted
+# ahead of "UFC Fight Night 286 - Nurmagomedov vs. Song" by one day, same
+# venue -- naively taking the first row picked the wrong event entirely.
+NON_ROSTER_EVENT_PATTERNS = ("road to ufc",)
+
+
+def _is_roster_event(name):
+    normalized = name.lower()
+    return not any(p in normalized for p in NON_ROSTER_EVENT_PATTERNS)
+
+
 def find_next_event(session):
     """Sherdog's org page lists upcoming events in ascending date order --
-    the first row in the 'Upcoming Events' tab is always the soonest."""
+    the first row in the 'Upcoming Events' tab is normally the soonest, but
+    we skip non-roster events (see NON_ROSTER_EVENT_PATTERNS) to find the
+    soonest actual UFC card."""
     resp = session.get(ORG_URL, headers=HEADERS, timeout=15)
     soup = BeautifulSoup(resp.text, "html.parser")
     upcoming_tab = soup.select_one("#upcoming_tab")
-    row = upcoming_tab.select_one("tr[itemscope]")
-    name = row.select_one('[itemprop="name"]').get_text(strip=True)
-    date = row.select_one('[itemprop="startDate"]')["content"][:10]
-    location = row.select_one('[itemprop="location"]').get_text(strip=True)
-    url = "https://www.sherdog.com" + row.select_one('a[itemprop="url"]')["href"]
-    return {"event_name": name, "event_date": date, "event_location": location, "event_url": url}
+    rows = upcoming_tab.select("tr[itemscope]")
+    for row in rows:
+        name = row.select_one('[itemprop="name"]').get_text(strip=True)
+        if not _is_roster_event(name):
+            continue
+        date = row.select_one('[itemprop="startDate"]')["content"][:10]
+        location = row.select_one('[itemprop="location"]').get_text(strip=True)
+        url = "https://www.sherdog.com" + row.select_one('a[itemprop="url"]')["href"]
+        return {"event_name": name, "event_date": date, "event_location": location, "event_url": url}
+    raise RuntimeError("no upcoming roster event found in Sherdog's UFC upcoming events tab")
 
 
 def scrape_card(session, event_url):
