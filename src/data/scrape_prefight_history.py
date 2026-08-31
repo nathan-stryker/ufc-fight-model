@@ -104,6 +104,13 @@ MANUAL_SHERDOG_URLS = {
     # first name "Stanley Dorsainvil" ("The Drill" nickname matches), so the
     # plain-name search found nothing (UFC Fight Night 285 card, 2026-08-22).
     "stan dorsainvil": "https://www.sherdog.com/fighter/Stanley-Dorsainvil-371512",
+    # Mirror image of the usual gap: UFCStats/upcoming_card.csv use the
+    # shorter "Matthieu Duclos" (fighters.csv), but Sherdog lists him under
+    # his fuller name "Matthieu Letho Duclos" ("Hexagone MMA" middleweight
+    # champion, matches the reported UFC Paris debut vs. Luis Felipe Dias),
+    # so the plain "Matthieu Duclos" search found nothing (UFC Fight Night
+    # 287 card, 2026-09-05).
+    "matthieu duclos": "https://www.sherdog.com/fighter/Matthieu-Letho-Duclos-350789",
 }
 
 

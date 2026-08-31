@@ -182,6 +182,18 @@ MANUAL = {
     # display name) since this script's insert-by-name fallback matches
     # against fighters.csv.
     "Cameron Nelson": ("Canada", "CA"),
+    # New card, UFC Fight Night 287 (Hooker vs. Parnasse, Paris) -- six more
+    # fighters with no prior row here, user-supplied directly. Two of them
+    # (Matthieu Duclos, and Muhammad Naimov -- already had a row) also had
+    # their upcoming_card.csv display name corrected this same pass ("Matthieu
+    # Letho Duclos"/"Muhammadjon Naimov" didn't match fighters.csv at all,
+    # leaving both fighter_id unresolved and their bouts unpredictable).
+    "Salahdine Parnasse": ("France", "FR"),
+    "Delphine Benouaich": ("France", "FR"),
+    "Sofia Montenegro": ("Argentina", "AR"),
+    "Fabia Sintes": ("Spain", "ES"),
+    "Michael Aljarouj": ("France", "FR"),
+    "Matthieu Duclos": ("France", "FR"),
 }
 
 
