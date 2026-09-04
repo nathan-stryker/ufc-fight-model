@@ -194,6 +194,10 @@ MANUAL = {
     "Fabia Sintes": ("Spain", "ES"),
     "Michael Aljarouj": ("France", "FR"),
     "Matthieu Duclos": ("France", "FR"),
+    # Added to the UFC Paris card as a short-notice replacement for the
+    # injured Mairon Santos (Nathaniel Wood's original opponent) -- a true
+    # UFC debut with no prior row here, user-supplied directly.
+    "Pavel Andrusca": ("Moldova", "MD"),
 }
 
 
