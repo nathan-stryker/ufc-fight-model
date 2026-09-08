@@ -111,6 +111,11 @@ MANUAL_SHERDOG_URLS = {
     # so the plain "Matthieu Duclos" search found nothing (UFC Fight Night
     # 287 card, 2026-09-05).
     "matthieu duclos": "https://www.sherdog.com/fighter/Matthieu-Letho-Duclos-350789",
+    # Name collision: Sherdog has several unrelated "Sean King"/"Shawn King"
+    # profiles. Confirmed via matching nickname "The King of New Orleans",
+    # Louisiana featherweight, and the reported 6-0 record ahead of his UFC
+    # debut vs. Jessie Rosas (UFC Fight Night 288 - Noche UFC 4, 2026-09-12).
+    "sean king iii": "https://www.sherdog.com/fighter/Sean-King-423706",
 }
 
 

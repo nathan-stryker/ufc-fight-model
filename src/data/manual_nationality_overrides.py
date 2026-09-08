@@ -198,6 +198,12 @@ MANUAL = {
     # injured Mairon Santos (Nathaniel Wood's original opponent) -- a true
     # UFC debut with no prior row here, user-supplied directly.
     "Pavel Andrusca": ("Moldova", "MD"),
+    # New card, UFC Fight Night 288 (Noche UFC 4) -- a true UFC debut with
+    # no prior row here, user-supplied directly. upcoming_card.csv originally
+    # scraped him as plain "Sean King" (no fighters.csv match, unresolved
+    # fighter_id) -- corrected to "Sean King III" (fighters.csv's actual name)
+    # in the same pass.
+    "Sean King III": ("United States", "US"),
 }
 
 
