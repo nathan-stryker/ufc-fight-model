@@ -141,7 +141,14 @@ function stanceLabel(f) {
 // featsA/featsB are the SAME per-fighter feature dicts predictFull() built
 // via buildWinFeats() -- passed in rather than recomputed, so a NaN here is
 // guaranteed to be the exact same NaN the model actually saw, not a second
-// independent (and possibly different) derivation.
+// independent (and possibly different) derivation. A NaN on a genuine UFC
+// debut fighter (featsX._isDebut) is expected -- there's simply no UFC
+// record yet. A NaN on a fighter who HAS UFC fights on file is different:
+// it means this project's own data is missing something it should have
+// (an untracked physical measurement, a round_stats.csv gap, etc.), which
+// quietly weakens that one prediction -- phrased distinctly on purpose
+// (flagged directly by user request, 2026-09-08) so it's visible to every
+// visitor, not just caught if someone happens to notice.
 function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB) {
   const rows = [];
   let stanceShap = 0;
@@ -153,8 +160,12 @@ function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB) {
     const rawA = featsA[base], rawB = featsB[base];
     let valueText;
     if (Number.isNaN(rawA) || Number.isNaN(rawB)) {
-      const missingName = Number.isNaN(rawA) ? nameA : nameB;
-      valueText = `no data yet for ${missingName} (debut) -- model used its learned default`;
+      const missingIsA = Number.isNaN(rawA);
+      const missingName = missingIsA ? nameA : nameB;
+      const missingIsDebut = missingIsA ? featsA._isDebut : featsB._isDebut;
+      valueText = missingIsDebut
+        ? `no data yet for ${missingName} (debut) -- model used its learned default`
+        : `data gap for ${missingName} on this stat (has UFC fights, but it's not on file) -- model used its learned default`;
     } else {
       valueText = meta.fmt(rawA - rawB);
     }

@@ -243,7 +243,7 @@ def load_fights(fighters: pd.DataFrame) -> pd.DataFrame:
     return fights
 
 
-def load_round_stats(fighters: pd.DataFrame) -> pd.DataFrame:
+def load_round_stats(fighters: pd.DataFrame, fights: pd.DataFrame) -> pd.DataFrame:
     stats = pd.read_csv(RAW_DIR / "ufc_fight_stats.csv")
     fight_details = pd.read_csv(RAW_DIR / "ufc_fight_details.csv")
 
@@ -251,9 +251,28 @@ def load_round_stats(fighters: pd.DataFrame) -> pd.DataFrame:
     fight_details = _strip_cols(fight_details, ["EVENT", "BOUT", "URL"])
 
     stats = stats.merge(fight_details, on=["EVENT", "BOUT"], how="left")
+    stats = stats.rename(columns={"URL": "fight_id"})
 
-    name_to_id = fighters.dropna(subset=["name"]).drop_duplicates(subset="name", keep=False).set_index("name")["fighter_id"]
-    stats["fighter_id"] = stats["FIGHTER"].map(name_to_id)
+    # Resolve fighter_id via fights.csv's OWN already-disambiguated mapping
+    # (per-fight weight-class matching, see load_fights()'s comment) instead
+    # of a second, independent name->id lookup -- a plain
+    # drop_duplicates(subset="name", keep=False) here silently dropped EVERY
+    # round-stats row for any fighter who shares a name with someone else in
+    # this project's ~4600-fighter roster. Confirmed: the current active
+    # "Jean Silva" (UFCStats has two people with that exact name) lost 6 of
+    # 8 striking/grappling rate features this way despite having 7 real,
+    # fully-scraped fights sitting right here in ufc_fight_stats.csv --
+    # flagged directly by the user (2026-09-08), who wants exactly this
+    # class of silent gap surfaced. Joining through fights.csv by fight_id
+    # reuses load_fights()'s resolution, so round_stats.csv can never
+    # disagree with fights.csv about who someone is.
+    fid_lookup = fights[["fight_id", "fighter_1_name", "fighter_1_id", "fighter_2_name", "fighter_2_id"]]
+    stats = stats.merge(fid_lookup, on="fight_id", how="left")
+    stats["fighter_id"] = np.where(
+        stats["FIGHTER"] == stats["fighter_1_name"], stats["fighter_1_id"],
+        np.where(stats["FIGHTER"] == stats["fighter_2_name"], stats["fighter_2_id"], np.nan),
+    )
+    stats = stats.drop(columns=["fighter_1_name", "fighter_1_id", "fighter_2_name", "fighter_2_id"])
 
     xoy_cols = {
         "SIG.STR.": "sig_str",
@@ -278,7 +297,6 @@ def load_round_stats(fighters: pd.DataFrame) -> pd.DataFrame:
 
     stats = stats.rename(
         columns={
-            "URL": "fight_id",
             "EVENT": "event",
             "BOUT": "bout",
             "FIGHTER": "fighter_name",
@@ -306,7 +324,7 @@ def main():
 
     fighters = load_fighters()
     fights = load_fights(fighters)
-    round_stats = load_round_stats(fighters)
+    round_stats = load_round_stats(fighters, fights)
 
     fighters.to_csv(PROCESSED_DIR / "fighters.csv", index=False)
     fights.to_csv(PROCESSED_DIR / "fights.csv", index=False)
