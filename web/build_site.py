@@ -6,6 +6,7 @@ WEB_DIR = Path(__file__).resolve().parent
 
 template = (WEB_DIR / "site_template.html").read_text(encoding="utf-8")
 engine_js = (WEB_DIR / "engine.js").read_text(encoding="utf-8")
+explain_js = (WEB_DIR / "explain.js").read_text(encoding="utf-8")
 model_data_json = (WEB_DIR / "model_data.json").read_text(encoding="utf-8")
 ui_js = (WEB_DIR / "ui.js").read_text(encoding="utf-8")
 predictions_js = (WEB_DIR / "predictions.js").read_text(encoding="utf-8")
@@ -19,6 +20,7 @@ predict_ui_js = (WEB_DIR / "predict_ui.js").read_text(encoding="utf-8")
 # consumer, was pulled from the site -- see edge_calculator_template.html's
 # own comment) but the file stays in web/ as dormant source, not deleted.
 out = template.replace("__ENGINE_JS__", engine_js)
+out = out.replace("__EXPLAIN_JS__", explain_js)
 out = out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
 out = out.replace("__PREDICTIONS_JS__", predictions_js)
 out = out.replace("__NEWS_RENDER_JS__", news_render_js)
@@ -102,6 +104,7 @@ predict_template = (WEB_DIR / "predict_template.html").read_text(encoding="utf-8
 
 predict_out = predict_template.replace("__SHARED_STYLE__", shared_style)
 predict_out = predict_out.replace("__ENGINE_JS__", engine_js)
+predict_out = predict_out.replace("__EXPLAIN_JS__", explain_js)
 predict_out = predict_out.replace("__MODEL_DATA__", f"const MODEL_DATA = {model_data_json};")
 predict_out = predict_out.replace("__PREDICT_UI_JS__", predict_ui_js)
 

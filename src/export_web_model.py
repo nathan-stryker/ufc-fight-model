@@ -47,8 +47,8 @@ def r(x, sig_figs=SIG_FIGS):
     return float(f"{x:.{sig_figs}g}")
 
 
-def strip_tree(t):
-    return [
+def strip_tree(t, with_cover=False):
+    tree = [
         t["left_children"],
         t["right_children"],
         t["split_indices"],
@@ -56,6 +56,16 @@ def strip_tree(t):
         t["default_left"],
         [r(x, TREE_SIG_FIGS) for x in t["base_weights"]],
     ]
+    if with_cover:
+        # sum_hessian = XGBoost's own per-node "cover" (for a binary logloss
+        # objective this is the sum of p*(1-p) over training rows reaching
+        # that node, i.e. an effective sample-weight) -- the one extra piece
+        # TreeSHAP needs beyond what a plain tree-walk uses. Only requested
+        # for the win model (see strip_binary_model) since it's the only one
+        # explain.js explains; skipping it for method/round keeps their
+        # payload the same size it's always been.
+        tree.append([r(x, TREE_SIG_FIGS) for x in t["sum_hessian"]])
+    return tree
 
 
 def _best_iteration(learner):
@@ -87,7 +97,7 @@ def strip_binary_model(path):
     return {
         "features": learner["feature_names"],
         "base_logit": r(base_logit, TREE_SIG_FIGS),
-        "trees": [strip_tree(t) for t in trees],
+        "trees": [strip_tree(t, with_cover=True) for t in trees],
     }
 
 

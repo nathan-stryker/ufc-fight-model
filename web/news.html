@@ -704,6 +704,65 @@
     .fc-row { text-align: center; }
   }
 
+  /* "Why this pick?" -- explain.js's per-feature SHAP breakdown. Same
+     underlined-button toggle idiom as .fc-predict-toggle/.lr-strike-toggle
+     above (nested one level deeper here, inside .fc-predict-panel on the
+     fight card, or standalone on the Fantasy Matchup page -- neither
+     context is a grid, so no grid-column/justify-self needed unlike
+     .fc-predict-toggle's own grid-row placement). .factor-bar-track is the
+     one genuinely new visual primitive this needs: every other bar in this
+     site (.tape-row-track, .odds-bar) fills 0->100% in one direction, but a
+     SHAP contribution is signed -- it can favor either fighter -- so this
+     is a diverging bar that grows outward from a center line instead. */
+  .why-toggle {
+    display: block;
+    margin-top: 0.75rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .why-toggle:hover { opacity: 0.8; }
+  .why-panel {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--canvas-line);
+  }
+  .factor-row {
+    display: grid;
+    grid-template-columns: 9rem 1fr 8rem;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--canvas-line);
+  }
+  .factor-row:last-child { border-bottom: none; }
+  .factor-label { font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.15rem; }
+  .factor-value { font-size: 0.7rem; color: var(--ink-dim); }
+  .factor-bar-track {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 0.5rem;
+    position: relative;
+  }
+  .factor-bar-track::before {
+    content: ""; position: absolute; left: 50%; top: -0.25rem; bottom: -0.25rem; width: 1px;
+    background: var(--canvas-line);
+  }
+  .factor-bar-a { justify-self: end; height: 100%; width: 0%; background: var(--red); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .factor-bar-b { justify-self: start; height: 100%; width: 0%; background: var(--blue); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .factor-favors { font-size: 0.72rem; text-align: right; color: var(--ink-dim); }
+  .why-factors { margin-top: 0.5rem; }
+  .factor-others { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.5rem; font-style: italic; }
+  .why-caption { font-size: 0.7rem; color: var(--ink-dim); margin-top: 0.75rem; line-height: 1.5; }
+
   /* Meet the Debut Fighters -- home page, below the fight card. Spotlights
      anyone on this week's card with zero recorded UFC fights (same "UFC
      Debut" signal the fight-card's own form badges already use). Only bio
@@ -986,7 +1045,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .odds-fill, .tape-row-fill, .predict-btn { transition: none !important; }
+    .odds-fill, .tape-row-fill, .factor-bar-a, .factor-bar-b, .predict-btn { transition: none !important; }
     .masthead { animation: none !important; }
   }
 

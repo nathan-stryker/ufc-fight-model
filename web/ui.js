@@ -102,6 +102,38 @@
       </div>`;
   }
 
+  // "Why this pick?" -- the top SHAP-ranked factors from explain.js's
+  // explainWin(), rendered as diverging bars (favors nameA left/red, nameB
+  // right/blue) around a center line, reusing the .tape-row grid layout's
+  // label/value columns but not its 0->100% single-direction fill, which
+  // doesn't fit a signed contribution. String-built like the rest of this
+  // file's row renderers (predictBreakdownHtml/tapeRowHtml) -- computed
+  // lazily on first expand, see the wiring below, not for every bout up
+  // front (explainWin is cheap but there's no reason to pay for bouts a
+  // visitor never opens).
+  function whyPanelHtml(explanation) {
+    const rows = explanation.factors.map((f) => {
+      const towardA = f.favors === "a";
+      const pct = (f.relativeMagnitude * 50).toFixed(1); // half-width from center
+      return `
+        <div class="factor-row">
+          <div class="factor-label">${escapeHtml(f.label)}<span class="factor-value mono">${escapeHtml(f.valueText)}</span></div>
+          <div class="factor-bar-track">
+            <div class="factor-bar factor-bar-a" style="width:${towardA ? pct : 0}%"></div>
+            <div class="factor-bar factor-bar-b" style="width:${towardA ? 0 : pct}%"></div>
+          </div>
+          <div class="factor-favors mono">${towardA ? escapeHtml(explanation.nameA) : escapeHtml(explanation.nameB)}</div>
+        </div>`;
+    }).join("");
+    const othersLine = explanation.othersCount > 0
+      ? `<div class="factor-others">${explanation.othersCount} other factor${explanation.othersCount === 1 ? "" : "s"} had a smaller effect.</div>`
+      : "";
+    return `
+      <div class="why-factors">${rows}</div>
+      ${othersLine}
+      <div class="why-caption">Based on the model's core prediction (Elo, physical attributes, UFC record, and striking/grappling rates); a small blend toward historical Elo trends can shift the win% shown above by a couple points without changing which factors drove it.</div>`;
+  }
+
   // Home-page "this week's card" -- scraped from Sherdog.com at build time
   // (src/data/scrape_upcoming_card.py), not fetched live in-browser (this
   // site has no server and Artifact CSP blocks cross-origin fetches anyway).
@@ -200,7 +232,7 @@
         // the full expand-on-demand breakdown below -- no second inference
         // call when a fight is expanded.
         const result = predictFull(fA, fB, callRounds, MODEL_DATA);
-        boutResults.push({ result, scheduledRounds: callRounds });
+        boutResults.push({ result, scheduledRounds: callRounds, fA, fB });
         modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
         // Always visible (not hidden behind the toggle) so a prediction you
         // logged last visit -- or five minutes ago -- still shows on the
@@ -214,6 +246,8 @@
           <button class="fc-predict-toggle" type="button" aria-expanded="false" data-default-label="Make Your Pick">Make Your Pick</button>
           <div class="fc-predict-panel" hidden>
             ${predictBreakdownHtml(result)}
+            <button class="why-toggle" type="button" aria-expanded="false">Why this pick?</button>
+            <div class="why-panel" hidden></div>
             <div class="fc-pick-mount"></div>
           </div>`;
       }
@@ -332,6 +366,21 @@
           mounted = true;
         }
       });
+
+      const whyBtn = panel.querySelector(".why-toggle");
+      const whyPanel = whyBtn ? whyBtn.nextElementSibling : null;
+      let whyMounted = false;
+      if (whyBtn && whyPanel && typeof explainWin === "function") {
+        whyBtn.addEventListener("click", () => {
+          const whyExpanded = whyBtn.getAttribute("aria-expanded") === "true";
+          whyBtn.setAttribute("aria-expanded", String(!whyExpanded));
+          whyPanel.hidden = whyExpanded;
+          if (!whyExpanded && !whyMounted) {
+            whyPanel.innerHTML = whyPanelHtml(explainWin(matchupObj.fA, matchupObj.fB, MODEL_DATA));
+            whyMounted = true;
+          }
+        });
+      }
     });
   }
 

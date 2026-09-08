@@ -117,7 +117,7 @@
     return row;
   }
 
-  function renderResult(r) {
+  function renderResult(r, explanation) {
     const results = document.getElementById("results");
     results.hidden = false;
 
@@ -164,6 +164,51 @@
     } else {
       entries.forEach(([rnd, p]) => roundRows.appendChild(makeRow(`Round ${rnd}`, p, showRoundPredicted && rnd === topRound)));
     }
+
+    renderWhy(explanation);
+  }
+
+  // "Why this call?" -- DOM-node version of ui.js's whyPanelHtml(), same
+  // reasoning as verdictText()/makeRow() above for why this is a separate
+  // implementation rather than a shared one. Collapsed and re-rendered on
+  // every new prediction (this page has one fixed results panel, unlike the
+  // fight card's N independent rows) so a stale explanation from the
+  // previous matchup can never be left showing.
+  function makeFactorRow(f, nameA, nameB) {
+    const row = document.createElement("div");
+    row.className = "factor-row";
+    const towardA = f.favors === "a";
+    row.innerHTML =
+      `<div class="factor-label">${escapeHtml(f.label)}<span class="factor-value mono">${escapeHtml(f.valueText)}</span></div>` +
+      `<div class="factor-bar-track"><div class="factor-bar factor-bar-a"></div><div class="factor-bar factor-bar-b"></div></div>` +
+      `<div class="factor-favors mono">${escapeHtml(towardA ? nameA : nameB)}</div>`;
+    requestAnimationFrame(() => {
+      const pct = f.relativeMagnitude * 50;
+      row.querySelector(towardA ? ".factor-bar-a" : ".factor-bar-b").style.width = pct + "%";
+    });
+    return row;
+  }
+
+  function renderWhy(explanation) {
+    const panel = document.getElementById("why-panel");
+    const btn = document.getElementById("why-toggle");
+    if (!panel || !btn) return;
+    panel.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+    panel.innerHTML = "";
+    explanation.factors.forEach((f) => {
+      panel.appendChild(makeFactorRow(f, explanation.nameA, explanation.nameB));
+    });
+    if (explanation.othersCount > 0) {
+      const others = document.createElement("div");
+      others.className = "factor-others";
+      others.textContent = `${explanation.othersCount} other factor${explanation.othersCount === 1 ? "" : "s"} had a smaller effect.`;
+      panel.appendChild(others);
+    }
+    const caption = document.createElement("div");
+    caption.className = "why-caption";
+    caption.textContent = "Based on the model's core prediction (Elo, physical attributes, UFC record, and striking/grappling rates); a small blend toward historical Elo trends can shift the win% shown above by a couple points without changing which factors drove it.";
+    panel.appendChild(caption);
   }
 
   // Shared by the "Call It" button click AND the auto-run path below (a
@@ -175,7 +220,8 @@
   function runPrediction() {
     if (!selected.a || !selected.b) return;
     const result = predictFull(selected.a, selected.b, scheduledRounds, MODEL_DATA);
-    renderResult(result);
+    const explanation = explainWin(selected.a, selected.b, MODEL_DATA);
+    renderResult(result, explanation);
   }
 
   setupCorner("a");
@@ -189,6 +235,16 @@
   });
 
   document.getElementById("predict-btn").addEventListener("click", runPrediction);
+
+  const whyToggleBtn = document.getElementById("why-toggle");
+  if (whyToggleBtn) {
+    whyToggleBtn.addEventListener("click", () => {
+      const panel = document.getElementById("why-panel");
+      const expanded = whyToggleBtn.getAttribute("aria-expanded") === "true";
+      whyToggleBtn.setAttribute("aria-expanded", String(!expanded));
+      panel.hidden = expanded;
+    });
+  }
 
   // Landed here from a shared/bookmarked link (?a=<idA>&b=<idB>&rounds=<N>)
   // -- pre-fill both corners and run the prediction immediately, no click
