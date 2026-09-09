@@ -558,6 +558,18 @@
   .fc-fighter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; }
   .fc-nickname { font-size: 0.68rem; font-style: italic; color: var(--ink-dim); margin-bottom: -0.15rem; }
   .fc-row--main-event .fc-nickname { font-size: 0.78rem; }
+  /* UFC.com's own "Fighting style" tag (scrape_fighting_style.py) and this
+     fighter's record against past opponents sharing THIS bout's opponent's
+     style (engine.js's recordVsStyle()) -- both omitted entirely rather
+     than shown blank when there's nothing on file, same convention as the
+     nickname line above. */
+  .fc-style {
+    font-size: 0.65rem; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink-dim); border: 1px solid var(--canvas-line); padding: 0.1rem 0.4rem;
+  }
+  .fc-style-record { font-size: 0.7rem; color: var(--ink); }
+  .fc-style-record-note { color: var(--ink-dim); font-size: 0.64rem; }
+  .fighter-style-record { color: var(--ink); font-size: 0.78rem; margin-top: -0.3rem; }
   /* Divisional rank, scraped from ufc.com alongside the rest of the card
      data -- "C" for the champion gets the gold treatment (same accent as
      the belt icon), a plain "#N" stays muted so it doesn't compete with

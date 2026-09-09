@@ -85,6 +85,7 @@
     if (f.height_in != null) metaParts.push(`${Math.floor(f.height_in / 12)}'${Math.round(f.height_in % 12)}"`);
     if (f.reach_in != null) metaParts.push(`${f.reach_in}" reach`);
     if (f.stance) metaParts.push(f.stance);
+    if (f.style) metaParts.push(f.style);
     if (f.elo == null) metaParts.push("no UFC history yet");
     document.getElementById(`meta-${corner}`).textContent = metaParts.join(" - ");
 
@@ -166,6 +167,26 @@
     }
 
     renderWhy(explanation);
+    renderStyleRecords();
+  }
+
+  // "X-Y vs {opponent's style}" under each fighter-card -- reads directly
+  // from `selected` (both corners) rather than taking params, since it
+  // only ever makes sense once both are chosen, same precondition
+  // runPrediction() already checks before calling renderResult() at all.
+  // Uses engine.js's recordVsStyle(), the exact same function ui.js's
+  // fight-card version calls -- one definition of "record vs style" for
+  // both pages, never two independent derivations that could disagree.
+  function renderStyleRecords() {
+    [["a", "b"], ["b", "a"]].forEach(([corner, oppCorner]) => {
+      const el = document.getElementById(`style-record-${corner}`);
+      if (!el) return;
+      const f = selected[corner], opp = selected[oppCorner];
+      const rec = f && opp ? recordVsStyle(f.fighter_id, opp.style, byId, MODEL_DATA.fighter_history) : null;
+      if (!rec) { el.hidden = true; el.textContent = ""; return; }
+      el.hidden = false;
+      el.textContent = `${rec.wins}-${rec.losses} vs ${opp.style} (${rec.knownCount} of ${rec.totalFights} career fights)`;
+    });
   }
 
   // "Why this call?" -- DOM-node version of ui.js's whyPanelHtml(), same

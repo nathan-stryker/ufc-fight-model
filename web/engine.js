@@ -31,6 +31,37 @@ function buildFighterIndex(fightersPayload) {
   return { byId, searchList };
 }
 
+// A fighter's win/loss record against opponents sharing ONE specific
+// fighting style (UFC.com's own editorial tag, see
+// src/data/scrape_fighting_style.py) -- e.g. "how has this fighter done
+// against other Wrestlers", asked about the style of whoever they're
+// CURRENTLY matched against. MODEL_DATA.fighter_history is keyed by
+// fighter_id -> [[opponentId, "W"|"L"], ...], their FULL career (not the
+// capped-at-5 recent-form badges), draws/no-contests already excluded at
+// export time. Returns null (never a guessed/zero record) when there's
+// nothing real to show: no opponentStyle to compare against, no history
+// at all, or zero opponents whose OWN style happens to be on file --
+// most fighters have some career opponents outside the active-roster
+// scrape window (retired, long inactive), so this is expected, not a bug,
+// and knownCount/totalFights is carried through so the UI can say so
+// honestly ("N of M career opponents' styles known") instead of implying
+// a complete record.
+function recordVsStyle(fighterId, opponentStyle, byId, fighterHistory) {
+  if (!opponentStyle) return null;
+  const history = fighterHistory && fighterHistory[fighterId];
+  if (!history || !history.length) return null;
+  let wins = 0, losses = 0, knownCount = 0;
+  for (const [oppId, outcome] of history) {
+    const opp = byId.get(oppId);
+    if (!opp || !opp.style) continue;
+    if (opp.style.toLowerCase() !== opponentStyle.toLowerCase()) continue;
+    knownCount++;
+    if (outcome === "W") wins++; else losses++;
+  }
+  if (knownCount === 0) return null;
+  return { wins, losses, knownCount, totalFights: history.length };
+}
+
 // ---------------------------------------------------------------------------
 // Tree-ensemble inference (mirrors XGBoost's own prediction logic exactly)
 // ---------------------------------------------------------------------------

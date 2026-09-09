@@ -48,6 +48,35 @@
     return svg || `<div class="fighter-badge-empty"></div>`;
   }
 
+  // UFC.com's own editorial "Fighting style" tag (see
+  // src/data/scrape_fighting_style.py) -- a plain label next to the
+  // fighter's name, same tier as the flag/rank chip. Not every fighter has
+  // one on file yet (a multi-hour scrape, and UFC.com itself doesn't tag
+  // every athlete) -- omitted rather than shown blank, same convention as
+  // the nickname line right above it.
+  function styleTagHtml(f) {
+    return f && f.style ? `<div class="fc-style mono">${escapeHtml(f.style)}</div>` : "";
+  }
+
+  // "X-Y vs {opponent's style}" -- f's own career record against fighters
+  // sharing THIS bout's opponent's style, via engine.js's recordVsStyle().
+  // Omitted (not shown as "0-0" or hidden-but-present) whenever there's
+  // nothing real to report: opponent has no style on file, f has no
+  // history, or none of f's own past opponents happen to have a known
+  // style themselves -- see recordVsStyle's own comment for why that last
+  // case is normal, not a bug.
+  function styleRecordHtml(f, opponentF) {
+    if (!f || !opponentF || !opponentF.style) return "";
+    const rec = recordVsStyle(f.fighter_id, opponentF.style, byId, MODEL_DATA.fighter_history);
+    if (!rec) return "";
+    // No pluralization attempted ("vs Wrestlers"/"vs Sambo fighters") --
+    // UFC.com's own style tags mix person-nouns ("Striker") and discipline
+    // names ("Sambo", "Muay Thai") inconsistently, so there's no single
+    // grammatically-safe rule; "vs {style}" reads fine either way.
+    return `<div class="fc-style-record mono">${rec.wins}-${rec.losses} vs ${escapeHtml(opponentF.style)} ` +
+      `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span></div>`;
+  }
+
   // Full model breakdown (odds bar + method/round tapes), rendered as an
   // HTML string rather than DOM nodes -- boutRowHtml() below builds the
   // whole fight card in one big innerHTML assignment, same as the rest of
@@ -278,13 +307,17 @@
             <div class="fc-fighter-block">
               ${fA && fA.nickname ? `<div class="fc-nickname">"${escapeHtml(fA.nickname)}"</div>` : ""}
               <div class="fc-fighter">${badgeA}${rankChipHtml(b.rankA)}<span>${escapeHtml(b.nameA)}</span></div>
+              ${styleTagHtml(fA)}
               ${formBadgesHtml(b.idA)}
+              ${styleRecordHtml(fA, fB)}
             </div>
             <div class="fc-vs">vs</div>
             <div class="fc-fighter-block">
               ${fB && fB.nickname ? `<div class="fc-nickname">"${escapeHtml(fB.nickname)}"</div>` : ""}
               <div class="fc-fighter">${badgeB}${rankChipHtml(b.rankB)}<span>${escapeHtml(b.nameB)}</span></div>
+              ${styleTagHtml(fB)}
               ${formBadgesHtml(b.idB)}
+              ${styleRecordHtml(fB, fA)}
             </div>
           </div>
           ${modelPick}

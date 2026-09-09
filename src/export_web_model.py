@@ -149,10 +149,19 @@ def export_fighters():
     nationality_path = PROCESSED_DIR / "fighter_nationality.csv"
     nationality = pd.read_csv(nationality_path)[["fighter_id", "iso_code"]] if nationality_path.exists() else \
         pd.DataFrame(columns=["fighter_id", "iso_code"])
+    # UFC.com's own editorial "Fighting style" tag (see
+    # src/data/scrape_fighting_style.py) -- a multi-hour scrape of the same
+    # active roster nationality/flags already use, so may not exist yet or
+    # be only partially filled in on a fresh checkout; degrades to every
+    # fighter showing no style rather than failing the export.
+    style_path = PROCESSED_DIR / "fighter_style.csv"
+    style = pd.read_csv(style_path)[["fighter_id", "style"]] if style_path.exists() else \
+        pd.DataFrame(columns=["fighter_id", "style"])
 
     df = fighters.merge(snapshot, on="fighter_id", how="left").merge(
         method_snapshot.drop(columns=["event_date"]), on="fighter_id", how="left"
-    ).merge(division_info, on="fighter_id", how="left").merge(nationality, on="fighter_id", how="left")
+    ).merge(division_info, on="fighter_id", how="left").merge(nationality, on="fighter_id", how="left") \
+        .merge(style, on="fighter_id", how="left")
     # Only ship fighters we have SOME data for (a profile at minimum -- height/reach/dob
     # may still be missing and are handled client-side same as predict.py's debut path).
     df = df[df["name"].notna()]
@@ -187,7 +196,7 @@ def export_fighters():
     method_dist_fields = [f"{tier}_{outcome}_{m}" for tier in ("last5", "career") for outcome in ("win", "loss") for m in METHODS]
 
     fields = ["fighter_id", "name", "nickname", "dob_epoch_days", "height_in", "reach_in", "stance", "last_fight_epoch_days"] \
-        + win_snapshot_fields + method_dist_fields + ["weightclass", "rank", "n_in_division", "iso_code"]
+        + win_snapshot_fields + method_dist_fields + ["weightclass", "rank", "n_in_division", "iso_code", "style"]
 
     epoch = pd.Timestamp("1970-01-01")
     df["dob_epoch_days"] = (df["dob"] - epoch).dt.days
@@ -271,6 +280,56 @@ def _upcoming_card_payload():
         "eventLocation": first["event_location"],
         "bouts": bouts,
     }
+
+
+def _fighter_full_history_payload(fighters_payload):
+    """
+    Full UFC fight history (opponent_id + win/loss) for every fighter in
+    the active-roster export, for the "record vs. opponent's fighting
+    style" feature -- deliberately NOT capped at n=5 like
+    _recent_results_payload() below (that's sized for the small hoverable
+    form badges; a style-matchup record needs a fighter's WHOLE career, or
+    it'd silently undercount). Opponent STYLE itself isn't resolved here --
+    the client already has MODEL_DATA.fighters keyed by id and can look
+    up an opponent's style itself, so this only carries opponent_id, not a
+    second copy of style data.
+
+    Scoped to the same active-roster fighter set the rest of this export
+    already uses. An older opponent from earlier in someone's career is
+    often retired/inactive and outside that window, so their style is
+    genuinely unknown here -- the feature built on this is meant to say so
+    honestly ("N of M career opponents' styles known"), not claim a
+    complete record it doesn't have.
+
+    Compact [opponent_id, outcome] pairs rather than named objects -- this
+    is the single biggest payload addition in this export (~770 fighters x
+    their whole career), and the field names would otherwise repeat once
+    per fight for no benefit.
+    """
+    fields = fighters_payload["fields"]
+    fid_idx = fields.index("fighter_id")
+    ids = {row[fid_idx] for row in fighters_payload["rows"]}
+    if not ids:
+        return {}
+
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+
+    history = {}
+    for fid in ids:
+        mine = fights[(fights["fighter_1_id"] == fid) | (fights["fighter_2_id"] == fid)]
+        rows = []
+        for _, r in mine.iterrows():
+            if r["is_no_contest"] or r["is_draw"] or pd.isna(r["winner_id"]):
+                continue  # not a win or loss -- doesn't count toward a style-matchup record
+            is_fighter_1 = r["fighter_1_id"] == fid
+            opponent_id = r["fighter_2_id"] if is_fighter_1 else r["fighter_1_id"]
+            if pd.isna(opponent_id):
+                continue  # opponent themselves unresolved -- can't look up their style either
+            outcome = "W" if r["winner_id"] == fid else "L"
+            rows.append([opponent_id, outcome])
+        if rows:
+            history[fid] = rows
+    return history
 
 
 def _recent_results_payload(upcoming_card_payload, n=5):
@@ -695,6 +754,7 @@ def main():
     }
     payload["fighters"], flag_codes = export_fighters()
     payload["flags"] = _flags_payload(flag_codes)
+    payload["fighter_history"] = _fighter_full_history_payload(payload["fighters"])
     payload["upcoming_card"] = _upcoming_card_payload()
     payload["recent_results"] = _recent_results_payload(payload["upcoming_card"])
     payload["prefight_records"] = _prefight_records_payload(payload["upcoming_card"])
@@ -745,7 +805,11 @@ def main():
     print(f"  method_model: {len(payload['method_model']['trees'])} trees, classes={method_classes}")
     print(f"  round_model: {len(payload['round_model']['trees'])} trees")
     print(f"  fighters: {len(payload['fighters']['rows'])} rows, {len(payload['fighters']['fields'])} fields each (active roster only)")
+    n_with_style = sum(1 for row in payload["fighters"]["rows"] if row[payload["fighters"]["fields"].index("style")] is not None)
+    print(f"  fighters with a known fighting style: {n_with_style}/{len(payload['fighters']['rows'])}")
     print(f"  flags: {len(payload['flags'])} countries")
+    n_fights_total = sum(len(v) for v in payload["fighter_history"].values())
+    print(f"  fighter_history: {len(payload['fighter_history'])} fighters, {n_fights_total} fight records")
     if payload["upcoming_card"]:
         n_matched = sum(1 for b in payload["upcoming_card"]["bouts"] if b["idA"] and b["idB"])
         print(f"  upcoming_card: {payload['upcoming_card']['eventName']}, "
