@@ -37,6 +37,7 @@ Writes: data/processed/fighter_style.csv
 import re
 import time
 import unicodedata
+import socket
 from pathlib import Path
 
 import pandas as pd
@@ -44,6 +45,18 @@ import requests
 from bs4 import BeautifulSoup
 
 from src.data.scrape_nationality import get_active_fighters
+
+# requests' own per-call `timeout=` only bounds an already-established
+# socket's connect/read phases -- it does NOT bound the OS-level DNS
+# lookup (getaddrinfo) requests goes through first. Confirmed hitting this
+# directly: this multi-hour scrape hung indefinitely twice in one session
+# (each time coinciding with the machine coming back from sleep), with
+# `timeout=15` on every call and the process still showing as "alive" but
+# making zero progress for 40+ minutes -- a stale post-sleep DNS/socket
+# state that outlives the per-request timeout. socket.setdefaulttimeout()
+# applies to that lower-level call too, so a hang here now raises instead
+# of blocking forever.
+socket.setdefaulttimeout(30)
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 REQUEST_DELAY_SECONDS = 15.0  # ufc.com robots.txt: crawl-delay: 15 (site-wide)
