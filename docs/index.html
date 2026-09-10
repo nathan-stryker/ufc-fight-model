@@ -1776,9 +1776,23 @@ function explainWin(fighterA, fighterB, model) {
     favors: r.shap >= 0 ? "a" : "b",
     relativeMagnitude: Math.abs(r.shap) / maxAbs,
   });
+  // Intangibles (age, reach, layoff, stance, etc.) run 8-10 factors deep
+  // per matchup -- unlike Striking/Grappling, which are core performance
+  // stats worth showing regardless of size, most individual intangibles
+  // barely move the model's pick. Below this share of the matchup's
+  // single biggest factor, a factor reads as noise, not signal -- drop it
+  // rather than pad the panel with near-zero rows (user feedback,
+  // 2026-09-10: "we do not need unnecessary info clogging our page").
+  // Striking/Grappling are never filtered.
+  const MIN_INTANGIBLE_MAGNITUDE = 0.08;
+
   const categories = {};
   for (const cat of CATEGORY_ORDER) {
-    categories[cat] = rows.filter((r) => r.category === cat).sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap)).map(toFactor);
+    let catRows = rows.filter((r) => r.category === cat).sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap)).map(toFactor);
+    if (cat === "intangibles") {
+      catRows = catRows.filter((f) => f.relativeMagnitude >= MIN_INTANGIBLE_MAGNITUDE);
+    }
+    categories[cat] = catRows;
   }
   return {
     nameA: fighterA.name, nameB: fighterB.name,
