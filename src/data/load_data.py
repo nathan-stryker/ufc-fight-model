@@ -72,6 +72,41 @@ def _strip_cols(df: pd.DataFrame, cols) -> pd.DataFrame:
     return df
 
 
+def _real_event_names() -> set:
+    events = pd.read_csv(RAW_DIR / "ufc_event_details.csv")
+    events = _strip_cols(events, ["EVENT"])
+    return set(events["EVENT"])
+
+
+def _dedupe_duplicate_events(df: pd.DataFrame, real_events: set, subset=None):
+    """The Greco1899/scrape_ufc_stats mirror double-scrapes some cards --
+    confirmed 2026-09-10 for 2 "Noche UFC" specials (46 bouts / 274
+    ufc_fight_stats.csv rows) -- once under their real "Noche UFC: ..."
+    name (present in ufc_event_details.csv) and again, byte-identical
+    otherwise, under a generic "UFC Fight Night: ..." label that has no
+    matching ufc_event_details.csv row. Left alone, every fighter on those
+    cards gets that fight double-counted in every rolling/aggregate stat
+    (this is what made Rafa Garcia's and Rongzhu's submission-attempt
+    rates look off to a domain-expert user). A handful of pre-2000 events
+    also carry literal same-event duplicate rows (a separate, smaller
+    scraper glitch), which this also catches since it doesn't require the
+    EVENT strings to differ, only the rest of the row to match.
+
+    subset=None compares every column except EVENT (used for
+    ufc_fight_stats.csv, which has no per-fight id until merged later).
+    Pass subset=["URL"] for ufc_fight_results.csv/ufc_fight_details.csv,
+    which already carry a real per-fight id -- comparing only URL (not the
+    full row) is what lets this also catch a duplicate whose OUTCOME/METHOD
+    text happens to differ trivially by whitespace.
+    """
+    if subset is None:
+        subset = [c for c in df.columns if c != "EVENT"]
+    is_real = df["EVENT"].isin(real_events)
+    ordered = df.assign(_is_real=is_real).sort_values("_is_real", ascending=False)
+    deduped = ordered.drop_duplicates(subset=subset, keep="first").drop(columns="_is_real")
+    return deduped.sort_index(), len(df) - len(deduped)
+
+
 def _parse_height(val: str) -> float:
     if not isinstance(val, str) or val.strip() == "--":
         return np.nan
@@ -151,12 +186,16 @@ def load_fighters() -> pd.DataFrame:
     return fighters
 
 
-def load_fights(fighters: pd.DataFrame) -> pd.DataFrame:
+def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
     results = pd.read_csv(RAW_DIR / "ufc_fight_results.csv")
     events = pd.read_csv(RAW_DIR / "ufc_event_details.csv")
 
     results = _strip_cols(results, ["EVENT", "BOUT", "OUTCOME", "WEIGHTCLASS", "METHOD", "URL"])
     events = _strip_cols(events, ["EVENT", "LOCATION"])
+
+    results, n_dropped = _dedupe_duplicate_events(results, real_events, subset=["URL"])
+    if n_dropped:
+        print(f"load_fights: dropped {n_dropped} duplicate-event rows from ufc_fight_results.csv")
 
     events["event_date"] = pd.to_datetime(events["DATE"], format="%B %d, %Y", errors="coerce")
     events = events.rename(columns={"LOCATION": "location"})[["EVENT", "event_date", "location"]]
@@ -243,15 +282,33 @@ def load_fights(fighters: pd.DataFrame) -> pd.DataFrame:
     return fights
 
 
-def load_round_stats(fighters: pd.DataFrame, fights: pd.DataFrame) -> pd.DataFrame:
+def load_round_stats(fighters: pd.DataFrame, fights: pd.DataFrame, real_events: set) -> pd.DataFrame:
     stats = pd.read_csv(RAW_DIR / "ufc_fight_stats.csv")
     fight_details = pd.read_csv(RAW_DIR / "ufc_fight_details.csv")
 
     stats = _strip_cols(stats, ["EVENT", "BOUT", "ROUND", "FIGHTER"])
     fight_details = _strip_cols(fight_details, ["EVENT", "BOUT", "URL"])
 
+    stats, n_dropped_stats = _dedupe_duplicate_events(stats, real_events)
+    if n_dropped_stats:
+        print(f"load_round_stats: dropped {n_dropped_stats} duplicate-event rows from ufc_fight_stats.csv")
+    fight_details, n_dropped_details = _dedupe_duplicate_events(fight_details, real_events, subset=["URL"])
+    if n_dropped_details:
+        print(f"load_round_stats: dropped {n_dropped_details} duplicate-event rows from ufc_fight_details.csv")
+
     stats = stats.merge(fight_details, on=["EVENT", "BOUT"], how="left")
     stats = stats.rename(columns={"URL": "fight_id"})
+    # Belt-and-suspenders: the fake "UFC Fight Night: ..." EVENT label is
+    # only dropped from fight_details above when it's a byte-identical
+    # duplicate of a real event's URL row. Also collapse any (fight_id,
+    # round, fighter) rows that still ended up identical after the merge
+    # (e.g. a fake-event stats row whose fight_details counterpart wasn't
+    # itself flagged as a duplicate for some other reason) so a real fight
+    # is never double-counted downstream.
+    before = len(stats)
+    stats = stats.drop_duplicates(subset=["fight_id", "ROUND", "FIGHTER"], keep="first")
+    if len(stats) != before:
+        print(f"load_round_stats: dropped {before - len(stats)} residual (fight_id, round, fighter) duplicate rows")
 
     # Resolve fighter_id via fights.csv's OWN already-disambiguated mapping
     # (per-fight weight-class matching, see load_fights()'s comment) instead
@@ -322,9 +379,11 @@ def load_round_stats(fighters: pd.DataFrame, fights: pd.DataFrame) -> pd.DataFra
 def main():
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
+    real_events = _real_event_names()
+
     fighters = load_fighters()
-    fights = load_fights(fighters)
-    round_stats = load_round_stats(fighters, fights)
+    fights = load_fights(fighters, real_events)
+    round_stats = load_round_stats(fighters, fights, real_events)
 
     fighters.to_csv(PROCESSED_DIR / "fighters.csv", index=False)
     fights.to_csv(PROCESSED_DIR / "fights.csv", index=False)

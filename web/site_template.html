@@ -509,6 +509,7 @@
   .fc-group-label:first-of-type { margin-top: 0.25rem; }
   .fc-rows { display: flex; flex-direction: column; gap: 0.4rem; }
   .fc-row {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -718,32 +719,38 @@
   /* "Breakdown" -- the single consolidated place for the model's per-
      feature explanation (explain.js), fighting styles, and record-vs-
      style, replacing what used to be split across "Make Your Pick"'s own
-     panel and a nested "Why this pick?" toggle inside it. Same underlined-
-     button toggle idiom as .fc-predict-toggle/.lr-strike-toggle above --
-     a sibling of .fc-predict-toggle now, not nested inside its panel, so
-     no grid-column/justify-self needed unlike .fc-predict-toggle's own
-     grid-row placement (neither this nor the Fantasy Matchup context is a
-     grid). .factor-bar-track is the one genuinely new visual primitive
-     this needs: every other bar in this site (.tape-row-track, .odds-bar)
-     fills 0->100% in one direction, but a per-feature contribution is
-     signed -- it can favor either fighter -- so this is a diverging bar
-     that grows outward from a center line instead. */
+     panel and a nested "Why this pick?" toggle inside it. Originally a
+     full-width underlined text button like .fc-predict-toggle below it --
+     switched to a small icon pinned to the card's own top-right corner
+     per direct user feedback that the text version read as too heavy for
+     something optional (2026-09-10). Positioned absolute against its
+     nearest `position: relative` ancestor -- .fc-row on the fight card,
+     .results on Fantasy Matchup (both set below/elsewhere) -- so it needs
+     no grid-column/justify-self the way .fc-predict-toggle's in-flow
+     placement does. .factor-bar-track is the one genuinely new visual
+     primitive the panel itself needs: every other bar in this site
+     (.tape-row-track, .odds-bar) fills 0->100% in one direction, but a
+     per-feature contribution is signed -- it can favor either fighter --
+     so this is a diverging bar that grows outward from a center line
+     instead. */
   .breakdown-toggle {
-    display: block;
-    margin-top: 0.75rem;
-    padding: 0;
-    background: none;
-    border: none;
-    border-bottom: 1px solid var(--gold);
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--canvas);
+    border: 1px solid var(--canvas-line);
+    border-radius: 50%;
     color: var(--gold);
-    font-family: inherit;
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     cursor: pointer;
   }
-  .breakdown-toggle:hover { opacity: 0.8; }
+  .breakdown-toggle svg { width: 100%; height: 100%; }
+  .breakdown-toggle:hover, .breakdown-toggle[aria-expanded="true"] { background: var(--gold); border-color: var(--gold); color: var(--canvas); }
   .breakdown-panel {
     margin-top: 0.75rem;
     padding-top: 0.75rem;

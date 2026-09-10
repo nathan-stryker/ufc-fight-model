@@ -238,6 +238,15 @@
       <circle cx="12" cy="7" r="6" fill="currentColor"></circle>
       <circle cx="12" cy="7" r="3" fill="var(--canvas)"></circle>
     </svg>`;
+    // Simple ascending-bars icon for the corner "Breakdown" button -- see
+    // its own comment at the action-markup call site for why this became
+    // a small icon pinned to the row's corner instead of a full-width
+    // text link.
+    const BREAKDOWN_ICON_SVG = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="3" y="13" width="4" height="8" rx="0.5" fill="currentColor"></rect>
+      <rect x="10" y="8" width="4" height="13" rx="0.5" fill="currentColor"></rect>
+      <rect x="17" y="3" width="4" height="18" rx="0.5" fill="currentColor"></rect>
+    </svg>`;
     const FORM_VERB = { W: "def.", L: "lost to", D: "drew", NC: "no contest vs." };
 
     // Last-up-to-5 UFC results per fighter, data from fights.csv via
@@ -315,9 +324,15 @@
         // Your Pick" toggle that also happened to show the whole analysis,
         // per user request to separate "the why and the fighter info" from
         // the pick-logging action into its own clearly-labeled place.
+        // Breakdown itself is a small icon button pinned to the row's own
+        // top-right corner (see .breakdown-toggle's position:absolute,
+        // anchored against .fc-row) rather than a full block-level text
+        // link like "Make Your Pick" below it -- per direct user feedback
+        // that the original text-button read as too heavy/prominent for
+        // something optional (2026-09-10).
         action = `
           ${myPickHtml}
-          <button class="breakdown-toggle" type="button" aria-expanded="false">Breakdown</button>
+          <button class="breakdown-toggle" type="button" aria-expanded="false" aria-label="Breakdown" title="Breakdown">${BREAKDOWN_ICON_SVG}</button>
           <div class="breakdown-panel" hidden>
             ${predictBreakdownHtml(result)}
             <div class="breakdown-extras-mount"></div>
@@ -452,9 +467,11 @@
       const mount = panel.querySelector(".breakdown-extras-mount");
       let mounted = false;
       btn.addEventListener("click", () => {
+        // Icon-only button -- aria-expanded alone drives the toggled/hover
+        // visual state via CSS (no text to swap the way "Make Your Pick"
+        // does; textContent would also destroy the SVG icon).
         const expanded = btn.getAttribute("aria-expanded") === "true";
         btn.setAttribute("aria-expanded", String(!expanded));
-        btn.textContent = expanded ? "Breakdown" : "Hide";
         panel.hidden = expanded;
         if (!expanded && !mounted && typeof explainWin === "function") {
           mount.innerHTML = breakdownExtrasHtml(explainWin(matchupObj.fA, matchupObj.fB, MODEL_DATA), matchupObj.fA, matchupObj.fB);
