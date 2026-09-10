@@ -301,10 +301,16 @@ def _fighter_full_history_payload(fighters_payload):
     honestly ("N of M career opponents' styles known"), not claim a
     complete record it doesn't have.
 
-    Compact [opponent_id, outcome] pairs rather than named objects -- this
-    is the single biggest payload addition in this export (~770 fighters x
-    their whole career), and the field names would otherwise repeat once
-    per fight for no benefit.
+    Compact [opponent_id, outcome, method, round, event, event_date] arrays
+    rather than named objects -- this is the single biggest payload
+    addition in this export (~770 fighters x their whole career), and the
+    field names would otherwise repeat once per fight for no benefit.
+    method/round/event/event_date are carried (not just opponent_id +
+    outcome) so the "record vs. opponent's style" feature can list the
+    actual fight(s) behind a tally, not just show a bare "3-1" -- opponent
+    NAME isn't included here since any fight this feature can even match
+    already has the opponent resolvable via MODEL_DATA.fighters (their
+    style had to be looked up from there in the first place).
     """
     fields = fighters_payload["fields"]
     fid_idx = fields.index("fighter_id")
@@ -326,7 +332,13 @@ def _fighter_full_history_payload(fighters_payload):
             if pd.isna(opponent_id):
                 continue  # opponent themselves unresolved -- can't look up their style either
             outcome = "W" if r["winner_id"] == fid else "L"
-            rows.append([opponent_id, outcome])
+            rows.append([
+                opponent_id, outcome,
+                r["method"] if pd.notna(r["method"]) else None,
+                int(r["round"]) if pd.notna(r["round"]) else None,
+                r["event"] if pd.notna(r["event"]) else None,
+                r["event_date"] if pd.notna(r["event_date"]) else None,
+            ])
         if rows:
             history[fid] = rows
     return history

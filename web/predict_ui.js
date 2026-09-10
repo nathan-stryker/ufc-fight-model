@@ -166,35 +166,19 @@
       entries.forEach(([rnd, p]) => roundRows.appendChild(makeRow(`Round ${rnd}`, p, showRoundPredicted && rnd === topRound)));
     }
 
-    renderWhy(explanation);
-    renderStyleRecords();
+    renderBreakdown(explanation);
   }
 
-  // "X-Y vs {opponent's style}" under each fighter-card -- reads directly
-  // from `selected` (both corners) rather than taking params, since it
-  // only ever makes sense once both are chosen, same precondition
-  // runPrediction() already checks before calling renderResult() at all.
-  // Uses engine.js's recordVsStyle(), the exact same function ui.js's
-  // fight-card version calls -- one definition of "record vs style" for
-  // both pages, never two independent derivations that could disagree.
-  function renderStyleRecords() {
-    [["a", "b"], ["b", "a"]].forEach(([corner, oppCorner]) => {
-      const el = document.getElementById(`style-record-${corner}`);
-      if (!el) return;
-      const f = selected[corner], opp = selected[oppCorner];
-      const rec = f && opp ? recordVsStyle(f.fighter_id, opp.style, byId, MODEL_DATA.fighter_history) : null;
-      if (!rec) { el.hidden = true; el.textContent = ""; return; }
-      el.hidden = false;
-      el.textContent = `${rec.wins}-${rec.losses} vs ${opp.style} (${rec.knownCount} of ${rec.totalFights} career fights)`;
-    });
+  function formatMonthYear(isoDate) {
+    if (!isoDate) return "";
+    const d = new Date(isoDate + "T00:00:00");
+    if (isNaN(d.getTime())) return isoDate;
+    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
   }
 
-  // "Why this call?" -- DOM-node version of ui.js's whyPanelHtml(), same
-  // reasoning as verdictText()/makeRow() above for why this is a separate
-  // implementation rather than a shared one. Collapsed and re-rendered on
-  // every new prediction (this page has one fixed results panel, unlike the
-  // fight card's N independent rows) so a stale explanation from the
-  // previous matchup can never be left showing.
+  // DOM-node version of ui.js's categorySectionHtml() -- same reasoning as
+  // verdictText()/makeRow() above for why this is a separate implementation
+  // rather than a shared one.
   function makeFactorRow(f, nameA, nameB) {
     const row = document.createElement("div");
     row.className = "factor-row";
@@ -210,22 +194,110 @@
     return row;
   }
 
-  function renderWhy(explanation) {
-    const panel = document.getElementById("why-panel");
-    const btn = document.getElementById("why-toggle");
+  function makeCategorySection(title, factors, nameA, nameB) {
+    if (!factors.length) return null;
+    const section = document.createElement("div");
+    section.className = "tape";
+    section.innerHTML = `<div class="tape-title"><span>${escapeHtml(title)}</span></div>`;
+    const wrap = document.createElement("div");
+    wrap.className = "why-factors";
+    factors.forEach((f) => wrap.appendChild(makeFactorRow(f, nameA, nameB)));
+    section.appendChild(wrap);
+    return section;
+  }
+
+  // One fight from engine.js's recordVsStyle() -- DOM-node equivalent of
+  // ui.js's reuse of prefightRowHtml() (same .debut-fight-row classes for
+  // visual consistency, this file just doesn't have that function since
+  // it's not a fight-card page).
+  function makeStyleFightRow(f) {
+    const row = document.createElement("div");
+    row.className = "debut-fight-row";
+    const detailParts = [];
+    if (f.method) detailParts.push(f.method);
+    if (f.round) detailParts.push(`R${f.round}`);
+    if (f.event) detailParts.push(f.event);
+    if (f.eventDate) detailParts.push(formatMonthYear(f.eventDate));
+    row.innerHTML =
+      `<span class="debut-fight-result ${f.outcome === "W" ? "win" : "loss"}">${f.outcome}</span>` +
+      `<span class="debut-fight-body">` +
+      `<span class="debut-fight-opp">${f.outcome === "W" ? "def." : "lost to"} ${escapeHtml(f.opponentName)}</span>` +
+      `<span class="debut-fight-detail mono">${escapeHtml(detailParts.join(" · "))}</span>` +
+      `</span>`;
+    return row;
+  }
+
+  function makeStyleRecordBlock(fighterName, opponentStyle, rec) {
+    if (!rec) return null;
+    const block = document.createElement("div");
+    block.className = "style-record-block";
+    const summary = document.createElement("div");
+    summary.className = "style-record-summary";
+    // No pluralization attempted ("vs Wrestlers"/"vs Sambo fighters") --
+    // UFC.com's own style tags mix person-nouns and discipline names
+    // inconsistently, so there's no single grammatically-safe rule.
+    summary.innerHTML = `${escapeHtml(fighterName)}: ${rec.wins}-${rec.losses} vs ${escapeHtml(opponentStyle)} ` +
+      `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span>`;
+    block.appendChild(summary);
+    rec.fights.forEach((f) => block.appendChild(makeStyleFightRow(f)));
+    return block;
+  }
+
+  // "Breakdown" -- odds/method/round are already always shown above this
+  // (this page has no per-bout toggle, unlike the fight card); this panel
+  // is everything explain.js/recordVsStyle add on top: categorized
+  // factors, both fighters' UFC.com style tags, and each fighter's record
+  // vs. the OTHER's style with the actual fight(s) listed. Collapsed and
+  // re-rendered on every new prediction (one fixed results panel, unlike
+  // the fight card's N independent rows) so a stale explanation from the
+  // previous matchup can never be left showing.
+  function renderBreakdown(explanation) {
+    const panel = document.getElementById("breakdown-panel");
+    const btn = document.getElementById("breakdown-toggle");
     if (!panel || !btn) return;
     panel.hidden = true;
     btn.setAttribute("aria-expanded", "false");
+    btn.textContent = "Breakdown";
     panel.innerHTML = "";
-    explanation.factors.forEach((f) => {
-      panel.appendChild(makeFactorRow(f, explanation.nameA, explanation.nameB));
-    });
-    if (explanation.othersCount > 0) {
-      const others = document.createElement("div");
-      others.className = "factor-others";
-      others.textContent = `${explanation.othersCount} other factor${explanation.othersCount === 1 ? "" : "s"} had a smaller effect.`;
-      panel.appendChild(others);
+
+    [["Striking", explanation.striking], ["Grappling", explanation.grappling], ["Intangibles", explanation.intangibles]]
+      .forEach(([title, factors]) => {
+        const section = makeCategorySection(title, factors, explanation.nameA, explanation.nameB);
+        if (section) panel.appendChild(section);
+      });
+
+    if (explanation.styleA || explanation.styleB) {
+      const stylesSection = document.createElement("div");
+      stylesSection.className = "tape";
+      stylesSection.innerHTML = `<div class="tape-title"><span>Fighting Styles</span></div>`;
+      if (explanation.styleA) {
+        const row = document.createElement("div");
+        row.className = "factor-row";
+        row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div>`;
+        stylesSection.appendChild(row);
+      }
+      if (explanation.styleB) {
+        const row = document.createElement("div");
+        row.className = "factor-row";
+        row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div>`;
+        stylesSection.appendChild(row);
+      }
+      panel.appendChild(stylesSection);
     }
+
+    const recA = recordVsStyle(selected.a.fighter_id, selected.b.style, byId, MODEL_DATA.fighter_history);
+    const recB = recordVsStyle(selected.b.fighter_id, selected.a.style, byId, MODEL_DATA.fighter_history);
+    if (recA || recB) {
+      const recordSection = document.createElement("div");
+      recordSection.className = "tape";
+      recordSection.innerHTML = `<div class="tape-title"><span>Record vs. Opponent's Style</span></div>`;
+      const blockA = makeStyleRecordBlock(explanation.nameA, selected.b.style, recA);
+      const blockB = makeStyleRecordBlock(explanation.nameB, selected.a.style, recB);
+      if (blockA) recordSection.appendChild(blockA);
+      if (blockB) recordSection.appendChild(blockB);
+      panel.appendChild(recordSection);
+    }
+
     const caption = document.createElement("div");
     caption.className = "why-caption";
     caption.textContent = "Based on the model's core prediction (Elo, physical attributes, UFC record, and striking/grappling rates); a small blend toward historical Elo trends can shift the win% shown above by a couple points without changing which factors drove it.";
@@ -257,12 +329,13 @@
 
   document.getElementById("predict-btn").addEventListener("click", runPrediction);
 
-  const whyToggleBtn = document.getElementById("why-toggle");
-  if (whyToggleBtn) {
-    whyToggleBtn.addEventListener("click", () => {
-      const panel = document.getElementById("why-panel");
-      const expanded = whyToggleBtn.getAttribute("aria-expanded") === "true";
-      whyToggleBtn.setAttribute("aria-expanded", String(!expanded));
+  const breakdownToggleBtn = document.getElementById("breakdown-toggle");
+  if (breakdownToggleBtn) {
+    breakdownToggleBtn.addEventListener("click", () => {
+      const panel = document.getElementById("breakdown-panel");
+      const expanded = breakdownToggleBtn.getAttribute("aria-expanded") === "true";
+      breakdownToggleBtn.setAttribute("aria-expanded", String(!expanded));
+      breakdownToggleBtn.textContent = expanded ? "Breakdown" : "Hide";
       panel.hidden = expanded;
     });
   }

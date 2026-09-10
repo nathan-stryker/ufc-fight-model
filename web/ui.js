@@ -58,25 +58,6 @@
     return f && f.style ? `<div class="fc-style mono">${escapeHtml(f.style)}</div>` : "";
   }
 
-  // "X-Y vs {opponent's style}" -- f's own career record against fighters
-  // sharing THIS bout's opponent's style, via engine.js's recordVsStyle().
-  // Omitted (not shown as "0-0" or hidden-but-present) whenever there's
-  // nothing real to report: opponent has no style on file, f has no
-  // history, or none of f's own past opponents happen to have a known
-  // style themselves -- see recordVsStyle's own comment for why that last
-  // case is normal, not a bug.
-  function styleRecordHtml(f, opponentF) {
-    if (!f || !opponentF || !opponentF.style) return "";
-    const rec = recordVsStyle(f.fighter_id, opponentF.style, byId, MODEL_DATA.fighter_history);
-    if (!rec) return "";
-    // No pluralization attempted ("vs Wrestlers"/"vs Sambo fighters") --
-    // UFC.com's own style tags mix person-nouns ("Striker") and discipline
-    // names ("Sambo", "Muay Thai") inconsistently, so there's no single
-    // grammatically-safe rule; "vs {style}" reads fine either way.
-    return `<div class="fc-style-record mono">${rec.wins}-${rec.losses} vs ${escapeHtml(opponentF.style)} ` +
-      `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span></div>`;
-  }
-
   // Full model breakdown (odds bar + method/round tapes), rendered as an
   // HTML string rather than DOM nodes -- boutRowHtml() below builds the
   // whole fight card in one big innerHTML assignment, same as the rest of
@@ -131,17 +112,17 @@
       </div>`;
   }
 
-  // "Why this pick?" -- the top SHAP-ranked factors from explain.js's
-  // explainWin(), rendered as diverging bars (favors nameA left/red, nameB
-  // right/blue) around a center line, reusing the .tape-row grid layout's
-  // label/value columns but not its 0->100% single-direction fill, which
-  // doesn't fit a signed contribution. String-built like the rest of this
-  // file's row renderers (predictBreakdownHtml/tapeRowHtml) -- computed
-  // lazily on first expand, see the wiring below, not for every bout up
-  // front (explainWin is cheap but there's no reason to pay for bouts a
-  // visitor never opens).
-  function whyPanelHtml(explanation) {
-    const rows = explanation.factors.map((f) => {
+  // One category section (Striking/Grappling/Intangibles) of explain.js's
+  // explainWin() output, rendered as diverging bars (favors nameA left/red,
+  // nameB right/blue) around a center line, reusing the .tape-row grid
+  // layout's label/value columns but not its 0->100% single-direction
+  // fill, which doesn't fit a signed contribution. Omitted entirely if
+  // this category has nothing to show (shouldn't normally happen -- every
+  // category always has at least one feature -- but a fresh debut vs.
+  // debut matchup could plausibly leave one empty).
+  function categorySectionHtml(title, factors, nameA, nameB) {
+    if (!factors.length) return "";
+    const rows = factors.map((f) => {
       const towardA = f.favors === "a";
       const pct = (f.relativeMagnitude * 50).toFixed(1); // half-width from center
       return `
@@ -151,15 +132,72 @@
             <div class="factor-bar factor-bar-a" style="width:${towardA ? pct : 0}%"></div>
             <div class="factor-bar factor-bar-b" style="width:${towardA ? 0 : pct}%"></div>
           </div>
-          <div class="factor-favors mono">${towardA ? escapeHtml(explanation.nameA) : escapeHtml(explanation.nameB)}</div>
+          <div class="factor-favors mono">${towardA ? escapeHtml(nameA) : escapeHtml(nameB)}</div>
         </div>`;
     }).join("");
-    const othersLine = explanation.othersCount > 0
-      ? `<div class="factor-others">${explanation.othersCount} other factor${explanation.othersCount === 1 ? "" : "s"} had a smaller effect.</div>`
-      : "";
+    return `<div class="tape"><div class="tape-title"><span>${escapeHtml(title)}</span></div><div class="why-factors">${rows}</div></div>`;
+  }
+
+  // One fighter's record vs. THIS bout's opponent's style, with the actual
+  // matching fight(s) listed out (not just the tally) -- reuses the exact
+  // row markup/classes prefightRowHtml() below already established for
+  // debut fighters' pre-UFC records, just fed engine.js's recordVsStyle()
+  // shape instead. Omitted whenever recordVsStyle() itself returns null
+  // (see its own comment for why that's the common, expected case, not a
+  // bug) -- never shown as an empty "0-0" block.
+  function styleRecordDetailHtml(fighterName, opponentStyle, rec) {
+    if (!rec) return "";
+    const fightRows = rec.fights.map((f) => prefightRowHtml({
+      result: f.outcome === "W" ? "win" : "loss",
+      opponent: f.opponentName,
+      method: f.method,
+      round: f.round,
+      event: f.event,
+      date: f.eventDate,
+    })).join("");
+    // No pluralization attempted ("vs Wrestlers"/"vs Sambo fighters") --
+    // UFC.com's own style tags mix person-nouns ("Striker") and discipline
+    // names ("Sambo", "Muay Thai") inconsistently, so there's no single
+    // grammatically-safe rule; "vs {style}" reads fine either way.
     return `
-      <div class="why-factors">${rows}</div>
-      ${othersLine}
+      <div class="style-record-block">
+        <div class="style-record-summary">${escapeHtml(fighterName)}: ${rec.wins}-${rec.losses} vs ${escapeHtml(opponentStyle)} ` +
+      `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span></div>
+        ${fightRows}
+      </div>`;
+  }
+
+  // Assembles the "Breakdown" panel's content BELOW the odds-bar/method/
+  // round tape (predictBreakdownHtml above) -- categorized factors, both
+  // fighters' UFC.com style tags, and each fighter's record vs. the
+  // OTHER's style. Computed lazily on first expand (see the wiring below),
+  // not for every bout up front -- explainWin/recordVsStyle are cheap, but
+  // there's no reason to pay for bouts a visitor never opens.
+  function breakdownExtrasHtml(explanation, fA, fB) {
+    const sections = [
+      categorySectionHtml("Striking", explanation.striking, explanation.nameA, explanation.nameB),
+      categorySectionHtml("Grappling", explanation.grappling, explanation.nameA, explanation.nameB),
+      categorySectionHtml("Intangibles", explanation.intangibles, explanation.nameA, explanation.nameB),
+    ].join("");
+
+    const styleRows = [];
+    if (explanation.styleA) styleRows.push(`<div class="factor-row"><div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div></div>`);
+    if (explanation.styleB) styleRows.push(`<div class="factor-row"><div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div></div>`);
+    const stylesHtml = styleRows.length
+      ? `<div class="tape"><div class="tape-title"><span>Fighting Styles</span></div>${styleRows.join("")}</div>`
+      : "";
+
+    const recA = recordVsStyle(fA.fighter_id, fB.style, byId, MODEL_DATA.fighter_history);
+    const recB = recordVsStyle(fB.fighter_id, fA.style, byId, MODEL_DATA.fighter_history);
+    const recordHtml = (recA || recB)
+      ? `<div class="tape"><div class="tape-title"><span>Record vs. Opponent's Style</span></div>` +
+        `${styleRecordDetailHtml(explanation.nameA, fB.style, recA)}${styleRecordDetailHtml(explanation.nameB, fA.style, recB)}</div>`
+      : "";
+
+    return `
+      ${sections}
+      ${stylesHtml}
+      ${recordHtml}
       <div class="why-caption">Based on the model's core prediction (Elo, physical attributes, UFC record, and striking/grappling rates); a small blend toward historical Elo trends can shift the win% shown above by a couple points without changing which factors drove it.</div>`;
   }
 
@@ -270,13 +308,22 @@
         // in from My Predictions' own localStorage log, which is the only
         // source of truth for this (never guessed or re-derived here).
         const myPickHtml = `<div class="fc-my-pick mono" hidden><span class="fc-my-pick-label">Your pick</span> <span class="fc-my-pick-text"></span></div>`;
+        // Two independent toggles now, not one: "Breakdown" is pure
+        // information (odds/method/round + categorized factors + styles +
+        // style-matchup records), "Make Your Pick" is purely the action of
+        // logging your own guess -- previously bundled under one "Make
+        // Your Pick" toggle that also happened to show the whole analysis,
+        // per user request to separate "the why and the fighter info" from
+        // the pick-logging action into its own clearly-labeled place.
         action = `
           ${myPickHtml}
+          <button class="breakdown-toggle" type="button" aria-expanded="false">Breakdown</button>
+          <div class="breakdown-panel" hidden>
+            ${predictBreakdownHtml(result)}
+            <div class="breakdown-extras-mount"></div>
+          </div>
           <button class="fc-predict-toggle" type="button" aria-expanded="false" data-default-label="Make Your Pick">Make Your Pick</button>
           <div class="fc-predict-panel" hidden>
-            ${predictBreakdownHtml(result)}
-            <button class="why-toggle" type="button" aria-expanded="false">Why this pick?</button>
-            <div class="why-panel" hidden></div>
             <div class="fc-pick-mount"></div>
           </div>`;
       }
@@ -309,7 +356,6 @@
               <div class="fc-fighter">${badgeA}${rankChipHtml(b.rankA)}<span>${escapeHtml(b.nameA)}</span></div>
               ${styleTagHtml(fA)}
               ${formBadgesHtml(b.idA)}
-              ${styleRecordHtml(fA, fB)}
             </div>
             <div class="fc-vs">vs</div>
             <div class="fc-fighter-block">
@@ -317,7 +363,6 @@
               <div class="fc-fighter">${badgeB}${rankChipHtml(b.rankB)}<span>${escapeHtml(b.nameB)}</span></div>
               ${styleTagHtml(fB)}
               ${formBadgesHtml(b.idB)}
-              ${styleRecordHtml(fB, fA)}
             </div>
           </div>
           ${modelPick}
@@ -358,18 +403,17 @@
     });
 
     // Each toggle's matchup result is looked up by plain array index -- see
-    // the boutResults comment above. The pick-form itself is mounted lazily
-    // on first expand (not for every bout up front), and only once per row;
-    // MyPredictions.mountCardPick() feeds it the same already-computed
-    // result, so it's a live pick against the model's real output for this
-    // exact bout, not a re-simulation.
+    // the boutResults comment above. Both the pick-form and the Breakdown
+    // panel's extras are mounted lazily on first expand (not for every
+    // bout up front), and only once per row.
     [...section.querySelectorAll(".fc-predict-toggle")].forEach((btn, i) => {
       const panel = btn.nextElementSibling;
       if (!panel || !panel.classList.contains("fc-predict-panel")) return;
       const matchupObj = boutResults[i];
-      const myPickLine = btn.previousElementSibling && btn.previousElementSibling.classList.contains("fc-my-pick")
-        ? btn.previousElementSibling
-        : null;
+      // Looked up within the shared .fc-row parent, not via sibling
+      // adjacency -- "Breakdown" now sits between .fc-my-pick and this
+      // toggle in the DOM, so previousElementSibling no longer points at it.
+      const myPickLine = btn.parentElement.querySelector(".fc-my-pick");
       let mounted = false;
 
       // Reflects the current My Predictions state onto this row's always-
@@ -399,21 +443,24 @@
           mounted = true;
         }
       });
+    });
 
-      const whyBtn = panel.querySelector(".why-toggle");
-      const whyPanel = whyBtn ? whyBtn.nextElementSibling : null;
-      let whyMounted = false;
-      if (whyBtn && whyPanel && typeof explainWin === "function") {
-        whyBtn.addEventListener("click", () => {
-          const whyExpanded = whyBtn.getAttribute("aria-expanded") === "true";
-          whyBtn.setAttribute("aria-expanded", String(!whyExpanded));
-          whyPanel.hidden = whyExpanded;
-          if (!whyExpanded && !whyMounted) {
-            whyPanel.innerHTML = whyPanelHtml(explainWin(matchupObj.fA, matchupObj.fB, MODEL_DATA));
-            whyMounted = true;
-          }
-        });
-      }
+    [...section.querySelectorAll(".breakdown-toggle")].forEach((btn, i) => {
+      const panel = btn.nextElementSibling;
+      if (!panel || !panel.classList.contains("breakdown-panel")) return;
+      const matchupObj = boutResults[i];
+      const mount = panel.querySelector(".breakdown-extras-mount");
+      let mounted = false;
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!expanded));
+        btn.textContent = expanded ? "Breakdown" : "Hide";
+        panel.hidden = expanded;
+        if (!expanded && !mounted && typeof explainWin === "function") {
+          mount.innerHTML = breakdownExtrasHtml(explainWin(matchupObj.fA, matchupObj.fB, MODEL_DATA), matchupObj.fA, matchupObj.fB);
+          mounted = true;
+        }
+      });
     });
   }
 

@@ -107,29 +107,34 @@ function explainMargin(model, x) {
 // Human-readable presentation
 // ---------------------------------------------------------------------------
 
-// label + how to phrase the raw differential; NaN handling is separate
-// (see factorRows below) since it depends on which SIDE is missing, not
-// just the feature.
+// label + category + how to phrase the raw differential; NaN handling is
+// separate (see factorRows below) since it depends on which SIDE is
+// missing, not just the feature. Category buckets (striking/grappling/
+// intangibles) match the Breakdown panel's own section headings -- height/
+// reach/stance aren't literally "intangible" but there's no 4th bucket in
+// the requested layout, and physical attributes sit more naturally next to
+// experience/form than next to a strike-volume stat.
 const FACTOR_LABELS = {
-  elo_diff: { label: "Recent form (Elo rating)", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} pts` },
-  height_in_diff: { label: "Height", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} in` },
-  reach_in_diff: { label: "Reach", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} in` },
-  age_years_diff: { label: "Age", fmt: (v) => `${Math.abs(v).toFixed(1)} yrs ${v < 0 ? "younger" : "older"}` },
-  fights_entering_diff: { label: "UFC experience", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
-  win_pct_entering_diff: { label: "Win rate", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  finish_rate_entering_diff: { label: "Finish rate", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  current_streak_entering_diff: { label: "Current streak", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
-  layoff_days_entering_diff: { label: "Time since last fight", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} days` },
-  sig_str_landed_per_min_diff: { label: "Striking output", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} landed/min` },
-  sig_str_absorbed_per_min_diff: { label: "Striking defense", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} absorbed/min` },
-  sig_str_acc_diff: { label: "Striking accuracy", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  td_avg_per15_diff: { label: "Takedown rate", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min` },
-  td_acc_diff: { label: "Takedown accuracy", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  td_def_diff: { label: "Takedown defense", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  sub_att_per15_diff: { label: "Submission attempts", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min` },
-  ctrl_pct_diff: { label: "Grappling control time", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  elo_diff: { label: "Recent form (Elo rating)", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} pts` },
+  height_in_diff: { label: "Height", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} in` },
+  reach_in_diff: { label: "Reach", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} in` },
+  age_years_diff: { label: "Age", category: "intangibles", fmt: (v) => `${Math.abs(v).toFixed(1)} yrs ${v < 0 ? "younger" : "older"}` },
+  fights_entering_diff: { label: "UFC experience", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
+  win_pct_entering_diff: { label: "Win rate", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  finish_rate_entering_diff: { label: "Finish rate", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  current_streak_entering_diff: { label: "Current streak", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
+  layoff_days_entering_diff: { label: "Time since last fight", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} days` },
+  sig_str_landed_per_min_diff: { label: "Striking output", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} landed/min` },
+  sig_str_absorbed_per_min_diff: { label: "Striking defense", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} absorbed/min` },
+  sig_str_acc_diff: { label: "Striking accuracy", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  td_avg_per15_diff: { label: "Takedown rate", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min` },
+  td_acc_diff: { label: "Takedown accuracy", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  td_def_diff: { label: "Takedown defense", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  sub_att_per15_diff: { label: "Submission attempts", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min` },
+  ctrl_pct_diff: { label: "Grappling control time", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
 };
 const STANCE_FEATURES = ["stance_orthodox_diff", "stance_southpaw_diff", "stance_switch_diff"];
+const CATEGORY_ORDER = ["striking", "grappling", "intangibles"];
 
 function stanceLabel(f) {
   for (const cat of ["orthodox", "southpaw", "switch"]) {
@@ -169,16 +174,15 @@ function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB) {
     } else {
       valueText = meta.fmt(rawA - rawB);
     }
-    rows.push({ shap: phiFinal[i], label: meta.label, valueText });
+    rows.push({ shap: phiFinal[i], label: meta.label, valueText, category: meta.category });
   });
   const stanceA = stanceLabel(featsA), stanceB = stanceLabel(featsB);
   if (stanceA && stanceB) {
     rows.push({
-      shap: stanceShap, label: "Stance matchup",
+      shap: stanceShap, label: "Stance matchup", category: "intangibles",
       valueText: stanceA === stanceB ? `both ${stanceA}` : `${stanceA} vs. ${stanceB}`,
     });
   }
-  rows.sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap));
   return rows;
 }
 
@@ -218,22 +222,28 @@ function explainWin(fighterA, fighterB, model) {
   }
 
   const rows = factorRows(phiFinal, model.win_model.features, featsA, featsB, fighterA.name, fighterB.name);
-  const top = rows.slice(0, 5);
-  const maxAbs = Math.max(...top.map((r) => Math.abs(r.shap)), 1e-9);
+  // Relative to the single largest factor across ALL categories, not a
+  // per-category scale -- so a glance across sections still shows which
+  // ones actually mattered most to THIS matchup, not three independently
+  // normalized bar charts that make a minor category look as loud as a
+  // major one. This is a ranking aid, not a claim about percentage-points
+  // of win probability (these contributions live in log-odds space;
+  // converting to probability points per-feature isn't mathematically
+  // valid through a sigmoid).
+  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.shap)), 1e-9);
+  const toFactor = (r) => ({
+    label: r.label,
+    valueText: r.valueText,
+    favors: r.shap >= 0 ? "a" : "b",
+    relativeMagnitude: Math.abs(r.shap) / maxAbs,
+  });
+  const categories = {};
+  for (const cat of CATEGORY_ORDER) {
+    categories[cat] = rows.filter((r) => r.category === cat).sort((a, b) => Math.abs(b.shap) - Math.abs(a.shap)).map(toFactor);
+  }
   return {
     nameA: fighterA.name, nameB: fighterB.name,
-    factors: top.map((r) => ({
-      label: r.label,
-      valueText: r.valueText,
-      favors: r.shap >= 0 ? "a" : "b",
-      // Relative to the largest shown factor, not an absolute scale --
-      // this is a ranking aid (which factors mattered most to THIS
-      // matchup), not a claim about percentage-points of win probability
-      // (these contributions live in log-odds space; converting to
-      // probability points per-feature isn't mathematically valid through
-      // a sigmoid).
-      relativeMagnitude: Math.abs(r.shap) / maxAbs,
-    })),
-    othersCount: Math.max(0, rows.length - top.length),
+    styleA: fighterA.style || null, styleB: fighterB.style || null,
+    ...categories,
   };
 }

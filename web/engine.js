@@ -36,30 +36,35 @@ function buildFighterIndex(fightersPayload) {
 // src/data/scrape_fighting_style.py) -- e.g. "how has this fighter done
 // against other Wrestlers", asked about the style of whoever they're
 // CURRENTLY matched against. MODEL_DATA.fighter_history is keyed by
-// fighter_id -> [[opponentId, "W"|"L"], ...], their FULL career (not the
-// capped-at-5 recent-form badges), draws/no-contests already excluded at
-// export time. Returns null (never a guessed/zero record) when there's
-// nothing real to show: no opponentStyle to compare against, no history
-// at all, or zero opponents whose OWN style happens to be on file --
-// most fighters have some career opponents outside the active-roster
-// scrape window (retired, long inactive), so this is expected, not a bug,
-// and knownCount/totalFights is carried through so the UI can say so
-// honestly ("N of M career opponents' styles known") instead of implying
-// a complete record.
+// fighter_id -> [[opponentId, "W"|"L", method, round, event, eventDate], ...],
+// their FULL career (not the capped-at-5 recent-form badges), draws/
+// no-contests already excluded at export time. Returns null (never a
+// guessed/zero record) when there's nothing real to show: no
+// opponentStyle to compare against, no history at all, or zero opponents
+// whose OWN style happens to be on file -- most fighters have some career
+// opponents outside the active-roster scrape window (retired, long
+// inactive), so this is expected, not a bug, and knownCount/totalFights
+// is carried through so the UI can say so honestly ("N of M career
+// opponents' styles known") instead of implying a complete record.
+// `fights` carries the actual matching bouts (opponent name resolved via
+// byId, same lookup that confirmed the style match in the first place) so
+// a caller can list them, not just show a bare tally.
 function recordVsStyle(fighterId, opponentStyle, byId, fighterHistory) {
   if (!opponentStyle) return null;
   const history = fighterHistory && fighterHistory[fighterId];
   if (!history || !history.length) return null;
-  let wins = 0, losses = 0, knownCount = 0;
-  for (const [oppId, outcome] of history) {
+  let wins = 0, losses = 0;
+  const fights = [];
+  for (const [oppId, outcome, method, round, event, eventDate] of history) {
     const opp = byId.get(oppId);
     if (!opp || !opp.style) continue;
     if (opp.style.toLowerCase() !== opponentStyle.toLowerCase()) continue;
-    knownCount++;
     if (outcome === "W") wins++; else losses++;
+    fights.push({ opponentName: opp.name, outcome, method, round, event, eventDate });
   }
-  if (knownCount === 0) return null;
-  return { wins, losses, knownCount, totalFights: history.length };
+  if (fights.length === 0) return null;
+  fights.sort((a, b) => (b.eventDate || "").localeCompare(a.eventDate || ""));
+  return { wins, losses, knownCount: fights.length, totalFights: history.length, fights };
 }
 
 // ---------------------------------------------------------------------------

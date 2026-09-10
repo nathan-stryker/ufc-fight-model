@@ -558,18 +558,17 @@
   .fc-fighter { display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem; }
   .fc-nickname { font-size: 0.68rem; font-style: italic; color: var(--ink-dim); margin-bottom: -0.15rem; }
   .fc-row--main-event .fc-nickname { font-size: 0.78rem; }
-  /* UFC.com's own "Fighting style" tag (scrape_fighting_style.py) and this
-     fighter's record against past opponents sharing THIS bout's opponent's
-     style (engine.js's recordVsStyle()) -- both omitted entirely rather
-     than shown blank when there's nothing on file, same convention as the
-     nickname line above. */
+  /* UFC.com's own "Fighting style" tag (scrape_fighting_style.py) -- quick
+     at-a-glance info next to the fighter's name, same tier as the flag/
+     rank chip. This fighter's record against past opponents sharing THIS
+     bout's opponent's style (engine.js's recordVsStyle()) lives inside the
+     Breakdown panel instead (see .style-record-block below), not inline
+     here -- omitted entirely rather than shown blank when there's nothing
+     on file, same convention as the nickname line above. */
   .fc-style {
     font-size: 0.65rem; letter-spacing: 0.04em; text-transform: uppercase;
     color: var(--ink-dim); border: 1px solid var(--canvas-line); padding: 0.1rem 0.4rem;
   }
-  .fc-style-record { font-size: 0.7rem; color: var(--ink); }
-  .fc-style-record-note { color: var(--ink-dim); font-size: 0.64rem; }
-  .fighter-style-record { color: var(--ink); font-size: 0.78rem; margin-top: -0.3rem; }
   /* Divisional rank, scraped from ufc.com alongside the rest of the card
      data -- "C" for the champion gets the gold treatment (same accent as
      the belt icon), a plain "#N" stays muted so it doesn't compete with
@@ -716,17 +715,20 @@
     .fc-row { text-align: center; }
   }
 
-  /* "Why this pick?" -- explain.js's per-feature SHAP breakdown. Same
-     underlined-button toggle idiom as .fc-predict-toggle/.lr-strike-toggle
-     above (nested one level deeper here, inside .fc-predict-panel on the
-     fight card, or standalone on the Fantasy Matchup page -- neither
-     context is a grid, so no grid-column/justify-self needed unlike
-     .fc-predict-toggle's own grid-row placement). .factor-bar-track is the
-     one genuinely new visual primitive this needs: every other bar in this
-     site (.tape-row-track, .odds-bar) fills 0->100% in one direction, but a
-     SHAP contribution is signed -- it can favor either fighter -- so this
-     is a diverging bar that grows outward from a center line instead. */
-  .why-toggle {
+  /* "Breakdown" -- the single consolidated place for the model's per-
+     feature explanation (explain.js), fighting styles, and record-vs-
+     style, replacing what used to be split across "Make Your Pick"'s own
+     panel and a nested "Why this pick?" toggle inside it. Same underlined-
+     button toggle idiom as .fc-predict-toggle/.lr-strike-toggle above --
+     a sibling of .fc-predict-toggle now, not nested inside its panel, so
+     no grid-column/justify-self needed unlike .fc-predict-toggle's own
+     grid-row placement (neither this nor the Fantasy Matchup context is a
+     grid). .factor-bar-track is the one genuinely new visual primitive
+     this needs: every other bar in this site (.tape-row-track, .odds-bar)
+     fills 0->100% in one direction, but a per-feature contribution is
+     signed -- it can favor either fighter -- so this is a diverging bar
+     that grows outward from a center line instead. */
+  .breakdown-toggle {
     display: block;
     margin-top: 0.75rem;
     padding: 0;
@@ -741,8 +743,8 @@
     letter-spacing: 0.04em;
     cursor: pointer;
   }
-  .why-toggle:hover { opacity: 0.8; }
-  .why-panel {
+  .breakdown-toggle:hover { opacity: 0.8; }
+  .breakdown-panel {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px dashed var(--canvas-line);
@@ -772,8 +774,14 @@
   .factor-bar-b { justify-self: start; height: 100%; width: 0%; background: var(--blue); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
   .factor-favors { font-size: 0.72rem; text-align: right; color: var(--ink-dim); }
   .why-factors { margin-top: 0.5rem; }
-  .factor-others { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.5rem; font-style: italic; }
   .why-caption { font-size: 0.7rem; color: var(--ink-dim); margin-top: 0.75rem; line-height: 1.5; }
+  /* Record vs. opponent's style -- reuses .debut-fight-row (below) for the
+     actual fight list so a visitor doesn't learn two different "fight
+     history row" visual languages on the same site. */
+  .style-record-block { margin-top: 0.75rem; }
+  .style-record-block:first-child { margin-top: 0; }
+  .style-record-summary { font-size: 0.78rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .fc-style-record-note { color: var(--ink-dim); font-weight: 400; font-size: 0.68rem; }
 
   /* Meet the Debut Fighters -- home page, below the fight card. Spotlights
      anyone on this week's card with zero recorded UFC fights (same "UFC
