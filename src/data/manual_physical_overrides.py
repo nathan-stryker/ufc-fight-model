@@ -48,6 +48,14 @@ MANUAL = {
     # UFC.com: 67.00in height, 66.00in reach. (DOB already on file.)
     # Stance user-supplied, 2026-09-10.
     "Regina Tarin": {"height_in": 67.0, "reach_in": 66.0, "stance": "Southpaw"},
+    # User reported "reach 72in" (2026-09-10), but UFC.com and RotoWire
+    # both independently list 72.00in as his HEIGHT, and neither has a
+    # reach figure at all -- looks like a height/reach mix-up (an
+    # understandable one; reach is reported far less often than height for
+    # a brand-new debut fighter). Filling height only; reach stays NaN
+    # rather than guessing between that and a single unverified aggregator
+    # site's "71.0in" claim.
+    "Sean King III": {"height_in": 72.0},
 }
 
 
