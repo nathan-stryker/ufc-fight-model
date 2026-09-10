@@ -7,10 +7,13 @@ cross-checked against each other before trusting a number (same "verify
 against a second source" discipline as manual_nationality_overrides.py's
 own history of getting this wrong from a single unreliable page).
 
-Never fills stance this way -- Tapology/UFC.com didn't have it for either
-fighter below, and it's a categorical guess with no good way to
-cross-verify, so it stays NaN (XGBoost's native missing-value handling)
-rather than being guessed at.
+Stance is normally left alone here -- Tapology/UFC.com didn't have it on
+file for Rahiki/Tarin, and it's a categorical guess with no independent
+source to cross-verify, so the default is to leave it NaN (XGBoost's
+native missing-value handling) rather than guess. The two entries below
+are the one exception: the user supplied both directly, having presumably
+watched them fight -- a real, informed source, just not a cross-checkable
+second website the way the height/reach numbers above are.
 
 Only fills fields that are ACTUALLY missing (NaN) -- never overwrites a
 real scraped value, even one that looks slightly different from what a
@@ -40,9 +43,11 @@ MANUAL = {
     # UFC.com: 68.00in height, 72.00in reach (exact match to Tapology's
     # 5'8"/72.0"). Tapology-only: DOB May 10, 2002 -- cross-checked against
     # UFC.com's own "24 years old" (as of this card, 2026-09-12), consistent.
-    "Marwan Rahiki": {"height_in": 68.0, "reach_in": 72.0, "dob": "2002-05-10"},
+    # Stance user-supplied, 2026-09-10.
+    "Marwan Rahiki": {"height_in": 68.0, "reach_in": 72.0, "dob": "2002-05-10", "stance": "Orthodox"},
     # UFC.com: 67.00in height, 66.00in reach. (DOB already on file.)
-    "Regina Tarin": {"height_in": 67.0, "reach_in": 66.0},
+    # Stance user-supplied, 2026-09-10.
+    "Regina Tarin": {"height_in": 67.0, "reach_in": 66.0, "stance": "Southpaw"},
 }
 
 
