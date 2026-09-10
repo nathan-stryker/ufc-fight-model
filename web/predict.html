@@ -777,11 +777,30 @@
     content: ""; position: absolute; left: 50%; top: -0.25rem; bottom: -0.25rem; width: 1px;
     background: var(--canvas-line);
   }
-  .factor-bar-a { justify-self: end; height: 100%; width: 0%; background: var(--red); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
-  .factor-bar-b { justify-self: start; height: 100%; width: 0%; background: var(--blue); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+  /* min-width keeps a genuinely small-but-nonzero contribution (e.g. a
+     1-2% relative magnitude on a minor intangible) visible as a short tick
+     instead of rounding away to a sub-pixel sliver that reads as a
+     rendering glitch next to the full-length bars above it. */
+  .factor-bar-a { justify-self: end; height: 100%; width: 0%; min-width: 2px; background: var(--red); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .factor-bar-b { justify-self: start; height: 100%; width: 0%; min-width: 2px; background: var(--blue); transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1); }
   .factor-favors { font-size: 0.72rem; text-align: right; color: var(--ink-dim); }
   .why-factors { margin-top: 0.5rem; }
   .why-caption { font-size: 0.7rem; color: var(--ink-dim); margin-top: 0.75rem; line-height: 1.5; }
+  /* Fighting Styles rows: a plain label + badge, NOT .factor-row's 3-column
+     label/bar-track/favors grid (that grid's middle column is 1fr wide,
+     built for the diverging bar -- reusing it here for a style badge left
+     it grid-stretched across that whole wide column, an empty-looking
+     bordered box unrelated to its actual content). */
+  .style-tag-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--canvas-line);
+  }
+  .style-tag-row:last-child { border-bottom: none; }
+  .style-tag-row .factor-label { font-size: 0.8rem; }
   /* Record vs. opponent's style -- reuses .debut-fight-row (below) for the
      actual fight list so a visitor doesn't learn two different "fight
      history row" visual languages on the same site. */
@@ -993,7 +1012,7 @@
   .predict-btn:not(:disabled):hover { transform: scale(1.04); }
   .predict-btn:not(:disabled):active { transform: scale(0.98); }
 
-  .results { margin-top: 2.25rem; }
+  .results { position: relative; margin-top: 2.25rem; }
   .results[hidden] { display: none; }
 
   .verdict {
@@ -1266,7 +1285,13 @@
       <div id="round-rows"></div>
     </div>
 
-    <button class="breakdown-toggle" id="breakdown-toggle" type="button" aria-expanded="false">Breakdown</button>
+    <button class="breakdown-toggle" id="breakdown-toggle" type="button" aria-expanded="false" aria-label="Breakdown" title="Breakdown">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="3" y="13" width="4" height="8" rx="0.5" fill="currentColor"></rect>
+        <rect x="10" y="8" width="4" height="13" rx="0.5" fill="currentColor"></rect>
+        <rect x="17" y="3" width="4" height="18" rx="0.5" fill="currentColor"></rect>
+      </svg>
+    </button>
     <div class="breakdown-panel" id="breakdown-panel" hidden></div>
   </section>
 
@@ -2103,7 +2128,6 @@ const MODEL_DATA = {"total_fights":8719,"win_model":{"features":["elo_diff","hei
     if (!panel || !btn) return;
     panel.hidden = true;
     btn.setAttribute("aria-expanded", "false");
-    btn.textContent = "Breakdown";
     panel.innerHTML = "";
 
     [["Striking", explanation.striking], ["Grappling", explanation.grappling], ["Intangibles", explanation.intangibles]]
@@ -2118,13 +2142,13 @@ const MODEL_DATA = {"total_fights":8719,"win_model":{"features":["elo_diff","hei
       stylesSection.innerHTML = `<div class="tape-title"><span>Fighting Styles</span></div>`;
       if (explanation.styleA) {
         const row = document.createElement("div");
-        row.className = "factor-row";
+        row.className = "style-tag-row";
         row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div>`;
         stylesSection.appendChild(row);
       }
       if (explanation.styleB) {
         const row = document.createElement("div");
-        row.className = "factor-row";
+        row.className = "style-tag-row";
         row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div>`;
         stylesSection.appendChild(row);
       }
@@ -2175,13 +2199,17 @@ const MODEL_DATA = {"total_fights":8719,"win_model":{"features":["elo_diff","hei
 
   document.getElementById("predict-btn").addEventListener("click", runPrediction);
 
+  // Icon-only button (see its markup in predict_template.html) -- no
+  // text-swap on toggle, unlike the old "Breakdown"/"Hide" version:
+  // aria-expanded alone drives both the accessible state and the CSS
+  // hover/expanded look, matching ui.js's corner-icon treatment on This
+  // Week's Card.
   const breakdownToggleBtn = document.getElementById("breakdown-toggle");
   if (breakdownToggleBtn) {
     breakdownToggleBtn.addEventListener("click", () => {
       const panel = document.getElementById("breakdown-panel");
       const expanded = breakdownToggleBtn.getAttribute("aria-expanded") === "true";
       breakdownToggleBtn.setAttribute("aria-expanded", String(!expanded));
-      breakdownToggleBtn.textContent = expanded ? "Breakdown" : "Hide";
       panel.hidden = expanded;
     });
   }

@@ -181,8 +181,8 @@
     ].join("");
 
     const styleRows = [];
-    if (explanation.styleA) styleRows.push(`<div class="factor-row"><div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div></div>`);
-    if (explanation.styleB) styleRows.push(`<div class="factor-row"><div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div></div>`);
+    if (explanation.styleA) styleRows.push(`<div class="style-tag-row"><div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div></div>`);
+    if (explanation.styleB) styleRows.push(`<div class="style-tag-row"><div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div></div>`);
     const stylesHtml = styleRows.length
       ? `<div class="tape"><div class="tape-title"><span>Fighting Styles</span></div>${styleRows.join("")}</div>`
       : "";
@@ -659,7 +659,10 @@
       visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
       const activeId = visible[0].target.id;
       links.forEach((a, id) => a.classList.toggle("active", id === activeId));
-    }, { rootMargin: "-4rem 0px -70% 0px", threshold: 0 });
+    // rootMargin only accepts px/% (rem throws "must be specified in
+    // pixels or percent" -- confirmed via a live console error on every
+    // page load, meaning this observer never actually attached before).
+    }, { rootMargin: "-64px 0px -70% 0px", threshold: 0 });
 
     sections.forEach((s) => observer.observe(s));
   }

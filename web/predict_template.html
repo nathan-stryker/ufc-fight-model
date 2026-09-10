@@ -101,7 +101,13 @@ __SHARED_STYLE__
       <div id="round-rows"></div>
     </div>
 
-    <button class="breakdown-toggle" id="breakdown-toggle" type="button" aria-expanded="false">Breakdown</button>
+    <button class="breakdown-toggle" id="breakdown-toggle" type="button" aria-expanded="false" aria-label="Breakdown" title="Breakdown">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="3" y="13" width="4" height="8" rx="0.5" fill="currentColor"></rect>
+        <rect x="10" y="8" width="4" height="13" rx="0.5" fill="currentColor"></rect>
+        <rect x="17" y="3" width="4" height="18" rx="0.5" fill="currentColor"></rect>
+      </svg>
+    </button>
     <div class="breakdown-panel" id="breakdown-panel" hidden></div>
   </section>
 

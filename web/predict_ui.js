@@ -257,7 +257,6 @@
     if (!panel || !btn) return;
     panel.hidden = true;
     btn.setAttribute("aria-expanded", "false");
-    btn.textContent = "Breakdown";
     panel.innerHTML = "";
 
     [["Striking", explanation.striking], ["Grappling", explanation.grappling], ["Intangibles", explanation.intangibles]]
@@ -272,13 +271,13 @@
       stylesSection.innerHTML = `<div class="tape-title"><span>Fighting Styles</span></div>`;
       if (explanation.styleA) {
         const row = document.createElement("div");
-        row.className = "factor-row";
+        row.className = "style-tag-row";
         row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div>`;
         stylesSection.appendChild(row);
       }
       if (explanation.styleB) {
         const row = document.createElement("div");
-        row.className = "factor-row";
+        row.className = "style-tag-row";
         row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div>`;
         stylesSection.appendChild(row);
       }
@@ -329,13 +328,17 @@
 
   document.getElementById("predict-btn").addEventListener("click", runPrediction);
 
+  // Icon-only button (see its markup in predict_template.html) -- no
+  // text-swap on toggle, unlike the old "Breakdown"/"Hide" version:
+  // aria-expanded alone drives both the accessible state and the CSS
+  // hover/expanded look, matching ui.js's corner-icon treatment on This
+  // Week's Card.
   const breakdownToggleBtn = document.getElementById("breakdown-toggle");
   if (breakdownToggleBtn) {
     breakdownToggleBtn.addEventListener("click", () => {
       const panel = document.getElementById("breakdown-panel");
       const expanded = breakdownToggleBtn.getAttribute("aria-expanded") === "true";
       breakdownToggleBtn.setAttribute("aria-expanded", String(!expanded));
-      breakdownToggleBtn.textContent = expanded ? "Breakdown" : "Hide";
       panel.hidden = expanded;
     });
   }
