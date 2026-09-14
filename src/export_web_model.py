@@ -271,6 +271,13 @@ def _upcoming_card_payload():
             "idB": row["fighter_b_id"] if pd.notna(row["fighter_b_id"]) else None,
             "tier": row["tier"] if pd.notna(row.get("tier")) else "prelim",
             "isTitleFight": bool(row["is_title_fight"]) if pd.notna(row.get("is_title_fight")) else False,
+            # Almost always redundant with tier=="main_event"/isTitleFight
+            # (ui.js's own callRounds falls back to that combination when
+            # this column doesn't exist at all, e.g. an older cached
+            # upcoming_card.csv) -- only diverges for a hand-confirmed
+            # "special attraction" 5-round non-title bout, see
+            # scrape_upcoming_card.py's MANUAL_FIVE_ROUND_BOUTS.
+            "isFiveRounds": bool(row["is_five_rounds"]) if pd.notna(row.get("is_five_rounds")) else None,
             "rankA": row["rank_a"] if pd.notna(row.get("rank_a")) else None,
             "rankB": row["rank_b"] if pd.notna(row.get("rank_b")) else None,
         })

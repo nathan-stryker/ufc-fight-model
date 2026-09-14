@@ -297,10 +297,14 @@
       const badgeB = fB ? `<div class="fc-badge">${flagBadgeHtml(fB.iso_code)}</div>` : "";
       // Main events and title fights (anywhere on the card) are scheduled
       // for 5 rounds, everything else for 3 -- same rule the "Model
-      // predicts" preview line and the full breakdown below both use. No
-      // scheduled-round data comes from the scrape, so this is a standard-
-      // UFC-convention assumption, not a scraped fact.
-      const callRounds = b.tier === "main_event" || b.isTitleFight ? 5 : 3;
+      // predicts" preview line and the full breakdown below both use.
+      // b.isFiveRounds (when present) additionally covers a hand-confirmed
+      // non-title "special attraction" 5-rounder that tier/isTitleFight
+      // alone can't detect -- see scrape_upcoming_card.py's
+      // MANUAL_FIVE_ROUND_BOUTS. Falls back to the tier/title-only rule
+      // (undefined, not just false) for an older cached upcoming_card.csv
+      // exported before this field existed.
+      const callRounds = b.tier === "main_event" || b.isTitleFight || b.isFiveRounds ? 5 : 3;
       let modelPick = "";
       let action = `<div class="fc-nodata">No prediction available</div>`;
       if (predictable) {

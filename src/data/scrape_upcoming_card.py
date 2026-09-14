@@ -367,6 +367,27 @@ def match_fighter_ids(bouts):
     return bouts
 
 
+# UFC occasionally schedules a non-title bout for 5 rounds anyway (a
+# "special attraction" -- usually a co-main or a fight the promotion wants
+# built up as a bigger draw) -- neither ufc.com's event-listing page nor
+# Sherdog's exposes this anywhere our scraper can read (confirmed live,
+# 2026-09-14: no "5 Rnd"/"Round" text anywhere near the bout's listing
+# block), so tier/title-fight alone silently under-predicts a fight like
+# this as a standard 3-rounder. Hand-verified per bout, same "no fuzzy
+# matching, extend as flagged" discipline as NAME_ALIASES above -- keyed
+# by a normalized, order-independent pair of both fighters' names so it
+# still matches regardless of which corner ufc.com lists as A/B.
+MANUAL_FIVE_ROUND_BOUTS = {
+    # UFC 331 (2026-09-19) co-main -- user-supplied directly (2026-09-14).
+    frozenset({"arman tsarukyan", "mauricio ruffy"}),
+}
+
+
+def _is_manual_five_rounds(b):
+    key = frozenset({normalize_name(b["fighter_a_name"]), normalize_name(b["fighter_b_name"])})
+    return key in MANUAL_FIVE_ROUND_BOUTS
+
+
 def add_model_predictions(bouts):
     """
     The model's own predicted winner/method/round for each bout, computed
@@ -387,9 +408,10 @@ def add_model_predictions(bouts):
         b["predicted_winner_side"] = None
         b["predicted_method"] = None
         b["predicted_round"] = None
+        b["is_five_rounds"] = b.get("tier") == "main_event" or bool(b.get("is_title_fight")) or _is_manual_five_rounds(b)
         if not b.get("fighter_a_id") or not b.get("fighter_b_id"):
             continue
-        scheduled_rounds = 5 if (b.get("tier") == "main_event" or b.get("is_title_fight")) else 3
+        scheduled_rounds = 5 if b["is_five_rounds"] else 3
         try:
             r = predict_full_by_id(b["fighter_a_id"], b["fighter_b_id"], scheduled_rounds=scheduled_rounds)
         except SystemExit:
