@@ -159,6 +159,18 @@ def _extract_segment_bouts(container):
     return bouts
 
 
+def _find_segment_container(soup, base_id):
+    """ufc.com's segment containers used to be exactly id="main-card" etc.
+    -- confirmed broken 2026-09-14 (live UFC 331 page): they're now
+    "main-card--2"/"prelims-card--2"/"early-prelims--2" (a Drupal block-
+    delta suffix, evidently not fixed at "--2" forever). A plain #main-card
+    lookup silently returned None, and a naive [id^="main-card"] prefix
+    match would have wrongly grabbed the page's OTHER "main-card-id" node
+    (the ticket-purchase widget) too -- anchor the regex so it only matches
+    the bare id or id--<digits>."""
+    return soup.find(id=re.compile(rf"^{re.escape(base_id)}(--\d+)?$"))
+
+
 def scrape_card_ufc_com(session, event_url, expected_date):
     """Returns None (triggering the Sherdog fallback) if the page doesn't
     parse as expected, its date doesn't match the Sherdog event we're
@@ -177,11 +189,11 @@ def scrape_card_ufc_com(session, event_url, expected_date):
         return None
 
     soup = BeautifulSoup(html, "html.parser")
-    main_card = _extract_segment_bouts(soup.select_one("#main-card"))
+    main_card = _extract_segment_bouts(_find_segment_container(soup, "main-card"))
     if not main_card:
         return None
-    prelims = _extract_segment_bouts(soup.select_one("#prelims-card"))
-    early_prelims = _extract_segment_bouts(soup.select_one("#early-prelims"))
+    prelims = _extract_segment_bouts(_find_segment_container(soup, "prelims-card"))
+    early_prelims = _extract_segment_bouts(_find_segment_container(soup, "early-prelims"))
     return {"main_card": main_card, "prelims": prelims, "early_prelims": early_prelims}
 
 
@@ -236,6 +248,17 @@ NAME_ALIASES = {
     # heavyweight champion, unambiguous), found on the UFC Fight Night 283
     # card (2026-08-01) opposite Navajo Stirling.
     "jan bachowicz": "jan blachowicz",
+    # UFC 331 (2026-09-19), confirmed by hand against fighters.csv (each is
+    # the only candidate at the bout's own weight class) and the user
+    # directly, who supplied UFC/overall records for two of them (Ozzy
+    # Diaz, Joo Sang Yoo) that only line up with these exact people
+    # (2026-09-14).
+    "osman diaz": "ozzy diaz",
+    "michael aswell": "michael aswell jr",
+    "joo sang yoo": "joosang yoo",
+    "renato carneiro": "renato moicano",
+    "patricio freire": "patricio pitbull",
+    "doo ho choi": "dooho choi",
 }
 
 

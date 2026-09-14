@@ -204,6 +204,12 @@ MANUAL = {
     # fighter_id) -- corrected to "Sean King III" (fighters.csv's actual name)
     # in the same pass.
     "Sean King III": ("United States", "US"),
+    # Sherdog's scraped nationality says "Russia" for him (likely conflating
+    # his Dagestan training base with citizenship, same failure mode as the
+    # Uros Medic case above) -- he's Armenian, born in Armenia, a point UFC
+    # broadcasts themselves regularly note. Flagged directly by the user
+    # ahead of UFC 331 (2026-09-14).
+    "Arman Tsarukyan": ("Armenia", "AM"),
 }
 
 
