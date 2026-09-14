@@ -80,6 +80,14 @@ MANUAL = {
     # file before this pass, nothing to add for him.
     "Diego Lopes": "Jiu-Jitsu",
     "Rob Font": "Striker",
+    # The 4 ufc.com genuinely has no "Fighting style" field for at all
+    # (confirmed live, 2026-09-14) -- user-supplied directly after being
+    # asked, needed for Arman Tsarukyan's, Joshua Van's, and Alexandre
+    # Pantoja's own record-vs-style tallies this week.
+    "Damir Ismagulov": "Striker",
+    "Kevin Borjas": "MMA",
+    "Tatsuro Taira": "MMA",
+    "Neil Seery": "Freestyle",
 }
 
 
