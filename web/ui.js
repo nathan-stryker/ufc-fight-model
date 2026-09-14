@@ -187,8 +187,8 @@
       ? `<div class="tape"><div class="tape-title"><span>Fighting Styles</span></div>${styleRows.join("")}</div>`
       : "";
 
-    const recA = recordVsStyle(fA.fighter_id, fB.style, byId, MODEL_DATA.fighter_history);
-    const recB = recordVsStyle(fB.fighter_id, fA.style, byId, MODEL_DATA.fighter_history);
+    const recA = recordVsStyle(fA.fighter_id, fB.style, MODEL_DATA.fighter_history);
+    const recB = recordVsStyle(fB.fighter_id, fA.style, MODEL_DATA.fighter_history);
     const recordHtml = (recA || recB)
       ? `<div class="tape"><div class="tape-title"><span>Record vs. Opponent's Style</span></div>` +
         `${styleRecordDetailHtml(explanation.nameA, fB.style, recA)}${styleRecordDetailHtml(explanation.nameB, fA.style, recB)}</div>`

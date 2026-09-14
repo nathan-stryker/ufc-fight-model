@@ -284,8 +284,8 @@
       panel.appendChild(stylesSection);
     }
 
-    const recA = recordVsStyle(selected.a.fighter_id, selected.b.style, byId, MODEL_DATA.fighter_history);
-    const recB = recordVsStyle(selected.b.fighter_id, selected.a.style, byId, MODEL_DATA.fighter_history);
+    const recA = recordVsStyle(selected.a.fighter_id, selected.b.style, MODEL_DATA.fighter_history);
+    const recB = recordVsStyle(selected.b.fighter_id, selected.a.style, MODEL_DATA.fighter_history);
     if (recA || recB) {
       const recordSection = document.createElement("div");
       recordSection.className = "tape";

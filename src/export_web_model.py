@@ -289,28 +289,35 @@ def _fighter_full_history_payload(fighters_payload):
     style" feature -- deliberately NOT capped at n=5 like
     _recent_results_payload() below (that's sized for the small hoverable
     form badges; a style-matchup record needs a fighter's WHOLE career, or
-    it'd silently undercount). Opponent STYLE itself isn't resolved here --
-    the client already has MODEL_DATA.fighters keyed by id and can look
-    up an opponent's style itself, so this only carries opponent_id, not a
-    second copy of style data.
+    it'd silently undercount).
+
+    Opponent name + style ARE resolved and embedded here (not left for the
+    client to look up via MODEL_DATA.fighters, unlike an earlier version of
+    this function) -- a fighter's career opponents routinely include people
+    outside the active-roster window (retired, long inactive), who simply
+    aren't IN that active-only payload at all. Confirmed a real, user-
+    visible gap 2026-09-14: Giga Chikadze's real 2-2 record vs strikers was
+    showing incomplete because one of the 4 fights' opponent (Omar Morales,
+    long inactive) had no MODEL_DATA.fighters row to resolve a name or
+    style from, even after fighter_style.csv itself had the right value on
+    file (manual_style_overrides.py now supports exactly this case -- see
+    its own docstring). Resolved from fighters.csv/fighter_style.csv
+    directly (the FULL tables, not the active-roster-filtered export), so
+    this works for any opponent with a name and a style on file, active or
+    not -- the honest "N of M career opponents' styles known" framing
+    downstream still holds for opponents whose style is genuinely unknown.
 
     Scoped to the same active-roster fighter set the rest of this export
-    already uses. An older opponent from earlier in someone's career is
-    often retired/inactive and outside that window, so their style is
-    genuinely unknown here -- the feature built on this is meant to say so
-    honestly ("N of M career opponents' styles known"), not claim a
-    complete record it doesn't have.
+    already uses for WHICH fighters get a history entry (Giga himself, not
+    every one of his opponents) -- this only widens who can be resolved
+    AS an opponent within those histories.
 
-    Compact [opponent_id, outcome, method, round, event, event_date] arrays
-    rather than named objects -- this is the single biggest payload
-    addition in this export (~770 fighters x their whole career), and the
-    field names would otherwise repeat once per fight for no benefit.
-    method/round/event/event_date are carried (not just opponent_id +
-    outcome) so the "record vs. opponent's style" feature can list the
-    actual fight(s) behind a tally, not just show a bare "3-1" -- opponent
-    NAME isn't included here since any fight this feature can even match
-    already has the opponent resolvable via MODEL_DATA.fighters (their
-    style had to be looked up from there in the first place).
+    Compact [opponent_id, outcome, method, round, event, event_date,
+    opponent_name, opponent_style] arrays rather than named objects -- this
+    is the single biggest payload addition in this export (~770 fighters x
+    their whole career), and the field names would otherwise repeat once
+    per fight for no benefit. opponent_style is None when genuinely
+    unknown (same "don't claim a complete record" honesty as before).
     """
     fields = fighters_payload["fields"]
     fid_idx = fields.index("fighter_id")
@@ -319,6 +326,13 @@ def _fighter_full_history_payload(fighters_payload):
         return {}
 
     fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+    all_fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv")[["fighter_id", "name"]]
+    name_by_id = dict(zip(all_fighters["fighter_id"], all_fighters["name"]))
+    style_path = PROCESSED_DIR / "fighter_style.csv"
+    style_by_id = {}
+    if style_path.exists():
+        style_df = pd.read_csv(style_path)
+        style_by_id = dict(zip(style_df["fighter_id"], style_df["style"]))
 
     history = {}
     for fid in ids:
@@ -330,14 +344,17 @@ def _fighter_full_history_payload(fighters_payload):
             is_fighter_1 = r["fighter_1_id"] == fid
             opponent_id = r["fighter_2_id"] if is_fighter_1 else r["fighter_1_id"]
             if pd.isna(opponent_id):
-                continue  # opponent themselves unresolved -- can't look up their style either
+                continue  # opponent themselves unresolved -- can't look up their name/style either
             outcome = "W" if r["winner_id"] == fid else "L"
+            opp_style = style_by_id.get(opponent_id)
             rows.append([
                 opponent_id, outcome,
                 r["method"] if pd.notna(r["method"]) else None,
                 int(r["round"]) if pd.notna(r["round"]) else None,
                 r["event"] if pd.notna(r["event"]) else None,
                 r["event_date"] if pd.notna(r["event_date"]) else None,
+                name_by_id.get(opponent_id),
+                opp_style if pd.notna(opp_style) else None,
             ])
         if rows:
             history[fid] = rows

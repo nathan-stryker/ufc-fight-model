@@ -36,31 +36,38 @@ function buildFighterIndex(fightersPayload) {
 // src/data/scrape_fighting_style.py) -- e.g. "how has this fighter done
 // against other Wrestlers", asked about the style of whoever they're
 // CURRENTLY matched against. MODEL_DATA.fighter_history is keyed by
-// fighter_id -> [[opponentId, "W"|"L", method, round, event, eventDate], ...],
-// their FULL career (not the capped-at-5 recent-form badges), draws/
-// no-contests already excluded at export time. Returns null (never a
-// guessed/zero record) when there's nothing real to show: no
-// opponentStyle to compare against, no history at all, or zero opponents
-// whose OWN style happens to be on file -- most fighters have some career
-// opponents outside the active-roster scrape window (retired, long
-// inactive), so this is expected, not a bug, and knownCount/totalFights
-// is carried through so the UI can say so honestly ("N of M career
+// fighter_id -> [[opponentId, "W"|"L", method, round, event, eventDate,
+// opponentName, opponentStyle], ...], their FULL career (not the
+// capped-at-5 recent-form badges), draws/no-contests already excluded at
+// export time. Returns null (never a guessed/zero record) when there's
+// nothing real to show: no opponentStyle to compare against, no history
+// at all, or zero opponents whose OWN style happens to be on file --
+// most fighters have some career opponents nobody's ever tagged a style
+// for, so this is expected, not a bug, and knownCount/totalFights is
+// carried through so the UI can say so honestly ("N of M career
 // opponents' styles known") instead of implying a complete record.
-// `fights` carries the actual matching bouts (opponent name resolved via
-// byId, same lookup that confirmed the style match in the first place) so
-// a caller can list them, not just show a bare tally.
-function recordVsStyle(fighterId, opponentStyle, byId, fighterHistory) {
+// opponentName/opponentStyle are resolved server-side at export time now
+// (export_web_model.py's _fighter_full_history_payload), NOT looked up
+// here via the byId/MODEL_DATA.fighters active-roster index like an
+// earlier version of this function -- a past opponent is routinely
+// retired/long-inactive and was never IN that active-only index at all,
+// which silently dropped them from this record even once their style was
+// added to fighter_style.csv by hand (confirmed 2026-09-14, Giga
+// Chikadze's real 2-2 record vs strikers was still showing incomplete
+// after adding Omar Morales's style, because Omar Morales himself isn't
+// on the active roster). `fights` carries the actual matching bouts so a
+// caller can list them, not just show a bare tally.
+function recordVsStyle(fighterId, opponentStyle, fighterHistory) {
   if (!opponentStyle) return null;
   const history = fighterHistory && fighterHistory[fighterId];
   if (!history || !history.length) return null;
   let wins = 0, losses = 0;
   const fights = [];
-  for (const [oppId, outcome, method, round, event, eventDate] of history) {
-    const opp = byId.get(oppId);
-    if (!opp || !opp.style) continue;
-    if (opp.style.toLowerCase() !== opponentStyle.toLowerCase()) continue;
+  for (const [oppId, outcome, method, round, event, eventDate, opponentName, oppStyle] of history) {
+    if (!oppStyle) continue;
+    if (oppStyle.toLowerCase() !== opponentStyle.toLowerCase()) continue;
     if (outcome === "W") wins++; else losses++;
-    fights.push({ opponentName: opp.name, outcome, method, round, event, eventDate });
+    fights.push({ opponentName, outcome, method, round, event, eventDate });
   }
   if (fights.length === 0) return null;
   fights.sort((a, b) => (b.eventDate || "").localeCompare(a.eventDate || ""));

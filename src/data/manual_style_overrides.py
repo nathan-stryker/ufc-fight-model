@@ -19,6 +19,20 @@ fighter_style.csv since that file is the scraper's own output -- rerun
 this any time after scrape_fighting_style.py in case that file gets
 regenerated from scratch.
 
+scrape_fighting_style.py only covers the "active roster" (fought within
+the last ACTIVE_WINDOW_MONTHS -- same window as scrape_nationality.py),
+so a retired/long-inactive fighter who shows up as a past OPPONENT in an
+active fighter's fight history (feeding engine.js's recordVsStyle(), the
+Breakdown panel's "Record vs. Opponent's Style") has no fighter_style.csv
+row at all, not just a blank one -- their fight against an active fighter
+silently drops out of that fighter's record-vs-style tally even though
+the fight itself is right there in fights.csv (confirmed 2026-09-14: Giga
+Chikadze's real 2-2 record vs strikers was showing incomplete because
+Omar Morales, one of the 4 fights, had no style row to match against).
+Falls back to inserting a brand new row when there's no existing one,
+resolving fighter_id from fighters.csv by exact name -- same pattern
+manual_nationality_overrides.py already uses for this.
+
 Run: python -m src.data.manual_style_overrides (after scrape_fighting_style.py)
 """
 from pathlib import Path
@@ -27,9 +41,10 @@ import pandas as pd
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
-# name -> style. Confirmed missing (blank, not a 404) in fighter_style.csv
-# before being added -- never guessed. Extend as new gaps are flagged (see
-# feedback_flag_incomplete_data_for_non_debut_fighters memory).
+# name -> style. Confirmed missing (blank, or no row at all) in
+# fighter_style.csv before being added -- never guessed. Extend as new gaps
+# are flagged (see feedback_flag_incomplete_data_for_non_debut_fighters
+# memory).
 MANUAL = {
     "Jose Delgado": "MMA",
     # Announced during fight introductions as "Galvan Combat Style" (an
@@ -46,25 +61,46 @@ MANUAL = {
     "Michael Aswell Jr.": "MMA",
     "Tai Tuivasa": "Street Fighter",
     "Patricio Pitbull": "MMA",
+    # Past opponents (not on the active roster themselves) needed to
+    # complete UFC 331 fighters' record-vs-style tallies -- user-supplied
+    # directly, framed as each active fighter's own style-record math
+    # (e.g. "giga chikadze is 2-2 vs strikers ... fought omar morales"),
+    # not a standalone claim about the opponent's UFC.com bio (2026-09-14).
+    "Omar Morales": "Striker",
+    "Montserrat Conejo Ruiz": "MMA",
+    "Zach Reese": "MMA",
+    "John Lineker": "Striker",
+    "Guido Cannetti": "Striker",
+    "Rob Font": "Striker",
 }
 
 
 def main():
     path = PROCESSED_DIR / "fighter_style.csv"
     df = pd.read_csv(path)
+    fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv")[["fighter_id", "name"]]
 
-    applied, not_found = 0, []
+    applied, inserted, not_found = 0, 0, []
+    new_rows = []
     for name, style in MANUAL.items():
         mask = df["name"] == name
-        if not mask.any():
+        if mask.any():
+            if df.loc[mask, "style"].isna().all():
+                df.loc[mask, "style"] = style
+                applied += 1
+            continue
+        fmatch = fighters[fighters["name"] == name]
+        if fmatch.empty:
             not_found.append(name)
             continue
-        if df.loc[mask, "style"].isna().all():
-            df.loc[mask, "style"] = style
-            applied += 1
+        new_rows.append({"fighter_id": fmatch.iloc[0]["fighter_id"], "name": name, "style": style})
+        inserted += 1
+
+    if new_rows:
+        df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
 
     df.to_csv(path, index=False)
-    print(f"applied to {applied} fighter(s) (not found: {not_found})")
+    print(f"filled {applied} existing row(s), inserted {inserted} new row(s) (not found in fighters.csv at all: {not_found})")
 
 
 if __name__ == "__main__":
