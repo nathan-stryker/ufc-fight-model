@@ -31,6 +31,23 @@ function buildFighterIndex(fightersPayload) {
   return { byId, searchList };
 }
 
+// ufc.com's own "Fighting style" bio field isn't a fixed enum -- it uses
+// both "Jiu-Jitsu" and "Brazilian Jiu-Jitsu" for what's the same real
+// discipline (confirmed 2026-09-14: Cub Swanson is tagged "Brazilian
+// Jiu-Jitsu", Renato Moicano and Brian Ortega are both plain "Jiu-Jitsu",
+// silently excluding a real win/loss from either fighter's record against
+// the other's style). Hand-verified equivalences ONLY, same "no fuzzy
+// matching" discipline as scrape_upcoming_card.py's NAME_ALIASES -- this
+// normalizes the COMPARISON inside recordVsStyle() below, never the
+// stored value itself, so a fighter's own style badge still shows
+// whatever ufc.com's real (fuller or shorter) label actually was.
+const STYLE_MATCH_ALIASES = { "brazilian jiu-jitsu": "jiu-jitsu" };
+
+function _canonicalStyle(style) {
+  const lower = style.toLowerCase();
+  return STYLE_MATCH_ALIASES[lower] || lower;
+}
+
 // A fighter's win/loss record against opponents sharing ONE specific
 // fighting style (UFC.com's own editorial tag, see
 // src/data/scrape_fighting_style.py) -- e.g. "how has this fighter done
@@ -63,9 +80,10 @@ function recordVsStyle(fighterId, opponentStyle, fighterHistory) {
   if (!history || !history.length) return null;
   let wins = 0, losses = 0;
   const fights = [];
+  const targetStyle = _canonicalStyle(opponentStyle);
   for (const [oppId, outcome, method, round, event, eventDate, opponentName, oppStyle] of history) {
     if (!oppStyle) continue;
-    if (oppStyle.toLowerCase() !== opponentStyle.toLowerCase()) continue;
+    if (_canonicalStyle(oppStyle) !== targetStyle) continue;
     if (outcome === "W") wins++; else losses++;
     fights.push({ opponentName, outcome, method, round, event, eventDate });
   }

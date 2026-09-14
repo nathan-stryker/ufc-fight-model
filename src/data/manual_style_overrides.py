@@ -71,6 +71,14 @@ MANUAL = {
     "Zach Reese": "MMA",
     "John Lineker": "Striker",
     "Guido Cannetti": "Striker",
+    # Also named by the user as fights that should count in this week's
+    # card's record-vs-style tallies (Moicano/Ortega vs Cub Swanson, Ortega
+    # vs Diego Lopes), but Diego Lopes -- unlike the 5 above -- has a real
+    # ufc.com "Fighting style" bio field on file; scraped live rather than
+    # asked for, since it's a verifiable fact, not an editorial judgment
+    # call (2026-09-14). Cub Swanson already had "Brazilian Jiu-Jitsu" on
+    # file before this pass, nothing to add for him.
+    "Diego Lopes": "Jiu-Jitsu",
     "Rob Font": "Striker",
 }
 
