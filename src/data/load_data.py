@@ -186,6 +186,30 @@ def load_fighters() -> pd.DataFrame:
     return fighters
 
 
+# UFCStats itself records the same real person under two different exact
+# name strings across different fight rows (not a scraper bug on our side
+# -- confirmed by hand, both spellings appear in the raw mirror's own
+# ufc_fight_results.csv). fighters.csv only has ONE row per fighter_id, so
+# whichever spelling that row's own "name" field carries becomes the only
+# string resolve_id() below will match -- any OTHER raw fight row using
+# the other spelling silently gets fighter_1_id/fighter_2_id = NaN and
+# vanishes from that fighter's entire history (stats, Elo, fight-history
+# payload) without any error. Keyed by the raw fights.csv spelling ->
+# fighters.csv's own spelling, same convention as scrape_upcoming_card.py's
+# NAME_ALIASES (hand-verified, no fuzzy matching).
+RAW_FIGHTER_NAME_ALIASES = {
+    # fighters.csv has him as "Patricio Pitbull" (his ring name, apparently
+    # from a more recent UFCStats profile update), but his 2 pre-UFC-327
+    # UFC fights (Yair Rodriguez, Dan Ige) are recorded in
+    # ufc_fight_results.csv under his birth name "Patricio Freire" -- both
+    # were silently unresolved (fighter_2_id NaN), leaving only his most
+    # recent fight (the Aaron Pico loss) counted anywhere. Flagged by the
+    # user after the site showed him 0-1 in the UFC instead of his real
+    # 1-2 (2026-09-14).
+    "Patricio Freire": "Patricio Pitbull",
+}
+
+
 def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
     results = pd.read_csv(RAW_DIR / "ufc_fight_results.csv")
     events = pd.read_csv(RAW_DIR / "ufc_event_details.csv")
@@ -231,6 +255,7 @@ def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
     }
 
     def resolve_id(name, weightclass):
+        name = RAW_FIGHTER_NAME_ALIASES.get(name, name)
         if name in unique_map.index:
             return unique_map[name]
         candidates = dupe_candidates.get(name)
