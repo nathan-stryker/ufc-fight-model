@@ -42,6 +42,10 @@ MANUAL = {
     "Drakkar Klose": "MMA",
     "Tommy Gantt": "Freestyle",
     "Regina Tarin": "Striker",
+    # UFC 331 card (2026-09-19), user-supplied directly (2026-09-14).
+    "Michael Aswell Jr.": "MMA",
+    "Tai Tuivasa": "Street Fighter",
+    "Patricio Pitbull": "MMA",
 }
 
 
