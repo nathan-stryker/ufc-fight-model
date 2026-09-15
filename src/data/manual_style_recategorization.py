@@ -100,12 +100,15 @@ MANUAL = {
     "Wellington Turman": "Brazilian Jiu-Jitsu",
     "Zachary Scroggin": None,
     # --- Women's Strawweight, 2026-09-15 ---
-    # Marina Rodriguez / Piera Rodriguez (one gets a value, one gets
-    # cleared) and Xiong Jingnan (set to "Striker" then "remove"d in the
-    # same message) are still pending -- ambiguous/contradictory as given,
-    # asked the user rather than guessed. Tina Black has no fighters.csv
-    # row at all (not even under a name variant) -- can't be added until
-    # she's actually in our data.
+    # Marina Rodriguez / Piera Rodriguez and Xiong Jingnan were both
+    # ambiguous/contradictory as first given (one bare "Rodriguez" set,
+    # one cleared -- unclear which was which; Xiong Jingnan set then
+    # "remove"d in the same message) -- asked the user rather than
+    # guessed, resolved below. Tina Black still has no fighters.csv row at
+    # all (checked the live upstream Greco1899 mirror directly, not just
+    # our local copy -- she's not there either) -- can't add a real,
+    # sourced entry for her without fabricating a fighter_id, so she's
+    # left out until UFCStats actually has her on file.
     "Alice Ardelean": "MMA",
     "Amanda Lemos": "Striker",
     "Amanda Ribas": "MMA",
@@ -142,6 +145,11 @@ MANUAL = {
     "Viktoriia Dudakova": None,
     "Yan Xiaonan": "Sanda",
     "Yazmin Jauregui": "Boxer",
+    # Resolved: Piera = MMA, Marina = removed; Xiong Jingnan keeps her
+    # earlier "Striker" instruction (per the user, 2026-09-15).
+    "Piera Rodriguez": "MMA",
+    "Marina Rodriguez": None,
+    "Xiong Jingnan": "Striker",
 }
 
 
