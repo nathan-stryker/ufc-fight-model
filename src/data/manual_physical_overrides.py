@@ -56,6 +56,9 @@ MANUAL = {
     # height:reach ratio ("ape index" 0) is itself unremarkable, not a red
     # flag (2026-09-10).
     "Sean King III": {"height_in": 72.0, "reach_in": 72.0},
+    # UFC.com's own bio page: HEIGHT 71.00 (5'11"), REACH 74.00 -- exact
+    # match to what the user gave directly (2026-09-15).
+    "Gable Steveson": {"height_in": 71.0, "reach_in": 74.0},
 }
 
 
