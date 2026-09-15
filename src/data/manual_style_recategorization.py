@@ -99,6 +99,49 @@ MANUAL = {
     "Victor Valenzuela": "Kickboxer",
     "Wellington Turman": "Brazilian Jiu-Jitsu",
     "Zachary Scroggin": None,
+    # --- Women's Strawweight, 2026-09-15 ---
+    # Marina Rodriguez / Piera Rodriguez (one gets a value, one gets
+    # cleared) and Xiong Jingnan (set to "Striker" then "remove"d in the
+    # same message) are still pending -- ambiguous/contradictory as given,
+    # asked the user rather than guessed. Tina Black has no fighters.csv
+    # row at all (not even under a name variant) -- can't be added until
+    # she's actually in our data.
+    "Alice Ardelean": "MMA",
+    "Amanda Lemos": "Striker",
+    "Amanda Ribas": "MMA",
+    "Ariane Carnelossi": None,
+    "Carla Esparza": None,
+    "Cory McKenna": None,
+    "Denise Gomes": "Muay Thai",
+    "Elise Reed": "Kickboxer",
+    "Fatima Kline": "MMA",
+    "Feng Xiaocan": None,
+    "Iasmin Lucindo": "MMA",
+    "Istela Nunes": None,
+    "Jessica Andrade": "Brawler",
+    "Jessica Penne": None,
+    "Josefine Knutsson": None,
+    "Loopy Godinez": "MMA",
+    "Marina Spasic": "Kickboxer",
+    "Marnic Mann": "MMA",
+    "Melissa Amaya": "MMA",
+    "Melissa Martinez": None,
+    "Molly McCann": None,
+    "Montserrat Conejo Ruiz": "Grappler",
+    "Puja Tomar": "Wushu",
+    "Rayanne dos Santos": "MMA",
+    "Shauna Bannon": "Kickboxer",
+    # User wrote "Shi Min" -- our roster has "Shi Ming" (115 lbs,
+    # strawweight), no "Shi Min" at all -- same person, minor typo.
+    "Shi Ming": "MMA",
+    "Sofia Montenegro": "MMA",
+    "Stephanie Luciano": "Muay Thai",
+    "Tabatha Ricci": "Grappler",
+    "Tatiana Suarez": "Wrestler",
+    "Tecia Pennington": None,
+    "Viktoriia Dudakova": None,
+    "Yan Xiaonan": "Sanda",
+    "Yazmin Jauregui": "Boxer",
 }
 
 
