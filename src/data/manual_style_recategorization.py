@@ -340,6 +340,50 @@ MANUAL = {
     "Uran Satybaldiev": "Judo",
     "Volkan Oezdemir": "Aggressive Striker",
     "Zhang Mingyang": "Aggressive Striker",
+    # --- Heavyweight (male), 2026-09-16 ---
+    # 7 names cross-listed with light heavyweight (Aleksandar Rakic, Alex
+    # Pereira, Alexander Poppeck, Felipe Franco, Johnny Walker, Tanner
+    # Boser, Uran Satybaldiev) were already set in that pass above and
+    # intentionally excluded from this round at the user's request, not
+    # re-touched here. "lourenco" -> "Gabriel Lorenco" (our transliteration
+    # of the same Portuguese name, no diacritic) -- only candidate in
+    # position, unambiguous. Tai Tuivasa's own earlier "Street Fighter"
+    # (set 2026-09-15, before this recategorization project existed) gets
+    # overwritten with "Brawler" here -- the user revising their own
+    # earlier call, same as any other deliberate overwrite this project.
+    "Alexander Volkov": "Distance Striker",
+    "Allen Frye Jr.": "Boxer",
+    "Ante Delija": "Aggressive MMA",
+    "Anthony Wint": "Explosive MMA",
+    "Brando Pericic": "Power Striker",
+    "Ciryl Gane": "Striker",
+    "Curtis Blaydes": "Wrestler",
+    "Denzel Freeman": "Karate",
+    "Elisha Ellison": "Jiu-Jitsu",
+    "Gable Steveson": "Explosive MMA",
+    "Gabriel Lorenco": "MMA",
+    "Guilherme Uriel": "MMA",
+    "Javad Mahjoub": "Judo",
+    "Jose Montanha": "Grappler",
+    "Josh Hokit": "Pressure Wrestler",
+    "Jovan Leka": "Aggressive Striker",
+    "Kennedy Nzechukwu": "Striker",
+    "Louie Sutherland": "Timid Brawler",
+    "Lucas Armand": "MMA",
+    "Marcus Buchecha": "Explosive Grappler",
+    "RJ Harris": "Brawler",
+    "Rizvan Kuniev": "MMA",
+    "Sergei Pavlovich": "Aggressive Striker",
+    "Steven Asplund": "MMA",
+    "Tai Tuivasa": "Brawler",
+    "Tallison Teixeira": "Muay Thai",
+    "Terrance Chatman": "Counter Striker",
+    "Thomas Petersen": "MMA",
+    "Tom Aspinall": "MMA",
+    "Tyrell Fortune": "Grappler",
+    "Valter Walker": "Grappler",
+    "Vitor Petrino": "Pressure Fighter",
+    "Waldo Cortes Acosta": "Power Striker",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
