@@ -150,6 +150,107 @@ MANUAL = {
     "Piera Rodriguez": "MMA",
     "Marina Rodriguez": None,
     "Xiong Jingnan": "Striker",
+    # --- Lightweight, 2026-09-16 ---
+    # Roster pulled from roster.watch this pass (data/processed/
+    # roster_watch.json, a local reference file, NOT part of the trained
+    # pipeline -- see its own note in export_web_model.py/README if that
+    # changes) rather than our own active-roster export, since the user
+    # wants a comprehensive division list independent of our 24-month
+    # activity window. Two names needed resolving against fighters.csv
+    # first: roster.watch's "Thomas Gantt" -> our "Tommy Gantt" (already
+    # had a style from way earlier this session) and "Cristian Perez
+    # Gonzalez" -> our "Cristian Perez" (155 lbs, confirms same person).
+    # "BSD" = Benoit Saint Denis, "RDA" = Rafael Dos Anjos -- both
+    # unambiguous, widely-used abbreviations, not guesses. From here on
+    # the user is giving more specific archetypes than the earlier
+    # divisions' single-word buckets (e.g. "Pressure Striker" instead of
+    # just "Striker") -- several of these overwrite a value this same
+    # fighter already got in an earlier division's pass (e.g. Arman
+    # Tsarukyan: "Kickboxer" from the welterweight pass -> "Pressure
+    # Fighter" here); the later entry in this dict literal wins, which is
+    # exactly the intended behavior for a deliberate re-recategorization.
+    "Abdul-Kareem Al-Selwady": "Explosive MMA",
+    "Adam Livingston": "MMA",
+    "Akbar Abdullaev": "Muay Thai",
+    "Alex Reyes": "Aggressive MMA",
+    "Alexander Hernandez": "Aggressive Striker",
+    "Arman Tsarukyan": "Pressure Fighter",
+    "Artur Minev": "MMA",
+    "Benoit Saint Denis": "Pressure Fighter",
+    "Billy Quarantillo": "Pressure Fighter",
+    "Bolaji Oki": "Aggressive Striker",
+    "Charles Oliveira": "Muay Thai / Jiu-Jitsu",
+    "Charlie Campbell": "Pressure Striker",
+    "Chris Duncan": "Pressure Striker",
+    "Chris Padilla": "Pressure Fighter",
+    "Claudio Puelles": "Grappler",
+    "Conor McGregor": "Counter-Striker",
+    "Cristian Perez": "MMA",
+    "Dakota Hope": "MMA",
+    "Damir Hadzovic": "Aggressive Striker",
+    "Dan Hooker": "Kickboxer",
+    "Daniel Zellhuber": "Technical Striker",
+    "Darrius Flowers": "Pressure Striker",
+    "David Onama": "Aggressive MMA",
+    "Diego Ferreira": "MMA",
+    "Dom Mar Fan": "Grappler",
+    "Drakkar Klose": "Pressure Fighter",
+    "Drew Dober": "Pressure Striker",
+    "Esteban Ribovics": "Aggressive Striker",
+    "Fares Ziam": "Rangy Kickboxer",
+    "Gabe Green": "Pressure Fighter",
+    "Gauge Young": "Pressure Fighter",
+    "Grant Dawson": "Pressure Grappler",
+    "Harry Hardwick": "Pressure MMA",
+    "Ignacio Bahamondes": "Aggressive Striker",
+    "Ilia Topuria": "Pressure Boxer",
+    "Jai Herbert": "Muay Thai",
+    "Jalin Turner": "Striker",
+    "Jared Gordon": "Freestyle",
+    "Jefferson Nascimento": "MMA",
+    "Jeremy Stephens": "Aggressive Striker",
+    "Jim Miller": "MMA",
+    "Joaquim Silva": "MMA",
+    "Jordan Leavitt": "Grappler",
+    "Josiah Harrell": "MMA",
+    "Justin Gaethje": "Pressure Striker",
+    "Kai Kamaka III": "MMA",
+    "King Green": "Hood Boxing",
+    "Kody Steele": "Pressure Fighter",
+    "Kyle Nelson": "Pressure Striker",
+    "Kyle Prepolec": "Striker",
+    "Lance Gibson Jr.": "Pankration",
+    "Magomed Zaynukov": "Muay Thai",
+    "Mairon Santos": "MMA",
+    "Mandel Nallo": "MMA",
+    "Manoel Sousa": "Aggressive MMA",
+    "Manuel Torres": "Aggressive Striker",
+    "MarQuel Mederos": "Striker",
+    "Mateusz Rebecki": "Aggressive MMA",
+    "Matt Frevola": "Pressure Fighter",
+    "Mauricio Ruffy": "Explosive Kickboxer",
+    "Max Holloway": "Volume Striker",
+    "Michael Chandler": "Chinny Wrestling",
+    "Nasrat Haqparast": "Pressure Striker",
+    "Nate Landwehr": "Pressure Striker",
+    "Nazim Sadykhov": "Pressure Striker",
+    "Noah Gugnon": "MMA",
+    "Ottman Azaitar": "Aggressive Striker",
+    "Paddy Pimblett": "Aggressive MMA",
+    "Rafa Garcia": "Grappler",
+    "Rafael Dos Anjos": "Pressure Fighter",
+    "Renato Moicano": "MMA",
+    "Roberto Romero": "Aggressive Striker",
+    "Rongzhu": "Pressure Striker",
+    "Salahdine Parnasse": "Striker",
+    "Samuel Sanches": "MMA",
+    "Silvestre Sanchez": "Striker",
+    "Sodiq Yusuff": "Dynamic Striker",
+    "Terrance McKinney": "Chinny Wrestling",
+    "Tofiq Musayev": "Sanda",
+    "Tom Nolan": "Long-Range Striker",
+    "Trevor Peek": "Street Fighter",
+    "Trey Ogden": "Grappler",
 }
 
 
