@@ -294,6 +294,50 @@ MANUAL = {
     "Ronaldo Rodriguez": "Aggressive MMA",
     "Sumudaerji": "Striker",
     "Tatsuro Taira": "Grappler",
+    # --- Light Heavyweight (male), 2026-09-16 ---
+    # roster.watch's "Ce Liu" / "Muhammad Said" -> our "Liu Ce" (Chinese
+    # name order preserved in fighters.csv) / "Muhammad Saidov" (fuller
+    # form), both confirmed at 205 lbs. A bare "Walker" this round is
+    # genuinely ambiguous (Johnny Walker AND Julius Walker are both on
+    # this list, only one "Walker" mention given) -- held back rather than
+    # guessed, unlike every other name this pass, which resolved cleanly:
+    # "fernandez" only matches Luke Fernandez (Lucas Fernando has a
+    # different surname, not a collision).
+    "Abdul Rakhman Yakhyaev": "Aggressive Finisher",
+    "Aleksandar Rakic": "Kickboxer",
+    "Alex Pereira": "Elite Kickboxer",
+    "Alexander Poppeck": "MMA",
+    "Alik Lorenz": "Aggressive Finisher",
+    "Alonzo Menifield": "Explosive Striker",
+    "Azamat Murzakanov": "Explosive Striker",
+    "Bogdan Guskov": "Aggressive Striker",
+    "Brendson Ribeiro": "Kill or Be Killed",
+    "Diyar Nurgozhay": "MMA",
+    "Dominick Reyes": "Boxer",
+    "Dustin Jacoby": "Aggressive Patience",
+    "Gerald Meerschaert": "Submission Specialist",
+    "Ibo Aslan": "Aggressive Striker",
+    "Ion Cutelaba": "Aggressive MMA",
+    "Iwo Baraniewski": "Aggressive MMA",
+    "Jamahal Hill": "Boxer",
+    "Junior Tafa": "Pressure Striker",
+    "Khalil Rountree Jr.": "Aggressive Striker",
+    "Levi Rodrigues Jr.": "Brawler",
+    "Liu Ce": "Kickboxer",
+    "Luke Fernandez": "MMA",
+    "Magomed Ankalaev": "Counter-Striker",
+    "Magomed Tuchalov": "MMA",
+    "Modestas Bukauskas": "Long-Range Kickboxer",
+    "Muhammad Saidov": "Judo",
+    "Paulo Costa": "Aggressive Striker",
+    "Quentin Pasley": "Boxer",
+    "Rafael Tobias": "Aggressive Grappler",
+    "Robert Whittaker": "Striker",
+    "Rodolfo Bellato": "Pressure Fighter",
+    "Roman Dolidze": "Explosive MMA",
+    "Uran Satybaldiev": "Judo",
+    "Volkan Oezdemir": "Aggressive Striker",
+    "Zhang Mingyang": "Aggressive Striker",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
