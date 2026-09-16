@@ -320,6 +320,8 @@ MANUAL = {
     "Ion Cutelaba": "Aggressive MMA",
     "Iwo Baraniewski": "Aggressive MMA",
     "Jamahal Hill": "Boxer",
+    # Resolved: Johnny Walker, not Julius Walker (per the user, 2026-09-16).
+    "Johnny Walker": "Aggressive Striker",
     "Junior Tafa": "Pressure Striker",
     "Khalil Rountree Jr.": "Aggressive Striker",
     "Levi Rodrigues Jr.": "Brawler",
