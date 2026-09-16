@@ -384,6 +384,82 @@ MANUAL = {
     "Valter Walker": "Grappler",
     "Vitor Petrino": "Pressure Fighter",
     "Waldo Cortes Acosta": "Power Striker",
+    # --- Middleweight (male), 2026-09-16 ---
+    # 13 names cross-listed with an earlier completed division (welterweight/
+    # light heavyweight/heavyweight) were excluded from the list shown to
+    # the user, same as the heavyweight pass. "CLD" = Christian Leroy
+    # Duncan, "DDP" = Dricus Du Plessis -- both unambiguous initials, not
+    # guesses. Two "hernandez" and two "rodrigues"/"magomedov"/
+    # "oleksiejczuk" mentions this round all resolved cleanly by message
+    # order against distinct people already in the list (Anthony Hernandez
+    # vs Luis Hernandez, Gregory Rodrigues vs Modestino Rodrigues, Abus
+    # Magomedov vs Shara Magomedov, Michal Oleksiejczuk -- Cezary
+    # Oleksiejczuk was never mentioned and stays untouched) -- no
+    # contradiction to flag this time, unlike the Rodriguez/Walker cases
+    # in earlier passes. Name variants resolved before this list was even
+    # shown: roster.watch's "Joseph Kropschot"/"Nick Galanti"/"Treston
+    # Vines"/"Yi Sak Lee"/"Zachary Reese" -> our "Joe Kropschot"/"Nicholas
+    # Galanti"/"Tre'ston Vines"/"YiSak Lee"/"Zach Reese"; "Luis Dias de
+    # Assis" -> "Luis Felipe Dias" is the weaker match of the six (same
+    # weight class, no other candidate, but not independently confirmed
+    # the way the others are).
+    "Abus Magomedov": "Explosive MMA",
+    "Aliaskhab Khizriev": "Wrestler",
+    "Andre Petroski": "Wrestler",
+    "Andrey Pulyaev": "Striker",
+    "Anthony Hernandez": "Pressure Fighter",
+    "Ateba Gautier": "Kickboxer",
+    "Azamat Bekoev": "Wrestle-Boxer",
+    "Baisangur Susurkaev": "Kickboxer",
+    "Ben Johnston": "Striker",
+    "Brendan Allen": "Pressure Grappler",
+    "Brunno Ferreira": "Pressure Fighter",
+    "Cam Rowston": "MMA",
+    "Cesar Almeida": "Kickboxer",
+    "Christian Leroy Duncan": "Rangy Kickboxer",
+    "Damian Pinas": "Pressure Boxer",
+    "Djorden Santos": "Pressure Fighter",
+    "Donte Johnson": "Pressure Striker",
+    "Dricus Du Plessis": "Pressure Fighter",
+    "Dusko Todorovic": "Striker",
+    "Dustin Stoltzfus": "MMA",
+    "Edmen Shahbazyan": "Explosive Striker",
+    "Eric McConico": "Pressure Fighter",
+    "Gregory Rodrigues": "Pressure Striker",
+    "Ismail Naurdiev": "MMA",
+    "Israel Adesanya": "Counter-Striker",
+    "Jacob Malkoun": "Wrestler",
+    "Jared Cannonier": "Power Striker",
+    "Joe Pyfer": "MMA",
+    "Joe Kropschot": "Jiu-Jitsu",
+    "Julien Leblanc": "MMA",
+    "JunYong Park": "Pressure Fighter",
+    "Kelvin Gastelum": "Pressure Striker",
+    "Kyle Daukaus": "Jiu-Jitsu",
+    "Luis Hernandez": "Pressure Fighter",
+    "Mantas Kondratavicius": "Aggressive Striker",
+    "Marc-Andre Barriault": "Pressure Striker",
+    "Marco Tulio": "Pressure Striker",
+    "Martin Kozak": "Kickboxer",
+    "Marvin Vettori": "Pressure Fighter",
+    "Matthieu Duclos": "MMA",
+    "Michal Oleksiejczuk": "Pressure Striker",
+    "Modestino Rodrigues": "MMA",
+    "Nicholas Galanti": "Grappler",
+    "Nursulton Ruziboev": "MMA",
+    "Ozzy Diaz": "Striker",
+    "Robert Valentin": "MMA",
+    "Roman Kopylov": "Striker",
+    "Ryan Gandra": "MMA",
+    "Sean Strickland": "Pressure Boxer",
+    "Sedriques Dumas": "Rangy Kickboxer",
+    "Shara Magomedov": "Kickboxer",
+    "Trent Miller": "MMA",
+    "Vlasto Cepo": "Aggressive Striker",
+    "Wes Schultz": "Wrestler",
+    "YiSak Lee": "Pressure Fighter",
+    "Yilizhati Maimaitijiang": "Grappler",
+    "Zach Reese": "Aggressive MMA",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
