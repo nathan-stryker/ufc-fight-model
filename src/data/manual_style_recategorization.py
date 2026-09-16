@@ -251,6 +251,60 @@ MANUAL = {
     "Tom Nolan": "Long-Range Striker",
     "Trevor Peek": "Street Fighter",
     "Trey Ogden": "Grappler",
+    # --- Flyweight (male), 2026-09-16 ---
+    # "Rosas" in the user's message doesn't match anyone on the flyweight
+    # list -- resolved as "Nilson Rojas" (position in the message lines up
+    # exactly where Rojas falls in the roster.watch list, surrounded by
+    # unambiguous matches on both sides: Mitch Raposo before, Nyamjargal
+    # Tumendemberel after). Two bare "rodriguez" mentions this round, NOT
+    # ambiguous like the strawweight pass's Rodriguez pair -- these land on
+    # Imanol Rodriguez and Ronaldo Rodriguez respectively purely by
+    # message order, both confirmed the same way (surrounding names on
+    # both sides match cleanly, no contradiction to flag).
+    "Alden Coria": "Freestyle",
+    "Alessandro Costa": "Jiu-Jitsu",
+    "Alex Perez": "MMA",
+    "Alexandre Pantoja": "Jiu-Jitsu",
+    "Amir Albazi": "Grappler",
+    "Bilal Hasan": "Taekwondo",
+    "Brandon Moreno": "MMA",
+    "Charles Johnson": "Rangy Striker",
+    "Christian Natividad": "MMA",
+    "Clayton Carpenter": "Explosive MMA",
+    "Cody Durden": "Pressure Wrestler",
+    "DongHun Choi": "MMA",
+    "Edgar Chairez": "Aggressive MMA",
+    "Imanol Rodriguez": "Aggressive MMA",
+    "Jose Ochoa": "Pressure Striker",
+    "Joseph Morales": "Grappler",
+    "Joshua Van": "Pressure Boxer",
+    "Kai Asakura": "Dynamic Striker",
+    "Kai Kara-France": "Aggressive Striker",
+    "Kevin Borjas": "Aggressive Striker",
+    "Kyoji Horiguchi": "Karate",
+    "Luis Gurule": "Pressure Fighter",
+    "Michael Aljarouj": "Kung Fu",
+    "Mitch Raposo": "Grappler",
+    "Nilson Rojas": "Wild Boxer",
+    "Nyamjargal Tumendemberel": "Pressure Sambo",
+    "Ode Osbourne": "Explosive MMA",
+    "Rafael Estevam": "Pressure Grappler",
+    "Ramazan Temirov": "Explosive Striker",
+    "Rei Tsuruya": "Wrestler",
+    "Ronaldo Rodriguez": "Aggressive MMA",
+    "Sumudaerji": "Striker",
+    "Tatsuro Taira": "Grappler",
+}
+
+# Rare escape hatch for a duplicate fighters.csv name where the two real
+# people are genuinely different (load_fights.py's own docstring names
+# this exact pair as its example) -- name-only matching in MANUAL above
+# would silently apply to BOTH. Keyed by fighter_id instead.
+MANUAL_BY_ID = {
+    # "Bruno Gustavo da Silva" (roster.watch's fuller name) = the 125 lbs
+    # Bruno Silva, not the 185 lbs one -- confirmed by weight_lbs in
+    # fighters.csv, per the user (2026-09-16).
+    "http://ufcstats.com/fighter-details/294aa73dbf37d281": "Aggressive MMA",
 }
 
 
@@ -280,8 +334,25 @@ def main():
     if new_rows:
         df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
 
+    by_id_set = 0
+    for fid, style in MANUAL_BY_ID.items():
+        mask = df["fighter_id"] == fid
+        if mask.any():
+            df.loc[mask, "style"] = style
+            by_id_set += 1
+        else:
+            fmatch = fighters[fighters["fighter_id"] == fid]
+            if not fmatch.empty:
+                df = pd.concat([df, pd.DataFrame([{
+                    "fighter_id": fid, "name": fmatch.iloc[0]["name"], "style": style,
+                }])], ignore_index=True)
+                by_id_set += 1
+            else:
+                not_found.append(fid)
+
     df.to_csv(path, index=False)
-    print(f"set {set_count}, cleared {cleared}, inserted {inserted} new row(s) "
+    print(f"set {set_count}, cleared {cleared}, inserted {inserted} new row(s), "
+          f"{by_id_set} by fighter_id "
           f"(not found in fighters.csv at all: {not_found})")
 
 
