@@ -116,6 +116,23 @@ MANUAL_SHERDOG_URLS = {
     # Louisiana featherweight, and the reported 6-0 record ahead of his UFC
     # debut vs. Jessie Rosas (UFC Fight Night 288 - Noche UFC 4, 2026-09-12).
     "sean king iii": "https://www.sherdog.com/fighter/Sean-King-423706",
+    # UFC Fight Night 289 (2026-09-26). Sherdog spells him "Mehemmedali"
+    # (our data/upcoming_card.csv both have "Mehemmedeli") -- one-letter
+    # difference broke the exact-match search. Confirmed via matching
+    # nickname "Ineffable" and the reported UFC debut vs. Ilimbek Akylbek
+    # Uulu.
+    "mehemmedeli osmanli": "https://www.sherdog.com/fighter/Mehemmedali-Osmanli-390629",
+    # Sherdog lists him with his own data's full patronymic ("Uulu"), but
+    # upcoming_card.csv's scraped display name drops it -- plain "Ilimbek
+    # Akylbek" search found nothing. Confirmed via the reported UFC debut
+    # vs. Mehemmedali Osmanli (exact date/event/opponent match).
+    "ilimbek akylbek": "https://www.sherdog.com/fighter/Ilimbek-Akylbek-Uulu-388255",
+    # "Tina Black" (upcoming_card.csv's scraped display name) is her
+    # nickname, not her Sherdog/UFCStats name (Valesca Machado) -- plain
+    # search found nothing. Confirmed via matching nickname "Tina Black"
+    # directly on her Sherdog profile and the reported UFC debut vs.
+    # Melissa Amaya.
+    "tina black": "https://www.sherdog.com/fighter/Valesca-Machado-215597",
 }
 
 
