@@ -460,6 +460,28 @@ MANUAL = {
     "YiSak Lee": "Pressure Fighter",
     "Yilizhati Maimaitijiang": "Grappler",
     "Zach Reese": "Aggressive MMA",
+    # --- Women's Bantamweight, 2026-09-23 ---
+    # roster.watch's "Nikolija Milosevic" -> our "Nina Milosevic" (135 lbs,
+    # only Milosevic on file). Two "nunes" mentions resolved by message
+    # order (Amanda Nunes then Josiane Nunes). The final bare "santos -
+    # striker" can only be Yana Santos: Luana Santos's position in the
+    # list already passed earlier in the message without a match, and the
+    # sequential message-order convention this whole project has used
+    # never goes backward -- not a genuine ambiguity like the Walker/
+    # Rodriguez cases, so not asked about.
+    "Ailin Perez": "Pressure Grappling",
+    "Alex Apodaca": "Brawler",
+    "Alice Pereira": "Kickboxer",
+    "Amanda Nunes": "Aggressive MMA",
+    "Chelsea Chandler": "Pressure MMA",
+    "Daria Zhelezniakova": "MMA",
+    "Josiane Nunes": "MMA",
+    "Julianna Pena": "Pressure MMA",
+    "Klaudia Sygula": "Volume Striker",
+    "Lucia Szabova": "MMA",
+    "Nina Milosevic": "Pressure Fighter",
+    "Norma Dumont": "MMA",
+    "Yana Santos": "Striker",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
