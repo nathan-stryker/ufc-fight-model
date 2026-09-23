@@ -1,0 +1,85 @@
+"""JS-vs-Python parity check for the website's inference engine.
+
+Runs web/engine.js's predictFull() in an embedded V8 (py_mini_racer) against
+web/model_data.json and compares it to src.models.predict's output for the
+same matchups. Exits non-zero if any win/method probability differs by more
+than TOLERANCE percentage points.
+
+Usage:
+    python -m src.check_js_parity                      # default matchups
+    python -m src.check_js_parity "A|B|5" "C|D|3"      # custom matchups
+
+Deliberately calls os._exit() at the end: MiniRacer's V8 teardown can hang
+the interpreter on Windows, which once stalled an unattended run for the
+full 5-minute tool timeout after the check itself had already passed.
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+TOLERANCE = 0.1  # percentage points
+
+DEFAULT_MATCHUPS = [
+    ("Islam Makhachev", "Ilia Topuria", 5),
+    ("Raul Rosas Jr.", "Raoni Barcelos", 5),
+]
+
+
+def python_prediction(a, b, rounds):
+    out = subprocess.run(
+        [sys.executable, "-m", "src.models.predict", a, b, "--rounds", str(rounds)],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    ).stdout
+    def pct(label):
+        m = re.search(rf"^\s*{re.escape(label)}: ([\d.]+)%", out, re.M)
+        return float(m.group(1)) if m else None
+    return {
+        "probAWins": pct(a),
+        "dec": pct("Decision"), "ko": pct("KO/TKO"), "sub": pct("Submission"),
+    }
+
+
+def main():
+    from py_mini_racer import MiniRacer
+
+    matchups = DEFAULT_MATCHUPS
+    if len(sys.argv) > 1:
+        matchups = [(p[0], p[1], int(p[2])) for p in (s.split("|") for s in sys.argv[1:])]
+
+    ctx = MiniRacer()
+    ctx.eval("var MODEL_DATA = " + (ROOT / "web/model_data.json").read_text(encoding="utf-8") + ";")
+    ctx.eval((ROOT / "web/engine.js").read_text(encoding="utf-8"))
+    ctx.eval(
+        "var IDX = buildFighterIndex(MODEL_DATA.fighters);"
+        "function byName(n){ const s = IDX.searchList.filter(x => x.name === n);"
+        " if (s.length !== 1) throw new Error(n + ': ' + s.length + ' roster matches');"
+        " return IDX.byId.get(s[0].id); }"
+    )
+
+    failed = False
+    for a, b, rounds in matchups:
+        js = json.loads(ctx.eval(
+            f"JSON.stringify(predictFull(byName({json.dumps(a)}), byName({json.dumps(b)}), {rounds}, MODEL_DATA))"
+        ))
+        js_vals = {"probAWins": js["probAWins"] * 100,
+                   **{k: v * 100 for k, v in js["method"].items()}}
+        py_vals = python_prediction(a, b, rounds)
+        worst = max(abs(js_vals[k] - py_vals[k]) for k in py_vals if py_vals[k] is not None)
+        # Python prints 1 decimal, so allow its rounding on top of the tolerance.
+        ok = worst <= TOLERANCE + 0.05
+        failed |= not ok
+        print(f"[{'OK' if ok else 'MISMATCH'}] {a} vs {b} ({rounds} rds): "
+              f"JS {js_vals['probAWins']:.2f}% / Py {py_vals['probAWins']:.1f}%  (max diff {worst:.3f}pp)")
+
+    print("parity: PASS" if not failed else "parity: FAIL")
+    sys.stdout.flush()
+    os._exit(1 if failed else 0)
+
+
+if __name__ == "__main__":
+    main()
