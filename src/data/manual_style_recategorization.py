@@ -488,6 +488,7 @@ MANUAL = {
     "Mehemmedeli Osmanli": "MMA",
     "Valesca Machado": "Aggressive Striker",
     "Melissa Amaya": "MMA",
+    "Raul Rosas Jr.": "Freestyle",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
