@@ -482,6 +482,8 @@ MANUAL = {
     "Nina Milosevic": "Pressure Fighter",
     "Norma Dumont": "MMA",
     "Yana Santos": "Striker",
+    # UFC Fight Night 289 (2026-09-26), user-supplied directly (2026-09-23).
+    "Brady Hiestand": "MMA",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
