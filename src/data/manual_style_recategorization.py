@@ -484,6 +484,10 @@ MANUAL = {
     "Yana Santos": "Striker",
     # UFC Fight Night 289 (2026-09-26), user-supplied directly (2026-09-23).
     "Brady Hiestand": "MMA",
+    "Ilimbek Akylbek Uulu": "Wrestler",
+    "Mehemmedeli Osmanli": "MMA",
+    "Valesca Machado": "Aggressive Striker",
+    "Melissa Amaya": "MMA",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
