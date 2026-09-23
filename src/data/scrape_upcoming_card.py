@@ -259,6 +259,13 @@ NAME_ALIASES = {
     "renato carneiro": "renato moicano",
     "patricio freire": "patricio pitbull",
     "doo ho choi": "dooho choi",
+    # UFC Fight Night 289 (2026-09-23). "Tina Black" is her nickname, not
+    # her UFCStats name (Valesca Machado) -- her fighters.csv row only
+    # appeared this week (didn't exist at all as of last week's mirror
+    # pull). "Ilimbek Akylbek" is missing fighters.csv's own patronymic
+    # suffix. Both confirmed by weight class + the user directly.
+    "tina black": "valesca machado",
+    "ilimbek akylbek": "ilimbek akylbek uulu",
 }
 
 

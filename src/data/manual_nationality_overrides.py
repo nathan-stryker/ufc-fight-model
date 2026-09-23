@@ -210,6 +210,19 @@ MANUAL = {
     # broadcasts themselves regularly note. Flagged directly by the user
     # ahead of UFC 331 (2026-09-14).
     "Arman Tsarukyan": ("Armenia", "AM"),
+    # New card, UFC Fight Night 289 (Rosas Jr. vs. Barcelos) -- 4 true UFC
+    # debuts with no prior row here (Valesca Machado literally didn't have
+    # a fighters.csv row at all as of last week -- her raw UFCStats profile
+    # only appeared after this week's mirror refresh) plus Brady Hiestand,
+    # a non-debut fighter with a genuine gap. User-supplied directly
+    # (2026-09-23). "Tina Black" is Valesca Machado's nickname, not her
+    # UFCStats name -- keyed by the real name here, same as every other
+    # entry in this file.
+    "Brady Hiestand": ("United States", "US"),
+    "Valesca Machado": ("Brazil", "BR"),
+    "Melissa Amaya": ("United States", "US"),
+    "Ilimbek Akylbek Uulu": ("Kyrgyzstan", "KG"),
+    "Mehemmedeli Osmanli": ("Azerbaijan", "AZ"),
 }
 
 
