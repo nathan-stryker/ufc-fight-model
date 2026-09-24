@@ -176,37 +176,6 @@
     return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
   }
 
-  // DOM-node version of ui.js's categorySectionHtml() -- same reasoning as
-  // verdictText()/makeRow() above for why this is a separate implementation
-  // rather than a shared one.
-  function makeFactorRow(f, nameA, nameB) {
-    const row = document.createElement("div");
-    row.className = "factor-row";
-    const towardA = f.favors === "a";
-    row.innerHTML =
-      `<div class="factor-label">${escapeHtml(f.label)}<span class="factor-value mono">${escapeHtml(f.valueText)}</span></div>` +
-      `<div class="factor-bar-track"><div class="factor-bar factor-bar-a"></div><div class="factor-bar factor-bar-b"></div></div>` +
-      `<div class="factor-favors mono">${escapeHtml(towardA ? nameA : nameB)}</div>`;
-    requestAnimationFrame(() => {
-      const pct = f.relativeMagnitude * 50;
-      row.querySelector(towardA ? ".factor-bar-a" : ".factor-bar-b").style.width = pct + "%";
-    });
-    return row;
-  }
-
-  function makeCategorySection(title, factors, nameA, nameB, subtitle) {
-    if (!factors.length) return null;
-    const section = document.createElement("div");
-    section.className = "tape";
-    const sub = subtitle ? `<span class="mono">${escapeHtml(subtitle)}</span>` : "";
-    section.innerHTML = `<div class="tape-title"><span>${escapeHtml(title)}</span>${sub}</div>`;
-    const wrap = document.createElement("div");
-    wrap.className = "why-factors";
-    factors.forEach((f) => wrap.appendChild(makeFactorRow(f, nameA, nameB)));
-    section.appendChild(wrap);
-    return section;
-  }
-
   // One fight from engine.js's recordVsStyle() -- DOM-node equivalent of
   // ui.js's reuse of prefightRowHtml() (same .debut-fight-row classes for
   // visual consistency, this file just doesn't have that function since
@@ -260,13 +229,9 @@
     btn.setAttribute("aria-expanded", "false");
     panel.innerHTML = "";
 
-    const careerLabel = `UFC career · ${shortFighterName(explanation.nameA)} vs ${shortFighterName(explanation.nameB)}`;
-    [["Striking", explanation.striking, careerLabel], ["Grappling", explanation.grappling, careerLabel],
-     ["Intangibles", explanation.intangibles, null]]
-      .forEach(([title, factors, subtitle]) => {
-        const section = makeCategorySection(title, factors, explanation.nameA, explanation.nameB, subtitle);
-        if (section) panel.appendChild(section);
-      });
+    const stats = document.createElement("div");
+    stats.innerHTML = statComparisonHtml(selected.a, selected.b, explanation, MODEL_DATA);
+    panel.appendChild(stats);
 
     if (explanation.styleA || explanation.styleB) {
       const stylesSection = document.createElement("div");

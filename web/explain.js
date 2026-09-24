@@ -107,56 +107,173 @@ function explainMargin(model, x) {
 // Human-readable presentation
 // ---------------------------------------------------------------------------
 
-// label + category + how to phrase the raw differential; NaN handling is
-// separate (see factorRows below) since it depends on which SIDE is
-// missing, not just the feature. Category buckets (striking/grappling/
-// intangibles) match the Breakdown panel's own section headings -- height/
-// reach/stance aren't literally "intangible" but there's no 4th bucket in
-// the requested layout, and physical attributes sit more naturally next to
-// experience/form than next to a strike-volume stat.
+// Readable name + category for each model feature, used for the "Model
+// leaned most on" line. Categories still drive explainWin()'s grouping and
+// its intangibles noise filter.
 const FACTOR_LABELS = {
-  elo_diff: { label: "Recent form (Elo rating)", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} pts` },
-  height_in_diff: { label: "Height", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} in` },
-  reach_in_diff: { label: "Reach", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} in` },
-  age_years_diff: { label: "Age", category: "intangibles", fmt: (v) => `${Math.abs(v).toFixed(1)} yrs ${v < 0 ? "younger" : "older"}` },
-  fights_entering_diff: { label: "UFC experience", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
-  win_pct_entering_diff: { label: "Win rate", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  finish_rate_entering_diff: { label: "Finish rate", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  current_streak_entering_diff: { label: "Current streak", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
-  layoff_days_entering_diff: { label: "Time since last fight", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} days` },
-  // Striking/grappling rows DISPLAY each fighter's UFC career number (the
-  // `career` field, exported by export_web_model._career_display_stats and
-  // matching UFC.com), not the model's own last-5-fight shrunk value -- a
-  // visitor checks these against UFC.com, and the model's values never match
-  // it (user flagged Barcelos/Rosas Jr., 2026-09-24). The bar still shows
-  // the model's own contribution. `fmt` is only the fallback when a fighter
-  // has no career number on file.
-  sig_str_landed_per_min_diff: { label: "Striking output", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} landed/min`,
-    career: { field: "career_slpm", fmt: (x) => x.toFixed(2), unit: " landed/min" } },
-  sig_str_absorbed_per_min_diff: { label: "Striking defense", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} absorbed/min`,
-    career: { field: "career_sapm", fmt: (x) => x.toFixed(2), unit: " absorbed/min" } },
-  sig_str_acc_diff: { label: "Striking accuracy", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
-    career: { field: "career_str_acc", fmt: (x) => `${Math.round(x * 100)}%`, unit: "" } },
-  td_avg_per15_diff: { label: "Takedown rate", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min`,
-    career: { field: "career_td_avg", fmt: (x) => x.toFixed(2), unit: " per 15 min" } },
-  td_acc_diff: { label: "Takedown accuracy", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
-    career: { field: "career_td_acc", fmt: (x) => `${Math.round(x * 100)}%`, unit: "" } },
-  td_def_diff: { label: "Takedown defense", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
-    career: { field: "career_td_def", fmt: (x) => `${Math.round(x * 100)}%`, unit: "" } },
-  sub_att_per15_diff: { label: "Submission attempts", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min`,
-    career: { field: "career_sub_avg", fmt: (x) => x.toFixed(2), unit: " per 15 min" } },
-  ctrl_pct_diff: { label: "Grappling control time", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
-    career: { field: "career_ctrl_pct", fmt: (x) => `${Math.round(x * 100)}%`, unit: " of fight time" } },
+  elo_diff: { label: "Recent form (Elo)", category: "intangibles" },
+  height_in_diff: { label: "Height", category: "intangibles" },
+  reach_in_diff: { label: "Reach", category: "intangibles" },
+  age_years_diff: { label: "Age", category: "intangibles" },
+  fights_entering_diff: { label: "UFC experience", category: "intangibles" },
+  win_pct_entering_diff: { label: "Win rate", category: "intangibles" },
+  finish_rate_entering_diff: { label: "Finish rate", category: "intangibles" },
+  current_streak_entering_diff: { label: "Current streak", category: "intangibles" },
+  layoff_days_entering_diff: { label: "Time since last fight", category: "intangibles" },
+  // Named to match the stat rows above them (CAREER_STAT_ROWS) -- e.g. the
+  // absorbed-per-minute feature was "Striking defense", which read as the
+  // separate "Sig. strike defense" row and could point at the other fighter.
+  sig_str_landed_per_min_diff: { label: "Strikes landed / min", category: "striking" },
+  sig_str_absorbed_per_min_diff: { label: "Strikes absorbed / min", category: "striking" },
+  sig_str_acc_diff: { label: "Strike accuracy", category: "striking" },
+  td_avg_per15_diff: { label: "Takedowns / 15 min", category: "grappling" },
+  td_acc_diff: { label: "Takedown accuracy", category: "grappling" },
+  td_def_diff: { label: "Takedown defense", category: "grappling" },
+  sub_att_per15_diff: { label: "Submission attempts / 15 min", category: "grappling" },
+  ctrl_pct_diff: { label: "Control time", category: "grappling" },
 };
 
-// Shared by the fight card and Fantasy Matchup Breakdown panels. Explains why
-// the striking/grappling numbers (UFC career, matching UFC.com) can disagree
-// with which way that row's bar points (the model's recent-form value).
+// Shared by the fight card and Fantasy Matchup Breakdown panels.
 const BREAKDOWN_CAPTION =
-  "Striking and grappling numbers are each fighter's UFC career stats (official UFC fights only, like UFCStats -- " +
-  "UFC.com also counts Contender Series fights for some fighters). The model itself weighs recent fights most " +
-  "(last 5), so a bar can point toward the fighter with the lower career number. The win% above also blends in a " +
-  "little of an Elo-only model, which can move it a couple of points without changing which factors drove it.";
+  "Striking and grappling stats are each fighter's UFC career numbers (official UFC fights only, like UFCStats -- " +
+  "UFC.com also counts Contender Series fights for some fighters). The model itself weighs recent fights most, so " +
+  "its key factors can favor the fighter with the lower career number.";
+
+// ---------------------------------------------------------------------------
+// UFC.com-style side-by-side stat comparison for the Breakdown panel
+// ---------------------------------------------------------------------------
+// Replaced the earlier diverging-bar factor rows (user: "kind of confusing",
+// 2026-09-24): each row is now fighter A's number | stat | fighter B's
+// number, like UFC.com's fight pages, with the better number in that
+// fighter's corner color. What the model weighed most is one plain line
+// underneath instead of a bar per stat.
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+const CAREER_STAT_ROWS = {
+  striking: [
+    { label: "Sig. strikes landed / min", field: "career_slpm", fmt: (x) => x.toFixed(2), better: "high" },
+    { label: "Sig. strike accuracy", field: "career_str_acc", fmt: (x) => `${Math.round(x * 100)}%`, better: "high" },
+    { label: "Sig. strikes absorbed / min", field: "career_sapm", fmt: (x) => x.toFixed(2), better: "low" },
+    { label: "Sig. strike defense", field: "career_str_def", fmt: (x) => `${Math.round(x * 100)}%`, better: "high" },
+  ],
+  grappling: [
+    { label: "Takedowns / 15 min", field: "career_td_avg", fmt: (x) => x.toFixed(2), better: "high" },
+    { label: "Takedown accuracy", field: "career_td_acc", fmt: (x) => `${Math.round(x * 100)}%`, better: "high" },
+    { label: "Takedown defense", field: "career_td_def", fmt: (x) => `${Math.round(x * 100)}%`, better: "high" },
+    { label: "Submission attempts / 15 min", field: "career_sub_avg", fmt: (x) => x.toFixed(2), better: "high" },
+    { label: "Control time", field: "career_ctrl_pct", fmt: (x) => `${Math.round(x * 100)}%`, better: "high" },
+  ],
+};
+
+function formatHeight(inches) {
+  if (inches == null) return null;
+  const ft = Math.floor(inches / 12);
+  return `${ft}'${Math.round(inches - ft * 12)}"`;
+}
+
+function formatStreak(n) {
+  if (n == null || n === 0) return null;
+  return n > 0 ? `W${n}` : `L${-n}`;
+}
+
+function epochDaysToMonthYear(epochDays) {
+  if (epochDays == null) return null;
+  return new Date(epochDays * 86400000).toLocaleString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+// UFC-only W-L from fighter_history (draws/no-contests aren't in it). A UFC
+// debut shows their pre-UFC pro record when the card scraper found one.
+function recordText(f, fighterHistory, prefightRecords) {
+  const hist = fighterHistory && fighterHistory[f.fighter_id];
+  if (hist && hist.length) {
+    const w = hist.filter((h) => h[1] === "W").length;
+    return `${w}-${hist.length - w}`;
+  }
+  const pre = prefightRecords && prefightRecords[f.fighter_id];
+  return pre && pre.fights && pre.fights.length ? `Debut (pro ${pre.wins}-${pre.losses})` : "Debut";
+}
+
+function statRowHtml(label, aText, bText, betterSide) {
+  const cls = (side) => (betterSide === side ? ` tott-better-${side}` : "");
+  return `<div class="tott-row"><div class="tott-val tott-a${cls("a")}">${escHtml(aText == null ? "—" : aText)}</div>` +
+    `<div class="tott-label">${escHtml(label)}</div>` +
+    `<div class="tott-val tott-b${cls("b")}">${escHtml(bText == null ? "—" : bText)}</div></div>`;
+}
+
+function statSectionHtml(title, subtitle, rowsHtml) {
+  const sub = subtitle ? `<span class="mono">${escHtml(subtitle)}</span>` : "";
+  return `<div class="tape"><div class="tape-title"><span>${escHtml(title)}</span>${sub}</div>${rowsHtml}</div>`;
+}
+
+// Top model factors (by |contribution|) as one readable line, from
+// explainWin()'s already-computed, already-filtered categories.
+function keyFactorsHtml(explanation) {
+  const all = CATEGORY_ORDER.flatMap((c) => explanation[c] || []);
+  const top = all.filter((f) => f.relativeMagnitude >= 0.25)
+    .sort((x, y) => y.relativeMagnitude - x.relativeMagnitude).slice(0, 4);
+  if (!top.length) return "";
+  const items = top.map((f) => {
+    const who = shortFighterName(f.favors === "a" ? explanation.nameA : explanation.nameB);
+    return `<span class="key-factor key-factor-${f.favors}">${escHtml(f.label)} <span class="key-factor-who">(${escHtml(who)})</span></span>`;
+  }).join("");
+  return `<div class="key-factors"><div class="key-factors-label">Model leaned most on</div><div class="key-factors-list">${items}</div></div>`;
+}
+
+// The full stat comparison, as an HTML string both pages drop into their
+// Breakdown panel. fighterA/fighterB are payload fighter objects; the
+// explanation is explainWin()'s output for the same pair.
+function statComparisonHtml(fighterA, fighterB, explanation, model) {
+  const today = todayEpochDays();
+  const age = (f) => (f.dob_epoch_days != null ? String(Math.floor((today - f.dob_epoch_days) / 365.25)) : null);
+  const names = `<div class="tott-row tott-names"><div class="tott-val tott-a">${escHtml(shortFighterName(fighterA.name))}</div>` +
+    `<div class="tott-label"></div><div class="tott-val tott-b">${escHtml(shortFighterName(fighterB.name))}</div></div>`;
+
+  const tape = [
+    statRowHtml("UFC record", recordText(fighterA, model.fighter_history, model.prefight_records),
+      recordText(fighterB, model.fighter_history, model.prefight_records)),
+    statRowHtml("Age", age(fighterA), age(fighterB)),
+    statRowHtml("Height", formatHeight(fighterA.height_in), formatHeight(fighterB.height_in)),
+    statRowHtml("Reach", fighterA.reach_in != null ? `${fighterA.reach_in}"` : null, fighterB.reach_in != null ? `${fighterB.reach_in}"` : null),
+    statRowHtml("Stance", fighterA.stance, fighterB.stance),
+    statRowHtml("Current streak", formatStreak(fighterA.current_streak_entering), formatStreak(fighterB.current_streak_entering)),
+    statRowHtml("Last fight", epochDaysToMonthYear(fighterA.last_fight_epoch_days), epochDaysToMonthYear(fighterB.last_fight_epoch_days)),
+  ].join("");
+
+  const statRows = (rows) => rows.map((r) => {
+    const a = fighterA[r.field], b = fighterB[r.field];
+    let better = null;
+    if (a != null && b != null && a !== b) better = (r.better === "high") === (a > b) ? "a" : "b";
+    return statRowHtml(r.label, a != null ? r.fmt(a) : null, b != null ? r.fmt(b) : null, better);
+  }).join("");
+
+  return statSectionHtml("Tale of the Tape", null, names + tape) +
+    statSectionHtml("Striking", "UFC career", statRows(CAREER_STAT_ROWS.striking)) +
+    statSectionHtml("Grappling", "UFC career", statRows(CAREER_STAT_ROWS.grappling)) +
+    dataGapHtml(fighterA, fighterB, model) +
+    keyFactorsHtml(explanation);
+}
+
+// A blank on a UFC debut is expected. A blank on a fighter who HAS UFC fights
+// means this project's data is missing something it should have, which also
+// quietly weakens that prediction -- called out in words so every visitor
+// sees it (user request, 2026-09-08). Takedown accuracy/defense are left out:
+// those are legitimately blank when nobody attempted a takedown.
+const DATA_GAP_FIELDS = [
+  ["height_in", "height"], ["reach_in", "reach"], ["dob_epoch_days", "date of birth"],
+  ["career_slpm", "striking stats"],
+];
+function dataGapHtml(fighterA, fighterB, model) {
+  const notes = [fighterA, fighterB].map((f) => {
+    const hist = model.fighter_history && model.fighter_history[f.fighter_id];
+    if (!hist || !hist.length) return null;
+    const missing = DATA_GAP_FIELDS.filter(([field]) => f[field] == null).map(([, label]) => label);
+    return missing.length ? `${f.name} has UFC fights but no ${missing.join(", ")} on file -- the model used its learned default.` : null;
+  }).filter(Boolean);
+  return notes.length ? `<div class="data-gap-note">Data gap: ${notes.map(escHtml).join(" ")}</div>` : "";
+}
 
 // "Raul Rosas Jr." -> "Rosas Jr.", "Raoni Barcelos" -> "Barcelos", mononyms
 // unchanged -- for compact "A vs B" section labels.
@@ -177,49 +294,19 @@ function stanceLabel(f) {
   return null;
 }
 
-// featsA/featsB are the SAME per-fighter feature dicts predictFull() built
-// via buildWinFeats() -- passed in rather than recomputed, so a NaN here is
-// guaranteed to be the exact same NaN the model actually saw, not a second
-// independent (and possibly different) derivation. A NaN on a genuine UFC
-// debut fighter (featsX._isDebut) is expected -- there's simply no UFC
-// record yet. A NaN on a fighter who HAS UFC fights on file is different:
-// it means this project's own data is missing something it should have
-// (an untracked physical measurement, a round_stats.csv gap, etc.), which
-// quietly weakens that one prediction -- phrased distinctly on purpose
-// (flagged directly by user request, 2026-09-08) so it's visible to every
-// visitor, not just caught if someone happens to notice.
-function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB, fighterA, fighterB) {
+// One row per model feature with its symmetrized contribution; the three
+// stance one-hots are summed into a single "Stance matchup" row.
+function factorRows(phiFinal, featureNames, featsA, featsB) {
   const rows = [];
   let stanceShap = 0;
   featureNames.forEach((f, i) => {
     if (STANCE_FEATURES.includes(f)) { stanceShap += phiFinal[i]; return; }
     const meta = FACTOR_LABELS[f];
     if (!meta) return; // shouldn't happen, but never show an unlabeled raw feature name
-    const base = f.slice(0, -"_diff".length);
-    const rawA = featsA[base], rawB = featsB[base];
-    const careerA = meta.career && fighterA ? fighterA[meta.career.field] : null;
-    const careerB = meta.career && fighterB ? fighterB[meta.career.field] : null;
-    let valueText;
-    if (careerA != null && careerB != null) {
-      valueText = `${meta.career.fmt(careerA)} vs ${meta.career.fmt(careerB)}${meta.career.unit}`;
-    } else if (Number.isNaN(rawA) || Number.isNaN(rawB)) {
-      const missingIsA = Number.isNaN(rawA);
-      const missingName = missingIsA ? nameA : nameB;
-      const missingIsDebut = missingIsA ? featsA._isDebut : featsB._isDebut;
-      valueText = missingIsDebut
-        ? `no data yet for ${missingName} (debut) -- model used its learned default`
-        : `data gap for ${missingName} on this stat (has UFC fights, but it's not on file) -- model used its learned default`;
-    } else {
-      valueText = meta.fmt(rawA - rawB);
-    }
-    rows.push({ shap: phiFinal[i], label: meta.label, valueText, category: meta.category });
+    rows.push({ shap: phiFinal[i], label: meta.label, category: meta.category });
   });
-  const stanceA = stanceLabel(featsA), stanceB = stanceLabel(featsB);
-  if (stanceA && stanceB) {
-    rows.push({
-      shap: stanceShap, label: "Stance matchup", category: "intangibles",
-      valueText: stanceA === stanceB ? `both ${stanceA}` : `${stanceA} vs. ${stanceB}`,
-    });
+  if (stanceLabel(featsA) && stanceLabel(featsB)) {
+    rows.push({ shap: stanceShap, label: "Stance matchup", category: "intangibles" });
   }
   return rows;
 }
@@ -259,7 +346,7 @@ function explainWin(fighterA, fighterB, model) {
     console.warn("explainWin: completeness check failed", { expectedMargin, gotMargin });
   }
 
-  const rows = factorRows(phiFinal, model.win_model.features, featsA, featsB, fighterA.name, fighterB.name, fighterA, fighterB);
+  const rows = factorRows(phiFinal, model.win_model.features, featsA, featsB);
   // Relative to the single largest factor across ALL categories, not a
   // per-category scale -- so a glance across sections still shows which
   // ones actually mattered most to THIS matchup, not three independently
@@ -271,7 +358,6 @@ function explainWin(fighterA, fighterB, model) {
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.shap)), 1e-9);
   const toFactor = (r) => ({
     label: r.label,
-    valueText: r.valueText,
     favors: r.shap >= 0 ? "a" : "b",
     relativeMagnitude: Math.abs(r.shap) / maxAbs,
   });

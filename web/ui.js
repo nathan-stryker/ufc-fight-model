@@ -132,33 +132,6 @@
       </div>`;
   }
 
-  // One category section (Striking/Grappling/Intangibles) of explain.js's
-  // explainWin() output, rendered as diverging bars (favors nameA left/red,
-  // nameB right/blue) around a center line, reusing the .tape-row grid
-  // layout's label/value columns but not its 0->100% single-direction
-  // fill, which doesn't fit a signed contribution. Omitted entirely if
-  // this category has nothing to show (shouldn't normally happen -- every
-  // category always has at least one feature -- but a fresh debut vs.
-  // debut matchup could plausibly leave one empty).
-  function categorySectionHtml(title, factors, nameA, nameB, subtitle) {
-    if (!factors.length) return "";
-    const rows = factors.map((f) => {
-      const towardA = f.favors === "a";
-      const pct = (f.relativeMagnitude * 50).toFixed(1); // half-width from center
-      return `
-        <div class="factor-row">
-          <div class="factor-label">${escapeHtml(f.label)}<span class="factor-value mono">${escapeHtml(f.valueText)}</span></div>
-          <div class="factor-bar-track">
-            <div class="factor-bar factor-bar-a" style="width:${towardA ? pct : 0}%"></div>
-            <div class="factor-bar factor-bar-b" style="width:${towardA ? 0 : pct}%"></div>
-          </div>
-          <div class="factor-favors mono">${towardA ? escapeHtml(nameA) : escapeHtml(nameB)}</div>
-        </div>`;
-    }).join("");
-    const sub = subtitle ? `<span class="mono">${escapeHtml(subtitle)}</span>` : "";
-    return `<div class="tape"><div class="tape-title"><span>${escapeHtml(title)}</span>${sub}</div><div class="why-factors">${rows}</div></div>`;
-  }
-
   // One fighter's record vs. THIS bout's opponent's style, with the actual
   // matching fight(s) listed out (not just the tally) -- reuses the exact
   // row markup/classes prefightRowHtml() below already established for
@@ -189,18 +162,14 @@
   }
 
   // Assembles the "Breakdown" panel's content BELOW the odds-bar/method/
-  // round tape (predictBreakdownHtml above) -- categorized factors, both
-  // fighters' UFC.com style tags, and each fighter's record vs. the
+  // round tape (predictBreakdownHtml above) -- the UFC.com-style stat
+  // comparison (explain.js's statComparisonHtml, shared with predict_ui.js),
+  // both fighters' UFC.com style tags, and each fighter's record vs. the
   // OTHER's style. Computed lazily on first expand (see the wiring below),
   // not for every bout up front -- explainWin/recordVsStyle are cheap, but
   // there's no reason to pay for bouts a visitor never opens.
   function breakdownExtrasHtml(explanation, fA, fB) {
-    const careerLabel = `UFC career · ${shortFighterName(explanation.nameA)} vs ${shortFighterName(explanation.nameB)}`;
-    const sections = [
-      categorySectionHtml("Striking", explanation.striking, explanation.nameA, explanation.nameB, careerLabel),
-      categorySectionHtml("Grappling", explanation.grappling, explanation.nameA, explanation.nameB, careerLabel),
-      categorySectionHtml("Intangibles", explanation.intangibles, explanation.nameA, explanation.nameB),
-    ].join("");
+    const sections = statComparisonHtml(fA, fB, explanation, MODEL_DATA);
 
     const styleRows = [];
     if (explanation.styleA) styleRows.push(`<div class="style-tag-row"><div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div></div>`);
