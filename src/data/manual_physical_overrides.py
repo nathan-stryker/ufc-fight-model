@@ -27,7 +27,13 @@ gets silently wiped the next time the raw mirror is re-pulled fresh (hit
 this directly with an earlier fighter-name fix this same project) --
 this script re-applies every time right after load_data.py instead.
 
-Run: python -m src.data.manual_physical_overrides (right after load_data.py)
+Also fills from data/processed/fighter_physical_ufccom.csv (UFC.com bio
+height/reach, see scrape_physical.py) the same fill-only way.
+
+Runs automatically at the end of load_data.py (it used to be a separate
+manual step, and got silently skipped -- a load_data rerun wiped Rahiki,
+Tarin, King III and Steveson's fills until 2026-09-24).
+Run standalone: python -m src.data.manual_physical_overrides
 """
 from pathlib import Path
 
@@ -77,9 +83,22 @@ def main():
                 df.loc[mask, field] = value
                 filled_fields += 1
         applied += 1
+    print(f"manual: applied to {applied} fighter(s), {filled_fields} field(s) filled (not found: {not_found})")
+
+    # Then UFC.com's own bio height/reach (src/data/scrape_physical.py), by
+    # fighter_id, same fill-only rule.
+    scraped_path = PROCESSED_DIR / "fighter_physical_ufccom.csv"
+    if scraped_path.exists():
+        scraped = pd.read_csv(scraped_path).set_index("fighter_id")
+        scraped_filled = 0
+        for field in ["height_in", "reach_in"]:
+            fill = df["fighter_id"].map(scraped[field])
+            mask = df[field].isna() & fill.notna()
+            df.loc[mask, field] = fill[mask]
+            scraped_filled += int(mask.sum())
+        print(f"UFC.com: {scraped_filled} field(s) filled")
 
     df.to_csv(path, index=False)
-    print(f"applied to {applied} fighter(s), {filled_fields} field(s) filled (not found: {not_found})")
 
 
 if __name__ == "__main__":

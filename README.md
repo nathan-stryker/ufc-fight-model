@@ -599,7 +599,12 @@ the main predictor and the prop tracker correctly resolves to Barlow.
    ```
    python -m src.data.load_data
    ```
-   Writes `data/processed/fighters.csv`, `fights.csv`, `round_stats.csv`.
+   Writes `data/processed/fighters.csv`, `fights.csv`, `round_stats.csv`,
+   then fills height/reach the raw mirror lacks (fill-only) from
+   `manual_physical_overrides.py` and `fighter_physical_ufccom.csv`. That
+   CSV comes from `python -m src.data.scrape_physical` (UFC.com bio pages +
+   a Sherdog height cross-check); rerun it when new active fighters show a
+   "Data gap" note in the Breakdown.
 
 2. **Build features**:
    ```

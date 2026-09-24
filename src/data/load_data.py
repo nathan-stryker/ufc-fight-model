@@ -418,6 +418,11 @@ def main():
     print(f"fights: {len(fights)} rows -> {PROCESSED_DIR / 'fights.csv'}")
     print(f"round_stats: {len(round_stats)} rows -> {PROCESSED_DIR / 'round_stats.csv'}")
 
+    # Re-apply hand-supplied and UFC.com-scraped height/reach (fill-only) --
+    # fighters.csv was just rewritten from the raw mirror, which lacks them.
+    from src.data import manual_physical_overrides
+    manual_physical_overrides.main()
+
     unmatched_1 = fights["fighter_1_id"].isna().sum()
     unmatched_2 = fights["fighter_2_id"].isna().sum()
     unmatched_winner = fights.loc[~fights["is_draw"] & ~fights["is_no_contest"], "winner_id"].isna().sum()
