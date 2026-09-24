@@ -658,6 +658,17 @@
     letter-spacing: 0.06em;
     margin-right: 0.4rem;
   }
+  .fc-model-pick-pct { color: var(--gold); }
+  .fc-method-split {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.9rem;
+    margin-top: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--ink-dim);
+  }
+  .fc-method-chip.is-top { color: var(--ink); font-weight: 700; }
   /* Your own logged pick -- same treatment as .fc-model-pick (centered,
      dashed rule above) but in green, so it reads as "this is yours" at a
      glance rather than being confused with the model's own line right
@@ -3040,6 +3051,26 @@ const MODEL_DATA = {"total_fights":8744,"win_model":{"features":["elo_diff","hei
     return { aWinner, winnerName, methodRanked, topMethod, text };
   }
 
+  // Bout-card preview: the likely winner with their win %, then how the fight
+  // is likely to end as percentages rather than one "by Decision" pick --
+  // Decision is the single most common outcome in most matchups, so a
+  // one-word pick hid most of what the method model actually says. Fixed
+  // Decision/KO/Sub order so the numbers line up card to card; the most
+  // likely one is emphasized. No round here: the round model is plain base
+  // rates by fight length (see train_round.py), so it stays in the Breakdown.
+  const METHOD_SHORT = { dec: "Decision", ko: "KO/TKO", sub: "Sub" };
+  function modelPickHtml(r) {
+    const v = verdictText(r);
+    const winPct = Math.round((v.aWinner ? r.probAWins : r.probBWins) * 100);
+    const chips = ["dec", "ko", "sub"].map((m) =>
+      `<span class="fc-method-chip${m === v.topMethod ? " is-top" : ""}">${METHOD_SHORT[m]} ${Math.round(r.method[m] * 100)}%</span>`
+    ).join("");
+    return `<div class="fc-model-pick mono">` +
+      `<span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(v.winnerName)} ` +
+      `<span class="fc-model-pick-pct">${winPct}%</span>` +
+      `<div class="fc-method-split">${chips}</div></div>`;
+  }
+
   function escapeHtml(s) {
     return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
@@ -3324,7 +3355,7 @@ const MODEL_DATA = {"total_fights":8744,"win_model":{"features":["elo_diff","hei
         // call when a fight is expanded.
         const result = predictFull(fA, fB, callRounds, MODEL_DATA, b.weightClass);
         boutResults.push({ result, scheduledRounds: callRounds, fA, fB });
-        modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
+        modelPick = modelPickHtml(result);
         // Always visible (not hidden behind the toggle) so a prediction you
         // logged last visit -- or five minutes ago -- still shows on the
         // card without having to re-open "Make Your Pick" to find it. Empty/
