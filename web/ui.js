@@ -140,7 +140,7 @@
   // this category has nothing to show (shouldn't normally happen -- every
   // category always has at least one feature -- but a fresh debut vs.
   // debut matchup could plausibly leave one empty).
-  function categorySectionHtml(title, factors, nameA, nameB) {
+  function categorySectionHtml(title, factors, nameA, nameB, subtitle) {
     if (!factors.length) return "";
     const rows = factors.map((f) => {
       const towardA = f.favors === "a";
@@ -155,7 +155,8 @@
           <div class="factor-favors mono">${towardA ? escapeHtml(nameA) : escapeHtml(nameB)}</div>
         </div>`;
     }).join("");
-    return `<div class="tape"><div class="tape-title"><span>${escapeHtml(title)}</span></div><div class="why-factors">${rows}</div></div>`;
+    const sub = subtitle ? `<span class="mono">${escapeHtml(subtitle)}</span>` : "";
+    return `<div class="tape"><div class="tape-title"><span>${escapeHtml(title)}</span>${sub}</div><div class="why-factors">${rows}</div></div>`;
   }
 
   // One fighter's record vs. THIS bout's opponent's style, with the actual
@@ -194,9 +195,10 @@
   // not for every bout up front -- explainWin/recordVsStyle are cheap, but
   // there's no reason to pay for bouts a visitor never opens.
   function breakdownExtrasHtml(explanation, fA, fB) {
+    const careerLabel = `UFC career · ${shortFighterName(explanation.nameA)} vs ${shortFighterName(explanation.nameB)}`;
     const sections = [
-      categorySectionHtml("Striking", explanation.striking, explanation.nameA, explanation.nameB),
-      categorySectionHtml("Grappling", explanation.grappling, explanation.nameA, explanation.nameB),
+      categorySectionHtml("Striking", explanation.striking, explanation.nameA, explanation.nameB, careerLabel),
+      categorySectionHtml("Grappling", explanation.grappling, explanation.nameA, explanation.nameB, careerLabel),
       categorySectionHtml("Intangibles", explanation.intangibles, explanation.nameA, explanation.nameB),
     ].join("");
 
@@ -218,7 +220,7 @@
       ${sections}
       ${stylesHtml}
       ${recordHtml}
-      <div class="why-caption">Based on the model's core prediction (Elo, physical attributes, UFC record, and striking/grappling rates); a small blend toward historical Elo trends can shift the win% shown above by a couple points without changing which factors drove it.</div>`;
+      <div class="why-caption">${BREAKDOWN_CAPTION}</div>`;
   }
 
   // Home-page "this week's card" -- scraped from Sherdog.com at build time

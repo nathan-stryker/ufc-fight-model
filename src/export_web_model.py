@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from src.data.scrape_nationality import ACTIVE_WINDOW_MONTHS
-from src.features.build_features import FEATURE_COLS
+from src.features.build_features import FEATURE_COLS, compute_fight_seconds
 from src.features.method_features import ALIGNMENT_COLS, METHODS
 from src.features.prefight_snapshot import build_debut_snapshots
 
@@ -141,6 +141,48 @@ def _division_info_per_fighter():
     return current[["fighter_id", "weightclass", "rank", "n_in_division"]]
 
 
+CAREER_DISPLAY_FIELDS = [
+    "career_slpm", "career_sapm", "career_str_acc", "career_str_def",
+    "career_td_avg", "career_td_acc", "career_td_def", "career_sub_avg", "career_ctrl_pct",
+]
+
+
+def _career_display_stats():
+    """
+    Whole-UFC-career striking/grappling numbers, computed the way UFCStats and
+    UFC.com's athlete pages do -- DISPLAY ONLY. The model's own rate features
+    (fighter_snapshot.csv) are last-5-fight averages shrunk toward the league
+    average for small samples, which is right for prediction but never matches
+    what a visitor sees on UFC.com (Raoni Barcelos: 3.42 landed/min on the site
+    vs 4.65 on UFC.com -- flagged by the user 2026-09-24; these career numbers
+    match UFC.com exactly for him). UFC.com also counts Dana White's Contender
+    Series fights for some fighters (e.g. Raul Rosas Jr.); UFCStats and this
+    project count official UFC fights only, so those can still differ slightly.
+    """
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
+    fights["fight_seconds"] = fights.apply(compute_fight_seconds, axis=1)
+    rs = pd.read_csv(PROCESSED_DIR / "round_stats.csv")
+    cols = ["sig_str_landed", "sig_str_attempted", "td_landed", "td_attempted", "sub_att", "ctrl_sec"]
+    per = rs.dropna(subset=["fighter_id"]).groupby(["fight_id", "fighter_id"], as_index=False)[cols].sum(min_count=1)
+    opp = per.rename(columns={"fighter_id": "opp_id", **{c: f"opp_{c}" for c in cols}})
+    both = per.merge(opp, on="fight_id")
+    both = both[both["fighter_id"] != both["opp_id"]].merge(fights[["fight_id", "fight_seconds"]], on="fight_id")
+    g = both.groupby("fighter_id")[cols + [f"opp_{c}" for c in cols] + ["fight_seconds"]].sum()
+    minutes = g["fight_seconds"] / 60.0
+    out = pd.DataFrame({
+        "career_slpm": g["sig_str_landed"] / minutes,
+        "career_sapm": g["opp_sig_str_landed"] / minutes,
+        "career_str_acc": g["sig_str_landed"] / g["sig_str_attempted"],
+        "career_str_def": 1 - g["opp_sig_str_landed"] / g["opp_sig_str_attempted"],
+        "career_td_avg": g["td_landed"] / minutes * 15.0,
+        "career_td_acc": g["td_landed"] / g["td_attempted"],
+        "career_td_def": 1 - g["opp_td_landed"] / g["opp_td_attempted"],
+        "career_sub_avg": g["sub_att"] / minutes * 15.0,
+        "career_ctrl_pct": g["ctrl_sec"] / g["fight_seconds"],
+    })
+    return out.replace([np.inf, -np.inf], np.nan).reset_index()
+
+
 def export_fighters():
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
     snapshot = pd.read_csv(PROCESSED_DIR / "fighter_snapshot.csv", parse_dates=["last_fight_date"])
@@ -161,7 +203,7 @@ def export_fighters():
     df = fighters.merge(snapshot, on="fighter_id", how="left").merge(
         method_snapshot.drop(columns=["event_date"]), on="fighter_id", how="left"
     ).merge(division_info, on="fighter_id", how="left").merge(nationality, on="fighter_id", how="left") \
-        .merge(style, on="fighter_id", how="left")
+        .merge(style, on="fighter_id", how="left").merge(_career_display_stats(), on="fighter_id", how="left")
     # Only ship fighters we have SOME data for (a profile at minimum -- height/reach/dob
     # may still be missing and are handled client-side same as predict.py's debut path).
     df = df[df["name"].notna()]
@@ -196,7 +238,8 @@ def export_fighters():
     method_dist_fields = [f"{tier}_{outcome}_{m}" for tier in ("last5", "career") for outcome in ("win", "loss") for m in METHODS]
 
     fields = ["fighter_id", "name", "nickname", "dob_epoch_days", "height_in", "reach_in", "stance", "last_fight_epoch_days"] \
-        + win_snapshot_fields + method_dist_fields + ["weightclass", "rank", "n_in_division", "iso_code", "style"]
+        + win_snapshot_fields + method_dist_fields + ["weightclass", "rank", "n_in_division", "iso_code", "style"] \
+        + CAREER_DISPLAY_FIELDS
 
     epoch = pd.Timestamp("1970-01-01")
     df["dob_epoch_days"] = (df["dob"] - epoch).dt.days

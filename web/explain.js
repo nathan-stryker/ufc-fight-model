@@ -124,15 +124,49 @@ const FACTOR_LABELS = {
   finish_rate_entering_diff: { label: "Finish rate", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
   current_streak_entering_diff: { label: "Current streak", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} fights` },
   layoff_days_entering_diff: { label: "Time since last fight", category: "intangibles", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v)} days` },
-  sig_str_landed_per_min_diff: { label: "Striking output", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} landed/min` },
-  sig_str_absorbed_per_min_diff: { label: "Striking defense", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} absorbed/min` },
-  sig_str_acc_diff: { label: "Striking accuracy", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  td_avg_per15_diff: { label: "Takedown rate", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min` },
-  td_acc_diff: { label: "Takedown accuracy", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  td_def_diff: { label: "Takedown defense", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
-  sub_att_per15_diff: { label: "Submission attempts", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min` },
-  ctrl_pct_diff: { label: "Grappling control time", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts` },
+  // Striking/grappling rows DISPLAY each fighter's UFC career number (the
+  // `career` field, exported by export_web_model._career_display_stats and
+  // matching UFC.com), not the model's own last-5-fight shrunk value -- a
+  // visitor checks these against UFC.com, and the model's values never match
+  // it (user flagged Barcelos/Rosas Jr., 2026-09-24). The bar still shows
+  // the model's own contribution. `fmt` is only the fallback when a fighter
+  // has no career number on file.
+  sig_str_landed_per_min_diff: { label: "Striking output", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} landed/min`,
+    career: { field: "career_slpm", fmt: (x) => x.toFixed(2), unit: " landed/min" } },
+  sig_str_absorbed_per_min_diff: { label: "Striking defense", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} absorbed/min`,
+    career: { field: "career_sapm", fmt: (x) => x.toFixed(2), unit: " absorbed/min" } },
+  sig_str_acc_diff: { label: "Striking accuracy", category: "striking", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
+    career: { field: "career_str_acc", fmt: (x) => `${Math.round(x * 100)}%`, unit: "" } },
+  td_avg_per15_diff: { label: "Takedown rate", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min`,
+    career: { field: "career_td_avg", fmt: (x) => x.toFixed(2), unit: " per 15 min" } },
+  td_acc_diff: { label: "Takedown accuracy", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
+    career: { field: "career_td_acc", fmt: (x) => `${Math.round(x * 100)}%`, unit: "" } },
+  td_def_diff: { label: "Takedown defense", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
+    career: { field: "career_td_def", fmt: (x) => `${Math.round(x * 100)}%`, unit: "" } },
+  sub_att_per15_diff: { label: "Submission attempts", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} per 15 min`,
+    career: { field: "career_sub_avg", fmt: (x) => x.toFixed(2), unit: " per 15 min" } },
+  ctrl_pct_diff: { label: "Grappling control time", category: "grappling", fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v * 100)} pts`,
+    career: { field: "career_ctrl_pct", fmt: (x) => `${Math.round(x * 100)}%`, unit: " of fight time" } },
 };
+
+// Shared by the fight card and Fantasy Matchup Breakdown panels. Explains why
+// the striking/grappling numbers (UFC career, matching UFC.com) can disagree
+// with which way that row's bar points (the model's recent-form value).
+const BREAKDOWN_CAPTION =
+  "Striking and grappling numbers are each fighter's UFC career stats (official UFC fights only, like UFCStats -- " +
+  "UFC.com also counts Contender Series fights for some fighters). The model itself weighs recent fights most " +
+  "(last 5), so a bar can point toward the fighter with the lower career number. The win% above also blends in a " +
+  "little of an Elo-only model, which can move it a couple of points without changing which factors drove it.";
+
+// "Raul Rosas Jr." -> "Rosas Jr.", "Raoni Barcelos" -> "Barcelos", mononyms
+// unchanged -- for compact "A vs B" section labels.
+const NAME_SUFFIXES = new Set(["Jr.", "Jr", "Sr.", "Sr", "II", "III", "IV"]);
+function shortFighterName(name) {
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  const last = parts[parts.length - 1];
+  return NAME_SUFFIXES.has(last) && parts.length > 2 ? `${parts[parts.length - 2]} ${last}` : last;
+}
 const STANCE_FEATURES = ["stance_orthodox_diff", "stance_southpaw_diff", "stance_switch_diff"];
 const CATEGORY_ORDER = ["striking", "grappling", "intangibles"];
 
@@ -154,7 +188,7 @@ function stanceLabel(f) {
 // quietly weakens that one prediction -- phrased distinctly on purpose
 // (flagged directly by user request, 2026-09-08) so it's visible to every
 // visitor, not just caught if someone happens to notice.
-function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB) {
+function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB, fighterA, fighterB) {
   const rows = [];
   let stanceShap = 0;
   featureNames.forEach((f, i) => {
@@ -163,8 +197,12 @@ function factorRows(phiFinal, featureNames, featsA, featsB, nameA, nameB) {
     if (!meta) return; // shouldn't happen, but never show an unlabeled raw feature name
     const base = f.slice(0, -"_diff".length);
     const rawA = featsA[base], rawB = featsB[base];
+    const careerA = meta.career && fighterA ? fighterA[meta.career.field] : null;
+    const careerB = meta.career && fighterB ? fighterB[meta.career.field] : null;
     let valueText;
-    if (Number.isNaN(rawA) || Number.isNaN(rawB)) {
+    if (careerA != null && careerB != null) {
+      valueText = `${meta.career.fmt(careerA)} vs ${meta.career.fmt(careerB)}${meta.career.unit}`;
+    } else if (Number.isNaN(rawA) || Number.isNaN(rawB)) {
       const missingIsA = Number.isNaN(rawA);
       const missingName = missingIsA ? nameA : nameB;
       const missingIsDebut = missingIsA ? featsA._isDebut : featsB._isDebut;
@@ -221,7 +259,7 @@ function explainWin(fighterA, fighterB, model) {
     console.warn("explainWin: completeness check failed", { expectedMargin, gotMargin });
   }
 
-  const rows = factorRows(phiFinal, model.win_model.features, featsA, featsB, fighterA.name, fighterB.name);
+  const rows = factorRows(phiFinal, model.win_model.features, featsA, featsB, fighterA.name, fighterB.name, fighterA, fighterB);
   // Relative to the single largest factor across ALL categories, not a
   // per-category scale -- so a glance across sections still shows which
   // ones actually mattered most to THIS matchup, not three independently

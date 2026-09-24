@@ -194,11 +194,12 @@
     return row;
   }
 
-  function makeCategorySection(title, factors, nameA, nameB) {
+  function makeCategorySection(title, factors, nameA, nameB, subtitle) {
     if (!factors.length) return null;
     const section = document.createElement("div");
     section.className = "tape";
-    section.innerHTML = `<div class="tape-title"><span>${escapeHtml(title)}</span></div>`;
+    const sub = subtitle ? `<span class="mono">${escapeHtml(subtitle)}</span>` : "";
+    section.innerHTML = `<div class="tape-title"><span>${escapeHtml(title)}</span>${sub}</div>`;
     const wrap = document.createElement("div");
     wrap.className = "why-factors";
     factors.forEach((f) => wrap.appendChild(makeFactorRow(f, nameA, nameB)));
@@ -259,9 +260,11 @@
     btn.setAttribute("aria-expanded", "false");
     panel.innerHTML = "";
 
-    [["Striking", explanation.striking], ["Grappling", explanation.grappling], ["Intangibles", explanation.intangibles]]
-      .forEach(([title, factors]) => {
-        const section = makeCategorySection(title, factors, explanation.nameA, explanation.nameB);
+    const careerLabel = `UFC career · ${shortFighterName(explanation.nameA)} vs ${shortFighterName(explanation.nameB)}`;
+    [["Striking", explanation.striking, careerLabel], ["Grappling", explanation.grappling, careerLabel],
+     ["Intangibles", explanation.intangibles, null]]
+      .forEach(([title, factors, subtitle]) => {
+        const section = makeCategorySection(title, factors, explanation.nameA, explanation.nameB, subtitle);
         if (section) panel.appendChild(section);
       });
 
@@ -299,7 +302,7 @@
 
     const caption = document.createElement("div");
     caption.className = "why-caption";
-    caption.textContent = "Based on the model's core prediction (Elo, physical attributes, UFC record, and striking/grappling rates); a small blend toward historical Elo trends can shift the win% shown above by a couple points without changing which factors drove it.";
+    caption.textContent = BREAKDOWN_CAPTION;
     panel.appendChild(caption);
   }
 
