@@ -266,7 +266,13 @@ function statComparisonHtml(fighterA, fighterB, explanation, model) {
     row("Time since last fight", (f) => (f.last_fight_epoch_days != null && rec(f) ? today - f.last_fight_epoch_days : null), formatLayoff),
     row("Stance", (f) => f.stance, String),
   ].join("");
-  const recordRow = statRowHtml("UFC record", recA ? `${recA.wins}-${recA.losses}` : "Debut", recB ? `${recB.wins}-${recB.losses}` : "Debut");
+  // A UFC debut shows their pre-UFC pro record when the card scraper found one.
+  const recordText = (f, r) => {
+    if (r) return `${r.wins}-${r.losses}`;
+    const pre = model.prefight_records && model.prefight_records[f.fighter_id];
+    return pre && pre.fights && pre.fights.length ? `Debut (${pre.wins}-${pre.losses} pro)` : "Debut";
+  };
+  const recordRow = statRowHtml("UFC record", recordText(fighterA, recA), recordText(fighterB, recB));
 
   return `<div class="tape">${names}</div>` +
     statSectionHtml("Striking", "UFC career", careerRows(CAREER_STAT_ROWS.striking)) +

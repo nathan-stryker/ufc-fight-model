@@ -65,6 +65,9 @@ MANUAL = {
     # UFC.com's own bio page: HEIGHT 71.00 (5'11"), REACH 74.00 -- exact
     # match to what the user gave directly (2026-09-15).
     "Gable Steveson": {"height_in": 71.0, "reach_in": 74.0},
+    # UFC.com bio: HEIGHT 69.00, REACH 73.50 (Sherdog: 5'10"; UFC.com kept,
+    # same rule as scrape_physical.py). Short-notice debut, 2026-09-26.
+    "Luis Hernandez": {"height_in": 69.0, "reach_in": 73.5},
 }
 
 

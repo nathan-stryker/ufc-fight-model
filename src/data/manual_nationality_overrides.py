@@ -223,6 +223,9 @@ MANUAL = {
     "Melissa Amaya": ("United States", "US"),
     "Ilimbek Akylbek Uulu": ("Kyrgyzstan", "KG"),
     "Mehemmedeli Osmanli": ("Azerbaijan", "AZ"),
+    # Replaced Mickey Gall on UFC Fight Night 289 (user, 2026-09-24). Born in
+    # Miami per both UFC.com and Sherdog.
+    "Luis Hernandez": ("United States", "US"),
 }
 
 

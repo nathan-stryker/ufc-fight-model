@@ -136,6 +136,11 @@ MANUAL_SHERDOG_URLS = {
     # directly on her Sherdog profile and the reported UFC debut vs.
     # Melissa Amaya.
     "tina black": "https://www.sherdog.com/fighter/Valesca-Machado-215597",
+    # 20+ Sherdog profiles named "Luis Hernandez". This one confirmed via
+    # nickname "The Stache", Miami, DOB 1996-08-22 (= our fighters.csv row),
+    # 8-0 incl. a Contender Series win (2026-09-15) before his short-notice
+    # UFC debut vs. Sedriques Dumas (UFC Fight Night 289), replacing Mickey Gall.
+    "luis hernandez": "https://www.sherdog.com/fighter/Luis-Hernandez-371502",
 }
 
 
