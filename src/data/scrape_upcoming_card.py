@@ -266,6 +266,10 @@ NAME_ALIASES = {
     # suffix. Both confirmed by weight class + the user directly.
     "tina black": "valesca machado",
     "ilimbek akylbek": "ilimbek akylbek uulu",
+    # ufc.com re-spelled him between 2026-09-23 and 09-24 (was "Mehemmedeli",
+    # which matched fighters.csv directly; Sherdog has a third spelling,
+    # "Mehemmedali"). Same fighter, same bout.
+    "mahammadali osmanli": "mehemmedeli osmanli",
 }
 
 
@@ -420,7 +424,8 @@ def add_model_predictions(bouts):
             continue
         scheduled_rounds = 5 if b["is_five_rounds"] else 3
         try:
-            r = predict_full_by_id(b["fighter_a_id"], b["fighter_b_id"], scheduled_rounds=scheduled_rounds)
+            r = predict_full_by_id(b["fighter_a_id"], b["fighter_b_id"], scheduled_rounds=scheduled_rounds,
+                                   weightclass=b.get("weight_class"))
         except SystemExit:
             continue
         top_method = max(r["method"], key=r["method"].get)

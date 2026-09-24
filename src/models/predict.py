@@ -28,7 +28,7 @@ import pandas as pd
 from xgboost import XGBClassifier
 
 from src.features.elo import BASE_RATING
-from src.features.method_features import ALIGNMENT_COLS, METHODS
+from src.features.method_features import METHODS, build_method_extras, matchup_division_context
 from src.features.prefight_snapshot import build_debut_snapshots
 from src.models.evaluate import XGB_BLEND_WEIGHT, blend_with_elo_baseline
 
@@ -185,13 +185,18 @@ def compute_alignment_features(dist_a: dict, dist_b: dict, a_is_favorite: bool) 
     return align
 
 
-def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as_of: pd.Timestamp):
+def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as_of: pd.Timestamp,
+                           weightclass: str = None):
     """
     Everything predict_full() does AFTER resolving its two fighters to rows
     -- factored out so predict_full() (resolve by name) and
     predict_full_by_id() (resolve by id) share one implementation and can
     never drift apart. Loads its own CSVs/artifacts fresh each call, same
     as the original single-function version.
+
+    weightclass: the bout's own weight class when known (a scheduled card
+    bout); None for a hypothetical matchup, which falls back to the heavier
+    fighter's current division (see method_features.matchup_division_context).
     """
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
     snapshot = pd.read_csv(PROCESSED_DIR / "fighter_snapshot.csv", parse_dates=["last_fight_date"])
@@ -246,11 +251,17 @@ def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as
     a_is_favorite = feats_a["elo"] >= feats_b["elo"]
     align = compute_alignment_features(dist_a, dist_b, a_is_favorite)
 
+    division_a = get_division_info(a["fighter_id"], division_ratings)
+    division_b = get_division_info(b["fighter_id"], division_ratings)
+    division_lbs, is_womens = matchup_division_context(
+        weightclass, (division_a or {}).get("weightclass"), (division_b or {}).get("weightclass"))
+    extras_a = build_method_extras(feats_a, feats_b, dist_a, dist_b, division_lbs, is_womens, scheduled_rounds)
+    extras_b = build_method_extras(feats_b, feats_a, dist_b, dist_a, division_lbs, is_womens, scheduled_rounds)
+
     method_model = XGBClassifier()
     method_model.load_model(ARTIFACTS_DIR / "method_model.json")
-    method_diff_cols = [c for c in method_feature_cols if c.endswith("_diff")]
-    row_method_a = {**row_ab, **align}  # method | A wins
-    row_method_b = {**row_ba, **align}  # method | B wins
+    row_method_a = {**row_ab, **align, **extras_a}  # method | A wins
+    row_method_b = {**row_ba, **align, **extras_b}  # method | B wins
     X_method = pd.DataFrame([row_method_a, row_method_b])[method_feature_cols]
     method_probs = method_model.predict_proba(X_method)  # rows: [given A wins, given B wins]
 
@@ -304,20 +315,22 @@ def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as
         "p_finish": p_finish,
         "round_given_finish": {i + 1: round_dist[i] for i in range(len(round_dist))},
         "scheduled_rounds": scheduled_rounds,
-        "division_a": get_division_info(a["fighter_id"], division_ratings),
-        "division_b": get_division_info(b["fighter_id"], division_ratings),
+        "division_a": division_a,
+        "division_b": division_b,
     }
 
 
-def predict_full(name_a: str, name_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None):
+def predict_full(name_a: str, name_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None,
+                 weightclass: str = None):
     as_of = as_of or pd.Timestamp(datetime.now().date())
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
     a = resolve_fighter(name_a, fighters)
     b = resolve_fighter(name_b, fighters)
-    return _predict_full_for_rows(a, b, scheduled_rounds, as_of)
+    return _predict_full_for_rows(a, b, scheduled_rounds, as_of, weightclass)
 
 
-def predict_full_by_id(fighter_id_a: str, fighter_id_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None):
+def predict_full_by_id(fighter_id_a: str, fighter_id_b: str, scheduled_rounds: int = 3, as_of: pd.Timestamp = None,
+                       weightclass: str = None):
     """
     Same as predict_full(), but resolves both fighters by fighter_id
     instead of name -- for callers with an already-unambiguous id (see
@@ -327,7 +340,7 @@ def predict_full_by_id(fighter_id_a: str, fighter_id_b: str, scheduled_rounds: i
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
     a = resolve_fighter_by_id(fighter_id_a, fighters)
     b = resolve_fighter_by_id(fighter_id_b, fighters)
-    return _predict_full_for_rows(a, b, scheduled_rounds, as_of)
+    return _predict_full_for_rows(a, b, scheduled_rounds, as_of, weightclass)
 
 
 def predict_matchup(name_a: str, name_b: str, as_of: pd.Timestamp = None):
@@ -341,9 +354,11 @@ def main():
     parser.add_argument("fighter_a")
     parser.add_argument("fighter_b")
     parser.add_argument("--rounds", type=int, default=3, choices=[3, 5], help="Scheduled rounds (5 for title/main-event fights)")
+    parser.add_argument("--weightclass", default=None,
+                        help="Bout weight class, e.g. \"Women's Flyweight\" (default: heavier fighter's current division)")
     args = parser.parse_args()
 
-    r = predict_full(args.fighter_a, args.fighter_b, scheduled_rounds=args.rounds)
+    r = predict_full(args.fighter_a, args.fighter_b, scheduled_rounds=args.rounds, weightclass=args.weightclass)
 
     def division_line(name, div):
         if div is None:

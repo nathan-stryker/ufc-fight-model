@@ -10,29 +10,38 @@ prediction time (see predict.py), this is queried twice -- once as if it
 were a KO, once as if it were a submission -- and mixed together using the
 method model's P(ko)/P(sub) as weights.
 
+Deliberately ONLY scheduled_rounds/is_ko/is_sub -- in effect a smoothed base
+rate per (fight length, finish type). The earlier version also fed in every
+win-model diff + alignment feature and scored slightly WORSE on the 2024+
+holdout than plain base rates (log loss 1.045 vs 1.043); an offline
+experiment (2026-09-24) adding weight class, per-fighter levels, and a
+2010+-only training window topped out at +0.4% over base rates. Which round
+a finish lands in just isn't predictable from this data, so the model
+shouldn't pretend otherwise.
+
 Run: python -m src.models.train_round
 """
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, log_loss
 from xgboost import XGBClassifier
 
-from src.models.train_method import DIFF_COLS, load_training_table
-from src.features.method_features import ALIGNMENT_COLS
+from src.models.train_method import load_training_table
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "models" / "artifacts"
 
 TRAIN_CUTOFF = "2022-01-01"
 TEST_CUTOFF = "2024-01-01"
-FEATURE_COLS = DIFF_COLS + ALIGNMENT_COLS + ["scheduled_rounds", "is_ko", "is_sub"]
+FEATURE_COLS = ["scheduled_rounds", "is_ko", "is_sub"]
 
 
 def load_round_training_table():
     df = load_training_table()  # fight_id, event_date, DIFF_COLS, ALIGNMENT_COLS, method_bucket
-    finishes = df[df["method_bucket"].isin(["ko", "sub"])].copy()
+    finishes = df[df["method_bucket"].isin(["ko", "sub"])].drop(columns=["scheduled_rounds"]).copy()
 
     fights = pd.read_csv(PROCESSED_DIR / "fights.csv")
     sched = fights["time_format"].str.extract(r"(\d+)\s*Rnd")[0].astype(float).fillna(1.0)
@@ -79,6 +88,13 @@ def main():
     majority_round = int(train["round"].mode()[0])
     majority_acc = (test["round"] == majority_round).mean()
     print(f"  majority-round baseline (always round {majority_round}) test acc = {majority_acc:.3f}")
+
+    rates = (train.groupby(["scheduled_rounds", "is_ko"])["round_idx"].value_counts(normalize=True)
+             .unstack(fill_value=0).reindex(columns=range(n_classes), fill_value=0) + 1e-4)
+    rates = rates.div(rates.sum(axis=1), axis=0)
+    base = np.array([rates.loc[(r, k)].to_numpy() for r, k in zip(test["scheduled_rounds"], test["is_ko"])])
+    print(f"  base rates by (scheduled rounds, KO vs sub): test log_loss = "
+          f"{log_loss(y_test, base, labels=list(range(n_classes))):.3f}")
 
     model.save_model(ARTIFACTS_DIR / "round_model.json")
     with open(ARTIFACTS_DIR / "round_feature_cols.json", "w") as f:

@@ -122,6 +122,9 @@ MANUAL_SHERDOG_URLS = {
     # nickname "Ineffable" and the reported UFC debut vs. Ilimbek Akylbek
     # Uulu.
     "mehemmedeli osmanli": "https://www.sherdog.com/fighter/Mehemmedali-Osmanli-390629",
+    # ufc.com's newer spelling of the same fighter (see scrape_upcoming_card.py's
+    # NAME_ALIASES) -- this dict is keyed by the card's scraped display name.
+    "mahammadali osmanli": "https://www.sherdog.com/fighter/Mehemmedali-Osmanli-390629",
     # Sherdog lists him with his own data's full patronymic ("Uulu"), but
     # upcoming_card.csv's scraped display name drops it -- plain "Ilimbek
     # Akylbek" search found nothing. Confirmed via the reported UFC debut

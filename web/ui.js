@@ -311,7 +311,7 @@
         // Computed once per bout, reused for both the one-line preview AND
         // the full expand-on-demand breakdown below -- no second inference
         // call when a fight is expanded.
-        const result = predictFull(fA, fB, callRounds, MODEL_DATA);
+        const result = predictFull(fA, fB, callRounds, MODEL_DATA, b.weightClass);
         boutResults.push({ result, scheduledRounds: callRounds, fA, fB });
         modelPick = `<div class="fc-model-pick mono"><span class="fc-model-pick-label">Model predicts</span> ${escapeHtml(verdictText(result).text)}</div>`;
         // Always visible (not hidden behind the toggle) so a prediction you

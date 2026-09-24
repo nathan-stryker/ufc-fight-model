@@ -13,6 +13,17 @@ const RATE_STAT_FIELDS = [
   "sig_str_landed_per_min", "sig_str_absorbed_per_min", "sig_str_acc",
   "td_avg_per15", "td_acc", "td_def", "sub_att_per15", "ctrl_pct",
 ];
+// Mirrors src/features/build_features.py FIGHTER_LEVEL_FIELDS and
+// src/features/method_features.py DIVISION_LBS -- method-model inputs.
+const FIGHTER_LEVEL_FIELDS = [
+  "finish_rate_entering", "sig_str_landed_per_min", "sig_str_absorbed_per_min",
+  "sub_att_per15", "td_avg_per15", "td_def",
+];
+const DIVISION_LBS = {
+  Strawweight: 115, Flyweight: 125, Bantamweight: 135, Featherweight: 145,
+  Lightweight: 155, Welterweight: 170, Middleweight: 185,
+  "Light Heavyweight": 205, Heavyweight: 265,
+};
 
 // ---------------------------------------------------------------------------
 // Fighter data indexing
@@ -229,6 +240,46 @@ function computeAlignment(distA, distB, aIsFavorite) {
   return align;
 }
 
+// Mirrors method_features.division_context(): [lbs, isWomens]; catch/open
+// weight -> [NaN, 0], no weight class at all -> [NaN, NaN].
+function divisionContext(wc) {
+  if (typeof wc !== "string" || wc === "") return [NaN, NaN];
+  const isWomens = wc.startsWith("Women's");
+  const base = isWomens ? wc.slice("Women's ".length) : wc;
+  const lbs = DIVISION_LBS[base];
+  return [lbs === undefined ? NaN : lbs, isWomens ? 1.0 : 0.0];
+}
+
+// Mirrors method_features.matchup_division_context(): the bout's own weight
+// class when known, else the heavier fighter's current division.
+function matchupDivisionContext(boutWc, wcA, wcB) {
+  if (typeof boutWc === "string" && boutWc !== "") return divisionContext(boutWc);
+  const [lbsA, wA] = divisionContext(wcA);
+  const [lbsB, wB] = divisionContext(wcB);
+  let lbs = NaN;
+  if (!(Number.isNaN(lbsA) && Number.isNaN(lbsB))) {
+    lbs = Number.isNaN(lbsA) ? lbsB : Number.isNaN(lbsB) ? lbsA : Math.max(lbsA, lbsB);
+  }
+  const isWomens = Number.isNaN(wA) && Number.isNaN(wB) ? NaN : (wA === 1.0 || wB === 1.0 ? 1.0 : 0.0);
+  return [lbs, isWomens];
+}
+
+// Mirrors method_features.build_method_extras() for one "given this fighter wins" row.
+function buildMethodExtras(winnerFeats, loserFeats, winnerDist, loserDist, divisionLbs, isWomens, scheduledRounds) {
+  const extras = { division_lbs: divisionLbs, is_womens: isWomens, scheduled_rounds: scheduledRounds };
+  for (const f of FIGHTER_LEVEL_FIELDS) {
+    extras[`winner_${f}`] = winnerFeats[f];
+    extras[`loser_${f}`] = loserFeats[f];
+  }
+  for (const tier of ["last5", "career"]) {
+    for (const m of ["ko", "sub"]) {
+      extras[`winner_${tier}_win_${m}`] = winnerDist[`${tier}_win_${m}`];
+      extras[`loser_${tier}_loss_${m}`] = loserDist[`${tier}_loss_${m}`];
+    }
+  }
+  return extras;
+}
+
 function buildDiffDict(featsA, featsB, baseCols) {
   const d = {};
   for (const c of baseCols) d[`${c}_diff`] = featsA[c] - featsB[c];
@@ -248,7 +299,9 @@ function eloLogregProb(eloDiff, logreg) {
   return sigmoid(logreg.intercept + logreg.coef * d);
 }
 
-function predictFull(fighterA, fighterB, scheduledRounds, model) {
+// weightClass: the bout's own weight class when known (a card bout); omit for
+// a hypothetical matchup (falls back to the heavier fighter's division).
+function predictFull(fighterA, fighterB, scheduledRounds, model, weightClass) {
   const todayDays = todayEpochDays();
   const featsA = buildWinFeats(fighterA, todayDays);
   const featsB = buildWinFeats(fighterB, todayDays);
@@ -269,8 +322,11 @@ function predictFull(fighterA, fighterB, scheduledRounds, model) {
   const aIsFavorite = featsA.elo >= featsB.elo;
   const align = computeAlignment(distA, distB, aIsFavorite);
 
-  const rowMethodA = Object.assign({}, rowAB, align);
-  const rowMethodB = Object.assign({}, rowBA, align);
+  const [divisionLbs, isWomens] = matchupDivisionContext(weightClass, fighterA.weightclass, fighterB.weightclass);
+  const extrasA = buildMethodExtras(featsA, featsB, distA, distB, divisionLbs, isWomens, scheduledRounds);
+  const extrasB = buildMethodExtras(featsB, featsA, distB, distA, divisionLbs, isWomens, scheduledRounds);
+  const rowMethodA = Object.assign({}, rowAB, align, extrasA);
+  const rowMethodB = Object.assign({}, rowBA, align, extrasB);
   const methodProbsA = predictMulticlass(model.method_model, toVector(model.method_model.features, rowMethodA));
   const methodProbsB = predictMulticlass(model.method_model, toVector(model.method_model.features, rowMethodB));
   const methodClasses = model.method_model.classes;

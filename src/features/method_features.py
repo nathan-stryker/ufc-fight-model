@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from src.features.build_features import (
+    FIGHTER_LEVEL_FIELDS,
     PROCESSED_DIR,
     build_fight_level_stats,
     build_long_history,
@@ -128,6 +129,70 @@ def add_favorite_alignment_features(long_df: pd.DataFrame, elo_per_fight: pd.Dat
 
 
 ALIGNMENT_COLS = [f"align_{side}_{m}_{tier}" for side in ("fav", "upset") for m in METHODS for tier in ("last5", "career")]
+
+# Extra method-model inputs beyond the win model's diffs + alignment, added
+# after an offline experiment (2026-09-24): together they cut holdout log
+# loss from 0.976 to 0.947 (base rates alone: 1.020), and the gain held up
+# in two separate earlier time windows too, not just the 2024+ holdout.
+#   context -- heavyweights get knocked out far more than flyweights, and a
+#              5-rounder has more time to end early
+#   levels  -- each fighter's own (not diffed) tendencies; see
+#              build_features.FIGHTER_LEVEL_FIELDS
+#   history -- how the WINNER usually wins and how the LOSER usually loses,
+#              as raw rates (the alignment features only carry products)
+# A knockdown-rate feature was also tested; it added almost nothing on top of
+# these (0.9466 -> 0.9435) so it was left out rather than threaded through the
+# snapshot and web payload.
+DIVISION_LBS = {
+    "Strawweight": 115, "Flyweight": 125, "Bantamweight": 135, "Featherweight": 145,
+    "Lightweight": 155, "Welterweight": 170, "Middleweight": 185,
+    "Light Heavyweight": 205, "Heavyweight": 265,
+}
+METHOD_CONTEXT_COLS = ["division_lbs", "is_womens", "scheduled_rounds"]
+METHOD_LEVEL_COLS = [f"{side}_{f}" for side in ("winner", "loser") for f in FIGHTER_LEVEL_FIELDS]
+METHOD_HISTORY_COLS = (
+    [f"winner_{tier}_win_{m}" for tier in ("last5", "career") for m in ("ko", "sub")]
+    + [f"loser_{tier}_loss_{m}" for tier in ("last5", "career") for m in ("ko", "sub")]
+)
+METHOD_EXTRA_COLS = METHOD_CONTEXT_COLS + METHOD_LEVEL_COLS + METHOD_HISTORY_COLS
+
+
+def division_context(weightclass) -> tuple[float, float]:
+    """(division weight in lbs, is_womens) for a normalized weight-class name
+    like "Women's Flyweight". Catch/open weight or unknown -> NaN lbs."""
+    if not isinstance(weightclass, str) or not weightclass:
+        return np.nan, np.nan
+    is_womens = weightclass.startswith("Women's")
+    base = weightclass[len("Women's "):] if is_womens else weightclass
+    return float(DIVISION_LBS.get(base, np.nan)), float(is_womens)
+
+
+def matchup_division_context(bout_weightclass, weightclass_a, weightclass_b) -> tuple[float, float]:
+    """The bout's own weight class when known (a scheduled card bout);
+    otherwise -- a hypothetical cross-division matchup -- the heavier of the
+    two fighters' current divisions, the class the lighter one would move up
+    to. Mirrored exactly by web/engine.js's matchupDivisionContext()."""
+    if isinstance(bout_weightclass, str) and bout_weightclass:
+        return division_context(bout_weightclass)
+    lbs_a, w_a = division_context(weightclass_a)
+    lbs_b, w_b = division_context(weightclass_b)
+    lbs = np.nanmax([lbs_a, lbs_b]) if not (np.isnan(lbs_a) and np.isnan(lbs_b)) else np.nan
+    is_womens = float(w_a == 1.0 or w_b == 1.0) if not (np.isnan(w_a) and np.isnan(w_b)) else np.nan
+    return float(lbs), is_womens
+
+
+def build_method_extras(winner_feats: dict, loser_feats: dict, winner_dist: dict, loser_dist: dict,
+                        division_lbs: float, is_womens: float, scheduled_rounds: float) -> dict:
+    """METHOD_EXTRA_COLS for one live "given this fighter wins" row."""
+    extras = {"division_lbs": division_lbs, "is_womens": is_womens, "scheduled_rounds": float(scheduled_rounds)}
+    for f in FIGHTER_LEVEL_FIELDS:
+        extras[f"winner_{f}"] = winner_feats[f]
+        extras[f"loser_{f}"] = loser_feats[f]
+    for tier in ("last5", "career"):
+        for m in ("ko", "sub"):
+            extras[f"winner_{tier}_win_{m}"] = winner_dist[f"{tier}_win_{m}"]
+            extras[f"loser_{tier}_loss_{m}"] = loser_dist[f"{tier}_loss_{m}"]
+    return extras
 
 
 def compute_method_priors(long_df: pd.DataFrame) -> dict:

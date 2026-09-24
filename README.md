@@ -743,14 +743,36 @@ alignment features ties the naive "always guess Decision" baseline exactly
 (51.5% vs. 51.4%). With the alignment features, holdout accuracy is 54.0%
 and log-loss improves from 1.015 (naive) to 0.968.
 
+**Update 2026-09-24 -- extra method features.** The model now also sees the
+bout's weight class (as lbs + a women's flag) and scheduled rounds, each
+fighter's own un-diffed tendencies (finish rate, strikes landed/absorbed,
+sub attempts, takedown rate, takedown defense), and the raw win-by/loss-by
+KO/sub rates the alignment products are built from (see
+`method_features.METHOD_EXTRA_COLS`). A diff can't tell two knockout artists
+apart from two cautious decision fighters; these can. Holdout log loss
+0.975 -> 0.948 (base rates alone: 1.020), i.e. +4.4% -> +7.1% over base
+rates; KO calls that were right went from 125 to 158. Checked it wasn't a
+lucky split: the gain also showed up training on older data and testing on
+2020-21 and 2016-17. A knockdown-rate feature added almost nothing on top
+(0.9466 -> 0.9435) and would have needed new snapshot/web fields, so it was
+left out. Card predictions pass the bout's real weight class through
+(`predict_full(..., weightclass=...)`, `predictFull(..., weightClass)`);
+hypothetical matchups use the heavier fighter's current division.
+`python -m src.check_js_parity` covers both paths plus a women's bout, a
+cross-division matchup, and debut fighters.
+
 The round model is only trained on fights that end in a finish (decisions
 trivially go the distance) and is queried twice at prediction time -- once
 per possible finish method -- then mixed using the method model's own
-KO/Submission probabilities as weights. Its top-pick accuracy roughly ties
-"always guess round 1" (round 1 is genuinely the most common single outcome,
-53% of all finishes), but its probabilities are real: log-loss 1.052 vs.
-1.097 for the naive marginal distribution, and 0.589 AUC discriminating
-actual round-1 finishes. Both models under-call Submission (it's the
+KO/Submission probabilities as weights. **As of 2026-09-24 it only uses
+scheduled rounds + KO/Sub**, in effect a smoothed base rate. The earlier
+version fed in every win-model feature and scored slightly *worse* on the
+2024+ holdout than plain base rates by (scheduled rounds, KO vs Sub) -- log
+loss 1.045 vs 1.043. (The old "1.052 vs 1.097" figure here compared against
+a base rate that ignored fight length, which flattered it.) Adding weight
+class, per-fighter levels, or a 2010+-only training window topped out at
++0.4%. Which round a finish lands in isn't predictable from this data.
+Both models under-call Submission (it's the
 rarest of the 3 methods, ~20% base rate) -- tried class-weighting to fix
 this, but it made both accuracy and log-loss worse, so it was reverted.
 `P(sub)` is still meaningfully informative even when it's not the top pick
@@ -802,6 +824,18 @@ that didn't hold up under rigorous testing. The code (`_compute_interactions`,
 `INTERACTION_COLS` in `build_features.py`) is still there, computed into
 `model_features.csv`, just excluded from `FEATURE_COLS`/training -- don't
 add it back without redoing this kind of controlled test.
+
+Also tried (2026-09-24), neither shipped:
+- **Opponent-adjusted rate stats** -- each fight's strikes/takedowns/control
+  measured against what that opponent normally allows, rolled over the last
+  5 fights. No gain (holdout accuracy 63.8% -> 63.6%, log loss within
+  noise), with or without replacing the raw rates. Elo already credits wins
+  by opponent quality, which likely covers most of this.
+- **Strength of schedule** (mean pre-fight Elo of the last 5 opponents) --
+  looked good on the 2024+ holdout (+~1pt accuracy, small but significant
+  log-loss gain) but reversed on an independent 2020-21 window (log loss
+  slightly worse). Not robust, so not worth wiring through the snapshot,
+  predict.py, engine.js and the export.
 
 ## Current holdout performance (fights on/after 2024-01-01)
 

@@ -6,9 +6,12 @@ model_features.csv, filtered to label==1 rows, which are exactly the
 winner-oriented diffs) plus the favorite/underdog method-alignment features
 from src.features.method_features.
 
-Also trains an ablation model WITHOUT the alignment features, to check
-whether they add real signal beyond what's already in the diff features --
-a direct test of the matchup heuristic they're built from.
+Also retrains the PREVIOUS feature set (diffs + alignment only) side by side
+and prints the class-base-rate log loss, so every retrain shows how much the
+extra method features (see method_features.METHOD_EXTRA_COLS) are adding.
+Log loss vs. base rates is the metric that matters here, not accuracy:
+submissions are ~20% of outcomes, so even a perfect model would rarely name
+one as the single most likely result.
 
 Run: python -m src.models.train_method
 """
@@ -20,8 +23,8 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, confusion_matrix, log_loss
 from xgboost import XGBClassifier
 
-from src.features.build_features import FEATURE_COLS
-from src.features.method_features import ALIGNMENT_COLS
+from src.features.build_features import FEATURE_COLS, FIGHTER_LEVEL_FIELDS
+from src.features.method_features import ALIGNMENT_COLS, METHOD_EXTRA_COLS, METHOD_HISTORY_COLS, division_context
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "models" / "artifacts"
@@ -29,17 +32,37 @@ ARTIFACTS_DIR = Path(__file__).resolve().parents[2] / "models" / "artifacts"
 TRAIN_CUTOFF = "2022-01-01"
 TEST_CUTOFF = "2024-01-01"
 DIFF_COLS = [f"{c}_diff" for c in FEATURE_COLS]
+METHOD_FEATURE_COLS = DIFF_COLS + ALIGNMENT_COLS + METHOD_EXTRA_COLS
 
 
 def load_training_table():
     model_features = pd.read_csv(PROCESSED_DIR / "model_features.csv", parse_dates=["event_date"])
     winner_rows = model_features[model_features["label"] == 1]
 
+    # method_long's "win" rows are the winner's perspective: its own columns
+    # are the winner's, its opp_ columns the loser's.
     method_long = pd.read_csv(PROCESSED_DIR / "method_long.csv")
-    winner_method = method_long[method_long["result"] == "win"][["fight_id", "method_bucket"] + ALIGNMENT_COLS]
+    wins = method_long[method_long["result"] == "win"].copy()
+    for tier in ("last5", "career"):
+        for m in ("ko", "sub"):
+            wins[f"winner_{tier}_win_{m}"] = wins[f"{tier}_win_{m}"]
+            wins[f"loser_{tier}_loss_{m}"] = wins[f"opp_{tier}_loss_{m}"]
+    winner_method = wins[["fight_id", "fighter_id", "opponent_id", "method_bucket"] + ALIGNMENT_COLS + METHOD_HISTORY_COLS]
 
     df = winner_rows.merge(winner_method, on="fight_id", how="inner")
     df = df.dropna(subset=["method_bucket"])
+
+    levels = pd.read_csv(PROCESSED_DIR / "fighter_fight_levels.csv")
+    for side, id_col in (("winner", "fighter_id"), ("loser", "opponent_id")):
+        renamed = levels.rename(columns={"fighter_id": id_col, **{f: f"{side}_{f}" for f in FIGHTER_LEVEL_FIELDS}})
+        df = df.merge(renamed, on=["fight_id", id_col], how="left")
+
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv", usecols=["fight_id", "weightclass", "time_format"])
+    ctx = fights["weightclass"].map(division_context)
+    fights["division_lbs"] = [c[0] for c in ctx]
+    fights["is_womens"] = [c[1] for c in ctx]
+    fights["scheduled_rounds"] = fights["time_format"].str.extract(r"(\d+)\s*Rnd")[0].astype(float)
+    df = df.merge(fights[["fight_id", "division_lbs", "is_womens", "scheduled_rounds"]], on="fight_id", how="left")
     return df
 
 
@@ -66,17 +89,24 @@ def main():
     class_to_idx = {c: i for i, c in enumerate(classes)}
     majority_class = df["method_bucket"].value_counts().idxmax()
 
-    for feature_set_name, cols in [("full (+ alignment)", DIFF_COLS + ALIGNMENT_COLS), ("ablation (no alignment)", DIFF_COLS)]:
+    y_test_all = test["method_bucket"].map(class_to_idx)
+    base_rates = train["method_bucket"].map(class_to_idx).value_counts(normalize=True).reindex(range(len(classes))).to_numpy()
+    prior_ll = log_loss(y_test_all, np.tile(base_rates, (len(test), 1)), labels=list(range(len(classes))))
+    majority_acc = (test["method_bucket"] == majority_class).mean()
+    print(f"\nbase rates only: test log_loss={prior_ll:.3f}   always '{majority_class}': test acc={majority_acc:.3f}")
+
+    for feature_set_name, cols in [("previous (diffs + alignment)", DIFF_COLS + ALIGNMENT_COLS),
+                                   ("current (+ context/levels/history)", METHOD_FEATURE_COLS)]:
         print(f"\n=== feature set: {feature_set_name} ===")
         X_train, y_train = train[cols], train["method_bucket"].map(class_to_idx)
         X_val, y_val = val[cols], val["method_bucket"].map(class_to_idx)
         X_test, y_test = test[cols], test["method_bucket"].map(class_to_idx)
 
         model = XGBClassifier(
-            n_estimators=400, max_depth=4, learning_rate=0.03,
+            n_estimators=600, max_depth=4, learning_rate=0.03,
             subsample=0.8, colsample_bytree=0.8, min_child_weight=5,
             objective="multi:softprob", eval_metric="mlogloss",
-            early_stopping_rounds=30, missing=float("nan"),
+            early_stopping_rounds=30, missing=float("nan"), random_state=42,
         )
         model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
 
@@ -84,11 +114,9 @@ def main():
         report("train", y_train, model.predict_proba(X_train), list(range(len(classes))))
         report("val", y_val, model.predict_proba(X_val), list(range(len(classes))))
         test_acc, test_ll = report("test (holdout)", y_test, model.predict_proba(X_test), list(range(len(classes))))
+        print(f"  improvement over base rates: {(prior_ll - test_ll) / prior_ll:+.1%}")
 
-        majority_acc = (test["method_bucket"] == majority_class).mean()
-        print(f"  majority-class baseline (always '{majority_class}') test acc = {majority_acc:.3f}")
-
-        if feature_set_name.startswith("full"):
+        if feature_set_name.startswith("current"):
             model.save_model(ARTIFACTS_DIR / "method_model.json")
             with open(ARTIFACTS_DIR / "method_feature_cols.json", "w") as f:
                 json.dump(cols, f, indent=2)

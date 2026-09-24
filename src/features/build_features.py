@@ -233,6 +233,17 @@ def attach_static_attributes(long_df: pd.DataFrame, fighters: pd.DataFrame) -> p
     return long_df
 
 
+# Per-fighter (not diffed) pre-fight levels the method model needs on top of
+# the win model's diffs: a diff can't tell "two knockout artists" apart from
+# "two cautious decision fighters", but how a fight ends depends on both
+# fighters' absolute tendencies. Written to fighter_fight_levels.csv for
+# train_method.py; at prediction time these come straight from each
+# fighter's snapshot (all already present there and in the web payload).
+FIGHTER_LEVEL_FIELDS = [
+    "finish_rate_entering", "sig_str_landed_per_min", "sig_str_absorbed_per_min",
+    "sub_att_per15", "td_avg_per15", "td_def",
+]
+
 FEATURE_COLS = [
     "elo", "height_in", "reach_in", "age_years",
     "fights_entering", "win_pct_entering", "finish_rate_entering", "current_streak_entering",
@@ -446,6 +457,9 @@ def main():
 
     long_df = add_pre_fight_career_features(long_df, priors)
     long_df = attach_static_attributes(long_df, fighters)
+
+    levels = long_df[["fight_id", "fighter_id"] + FIGHTER_LEVEL_FIELDS]
+    levels.to_csv(PROCESSED_DIR / "fighter_fight_levels.csv", index=False)
 
     model_df = build_model_table(long_df, elo_per_fight, division_elo_per_fight, fights)
     model_df.to_csv(PROCESSED_DIR / "model_features.csv", index=False)
