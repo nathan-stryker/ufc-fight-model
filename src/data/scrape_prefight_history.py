@@ -255,7 +255,11 @@ def parse_fight_history(html):
                 continue  # header row
             result_el = cells[0].select_one("span.final_result")
             opponent_el = cells[1].select_one("a")
-            event_el = cells[2].select_one('span[itemprop="award"]')
+            # Sherdog only wraps the event name in itemprop="award" on WINS --
+            # on a loss it's the bare <a> text. Reading only the award span
+            # left every loss with no event name (8 on the 2026-09-26 card's
+            # debut records; caught by src/audit_card.py).
+            event_el = cells[2].select_one('span[itemprop="award"]') or cells[2].select_one("a")
             date_el = cells[2].select_one("span.sub_line")
             method_el = cells[3].select_one("b")
             round_text = cells[4].get_text(strip=True)
