@@ -74,7 +74,8 @@ MANUAL = {
     # scrape_physical run, there by the 2026-09-25 card audit. Stance
     # user-supplied (2026-09-25).
     "Christian Edwards": {"reach_in": 78.0, "stance": "Southpaw"},
-    "Mehemmedeli Osmanli": {"stance": "Southpaw"},
+    # Reach user-supplied (2026-09-25) -- neither UFC.com nor Sherdog lists it.
+    "Mehemmedeli Osmanli": {"stance": "Southpaw", "reach_in": 71.0},
     "Ilimbek Akylbek Uulu": {"stance": "Orthodox"},
     # User's default, not a confirmed stance ("just put orthodox") --
     # replace if her real stance turns up.
