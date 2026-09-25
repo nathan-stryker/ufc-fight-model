@@ -144,6 +144,10 @@ def _division_info_per_fighter():
 CAREER_DISPLAY_FIELDS = [
     "career_slpm", "career_sapm", "career_str_acc", "career_str_def",
     "career_td_avg", "career_td_acc", "career_td_def", "career_sub_avg", "career_ctrl_pct",
+    # Raw takedown counts behind the two percentages, shown next to them
+    # ("100% (1/1)") so a one-attempt sample doesn't read like a real stat
+    # (user read Bryczek's 1-for-1 accuracy as a 100% defense, 2026-09-25).
+    "career_td_landed", "career_td_att", "career_opp_td_landed", "career_opp_td_att",
 ]
 
 
@@ -179,6 +183,10 @@ def _career_display_stats():
         "career_td_def": 1 - g["opp_td_landed"] / g["opp_td_attempted"],
         "career_sub_avg": g["sub_att"] / minutes * 15.0,
         "career_ctrl_pct": g["ctrl_sec"] / g["fight_seconds"],
+        "career_td_landed": g["td_landed"],
+        "career_td_att": g["td_attempted"],
+        "career_opp_td_landed": g["opp_td_landed"],
+        "career_opp_td_att": g["opp_td_attempted"],
     })
     return out.replace([np.inf, -np.inf], np.nan).reset_index()
 

@@ -171,12 +171,20 @@ const CAREER_STAT_ROWS = {
   ],
   grappling: [
     { label: "Takedowns / 15 min", field: "career_td_avg", fmt: (x) => x.toFixed(2), better: "high" },
-    { label: "Takedown accuracy", field: "career_td_acc", fmt: fmtPct, better: "high" },
-    { label: "Takedown defense", field: "career_td_def", fmt: fmtPct, better: "high" },
+    // Counts shown alongside, like UFC.com: "100% (1/1)" makes a one-attempt
+    // sample obvious. Defense counts are takedowns stopped / opponents' attempts.
+    { label: "Takedown accuracy", field: "career_td_acc", better: "high",
+      fmtRow: (x, f) => withCounts(x, f.career_td_landed, f.career_td_att) },
+    { label: "Takedown defense", field: "career_td_def", better: "high",
+      fmtRow: (x, f) => withCounts(x, f.career_opp_td_att - f.career_opp_td_landed, f.career_opp_td_att) },
     { label: "Submission attempts / 15 min", field: "career_sub_avg", fmt: (x) => x.toFixed(2), better: "high" },
     { label: "Control time", field: "career_ctrl_pct", fmt: fmtPct, better: "high" },
   ],
 };
+
+function withCounts(x, num, den) {
+  return den != null && num != null ? `${fmtPct(x)} (${Math.round(num)}/${Math.round(den)})` : fmtPct(x);
+}
 
 const FINISH_METHODS = new Set(["KO/TKO", "Submission", "TKO - Doctor's Stoppage"]); // = build_features.FINISH_METHODS
 
@@ -248,9 +256,9 @@ function statComparisonHtml(fighterA, fighterB, explanation, model) {
     const a = get(fighterA), b = get(fighterB);
     let side = null;
     if (better && a != null && b != null && a !== b) side = (better === "high") === (a > b) ? "a" : "b";
-    return statRowHtml(label, a != null ? fmt(a) : null, b != null ? fmt(b) : null, side);
+    return statRowHtml(label, a != null ? fmt(a, fighterA) : null, b != null ? fmt(b, fighterB) : null, side);
   };
-  const careerRows = (rows) => rows.map((r) => row(r.label, (f) => f[r.field], r.fmt, r.better)).join("");
+  const careerRows = (rows) => rows.map((r) => row(r.label, (f) => f[r.field], r.fmtRow || r.fmt, r.better)).join("");
 
   const recA = ufcRecord(fighterA, model.fighter_history), recB = ufcRecord(fighterB, model.fighter_history);
   const rec = (f) => (f === fighterA ? recA : recB);
