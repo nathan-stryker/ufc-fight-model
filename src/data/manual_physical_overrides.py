@@ -67,10 +67,18 @@ MANUAL = {
     "Gable Steveson": {"height_in": 71.0, "reach_in": 74.0},
     # UFC.com bio: HEIGHT 69.00, REACH 73.50 (Sherdog: 5'10"; UFC.com kept,
     # same rule as scrape_physical.py). Short-notice debut, 2026-09-26.
-    "Luis Hernandez": {"height_in": 69.0, "reach_in": 73.5},
+    # Stance user-supplied (2026-09-25) -- no outside source available
+    # lists it (see src/audit_card.py).
+    "Luis Hernandez": {"height_in": 69.0, "reach_in": 73.5, "stance": "Southpaw"},
     # UFC.com bio REACH 78.00 -- not on the page yet at the 2026-09-24
-    # scrape_physical run, there by the 2026-09-25 card audit.
-    "Christian Edwards": {"reach_in": 78.0},
+    # scrape_physical run, there by the 2026-09-25 card audit. Stance
+    # user-supplied (2026-09-25).
+    "Christian Edwards": {"reach_in": 78.0, "stance": "Southpaw"},
+    "Mehemmedeli Osmanli": {"stance": "Southpaw"},
+    "Ilimbek Akylbek Uulu": {"stance": "Orthodox"},
+    # User's default, not a confirmed stance ("just put orthodox") --
+    # replace if her real stance turns up.
+    "Melissa Amaya": {"stance": "Orthodox"},
 }
 
 
