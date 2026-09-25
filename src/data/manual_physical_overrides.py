@@ -74,6 +74,19 @@ MANUAL = {
 }
 
 
+# Corrections that REPLACE an existing value -- only where the user has
+# decided between two conflicting sources (src/audit_card.py flags these).
+REPLACE = {
+    # UFCStats 75.0 vs UFC.com bio 77.5 -- user chose UFC.com (2026-09-25).
+    "Rodolfo Bellato": {"reach_in": 77.5},
+    # UFC.com has two pages for him: /athlete/ilimbek-akylbek-uulu (66.5,
+    # what scrape_physical.py used) and /athlete/ilimbek-akylbek (65.0, the
+    # one the UFC Fight Night 289 card links). User chose UFC.com's card
+    # page (2026-09-25).
+    "Ilimbek Akylbek Uulu": {"reach_in": 65.0},
+}
+
+
 def main():
     path = PROCESSED_DIR / "fighters.csv"
     df = pd.read_csv(path)
@@ -103,6 +116,15 @@ def main():
             df.loc[mask, field] = fill[mask]
             scraped_filled += int(mask.sum())
         print(f"UFC.com: {scraped_filled} field(s) filled")
+
+    replaced = []
+    for name, fields in REPLACE.items():
+        mask = df["name"] == name
+        for field, value in fields.items():
+            if mask.any():
+                replaced.append(f"{name} {field}: {df.loc[mask, field].iloc[0]} -> {value}")
+                df.loc[mask, field] = value
+    print(f"replaced: {replaced}")
 
     df.to_csv(path, index=False)
 

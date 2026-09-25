@@ -226,6 +226,9 @@ MANUAL = {
     # Replaced Mickey Gall on UFC Fight Night 289 (user, 2026-09-24). Born in
     # Miami per both UFC.com and Sherdog.
     "Luis Hernandez": ("United States", "US"),
+    # Sherdog lists United States; UFC.com's card lists him under Mexico, and
+    # the user confirmed Mexico (2026-09-25).
+    "Raul Rosas Jr.": ("Mexico", "MX"),
 }
 
 
@@ -251,7 +254,10 @@ def main():
         if mask.any():
             df.loc[mask, "nationality"] = nat
             df.loc[mask, "iso_code"] = iso
-            df.loc[mask, "sherdog_url"] = "manual"
+            # Keep a real Sherdog URL if one was scraped -- src/audit_card.py
+            # uses it to check the fighter's record/DOB.
+            has_url = df.loc[mask, "sherdog_url"].astype(str).str.startswith("http")
+            df.loc[mask & ~has_url.reindex(df.index, fill_value=False), "sherdog_url"] = "manual"
             applied += 1
             continue
         fmatch = fighters[fighters["name"] == name]
