@@ -85,7 +85,7 @@ MANUAL = {
     # UFC 332 (2026-10-03) debuts: reach + stance user-supplied (2026-09-28);
     # heights for Soldic/Whitehead come from Sherdog via scrape_physical.py.
     "Roberto Soldic": {"reach_in": 74.0, "stance": "Southpaw"},
-    "Lucas Armand": {"reach_in": 76.0, "stance": "Orthodox"},
+    "Lucas Armand": {"height_in": 76.0, "reach_in": 76.0, "stance": "Orthodox"},  # 6'4" user-supplied
     "Bruce Whitehead": {"reach_in": 74.0, "stance": "Orthodox"},
 }
 
