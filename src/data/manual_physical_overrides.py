@@ -82,6 +82,11 @@ MANUAL = {
     # User's default, not a confirmed stance ("just put orthodox") --
     # replace if her real stance turns up.
     "Melissa Amaya": {"stance": "Orthodox"},
+    # UFC 332 (2026-10-03) debuts: reach + stance user-supplied (2026-09-28);
+    # heights for Soldic/Whitehead come from Sherdog via scrape_physical.py.
+    "Roberto Soldic": {"reach_in": 74.0, "stance": "Southpaw"},
+    "Lucas Armand": {"reach_in": 76.0, "stance": "Orthodox"},
+    "Bruce Whitehead": {"reach_in": 74.0, "stance": "Orthodox"},
 }
 
 
