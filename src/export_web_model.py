@@ -280,18 +280,25 @@ def export_fighters():
             if pd.notna(snap["last_fight_date"]):
                 df.loc[mask, "last_fight_epoch_days"] = (pd.Timestamp(snap["last_fight_date"]) - epoch).days
 
-    def clean(v):
+    # Model-input fields are exported at full precision, not r()'s 6 sig figs:
+    # predict.py reads them unrounded, and rounding alone can flip an XGBoost
+    # split. Found for real 2026-09-28: debut Lucas Armand's win_pct 5/6
+    # exported as 0.833333 moved Anthony Wint vs Armand's win_pct_diff across
+    # a threshold -- JS 36.4% vs Python 35.9%.
+    full_precision = set(win_snapshot_fields) | set(method_dist_fields)
+
+    def clean(v, exact=False):
         if pd.isna(v):
             return None
         if isinstance(v, (float, np.floating)):
-            return r(float(v))
+            return float(v) if exact else r(float(v))
         if isinstance(v, (int, np.integer)):
             return int(v)
         return v
 
     rows = []
     for _, row in df.iterrows():
-        rows.append([clean(row[f]) for f in fields])
+        rows.append([clean(row[f], f in full_precision) for f in fields])
 
     return {"fields": fields, "rows": rows}, sorted({str(c).lower() for c in df["iso_code"].dropna().unique()})
 

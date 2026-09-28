@@ -102,19 +102,27 @@ def _strip_bout_suffix(text):
     return re.sub(r"\s+(Title\s+)?Bout$", "", text).strip()
 
 
-def find_next_ufc_com_event_url(session):
+def find_ufc_com_event_urls(session, limit=3):
     """ufc.com's events page lists upcoming events in ascending date order,
-    same convention as Sherdog's org page -- first event link in the
-    upcoming block is the soonest."""
+    same convention as Sherdog's org page -- but it can keep a just-finished
+    event at the top of the upcoming block for a few days (found for real
+    2026-09-28: the 09-26 Fight Night was still listed first, so the
+    date check rejected it and the whole card fell back to Sherdog). Return
+    the first few distinct event URLs; the caller keeps whichever one
+    scrape_card_ufc_com()'s date check accepts."""
     resp = session.get(UFC_EVENTS_URL, headers=HEADERS, timeout=15)
     soup = BeautifulSoup(resp.text, "html.parser")
     container = soup.select_one("#events-list-upcoming")
     if not container:
-        return None
-    a = container.select_one('a[href^="/event/"]')
-    if not a:
-        return None
-    return "https://www.ufc.com" + a["href"].split("#")[0]
+        return []
+    urls = []
+    for a in container.select('a[href^="/event/"]'):
+        url = "https://www.ufc.com" + a["href"].split("#")[0]
+        if url not in urls:
+            urls.append(url)
+        if len(urls) >= limit:
+            break
+    return urls
 
 
 def _extract_ranks(fight_node):
@@ -178,7 +186,9 @@ def scrape_card_ufc_com(session, event_url, expected_date):
     future events that ufc.com hasn't broken into main-card/prelims yet)."""
     resp = session.get(event_url, headers=HEADERS, timeout=15)
     html = resp.text
-    date_match = re.search(r"On ([A-Za-z]+ \d{1,2}, \d{4})", html)
+    # "[Oo]n": the meta description usually reads "...On <date>", but UFC 332's
+    # (2026-09-28) reads "...Utah on October 3, 2026" -- lowercase.
+    date_match = re.search(r"\b[Oo]n ([A-Z][a-z]+ \d{1,2}, \d{4})", html)
     if not date_match:
         return None
     try:
@@ -450,12 +460,12 @@ def main():
     source = "sherdog (fallback)"
     bouts = None
     try:
-        ufc_url = find_next_ufc_com_event_url(session)
-        if ufc_url:
+        for ufc_url in find_ufc_com_event_urls(session):
             segments = scrape_card_ufc_com(session, ufc_url, event["event_date"])
             if segments:
                 bouts = assign_tiers_ufc(segments)
                 source = "ufc.com"
+                break
     except requests.RequestException as e:
         print(f"ufc.com fetch failed ({e}), falling back to Sherdog")
 
@@ -480,9 +490,14 @@ def main():
     # scraper needed, we already have everything both sides of that join
     # need. Only overwrite last_card.csv if there's actually a previous
     # upcoming_card.csv to promote (skip on a from-scratch first run).
+    # Also skip if the existing file is already THIS event (a same-week
+    # re-run) -- promoting it would clobber last week's real snapshot with
+    # this week's not-yet-fought card, emptying "Last Week's Results".
     if out_path.exists():
-        last_card_path = PROCESSED_DIR / "last_card.csv"
-        out_path.replace(last_card_path)
+        prev_event = pd.read_csv(out_path, usecols=["event_url"])["event_url"].iloc[:1].tolist()
+        if prev_event != [event["event_url"]]:
+            last_card_path = PROCESSED_DIR / "last_card.csv"
+            out_path.replace(last_card_path)
 
     out.to_csv(out_path, index=False)
 
