@@ -100,6 +100,9 @@ REPLACE = {
     # one the UFC Fight Night 289 card links). User chose UFC.com's card
     # page (2026-09-25).
     "Ilimbek Akylbek Uulu": {"reach_in": 65.0},
+    # UFCStats 1991-05-04; Sherdog 1992-05-04 and UFC.com's "34" agree on
+    # 1992 (UFC 332 card audit, 2026-09-28).
+    "Roman Kopylov": {"dob": "1992-05-04"},
 }
 
 

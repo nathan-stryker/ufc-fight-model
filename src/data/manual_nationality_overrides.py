@@ -235,6 +235,11 @@ MANUAL = {
     "Bruce Whitehead": ("United States", "US"),
     "Lucas Armand": ("United States", "US"),
     "Roberto Soldic": ("Croatia", "HR"),
+    # The scraped Sherdog match was a different, Irish Eric Nolan (no UFC
+    # fights). The real one (DOB 1997-09-13 = ours, UFC 0-2 vs Susurkaev and
+    # Hasanov) is American, as UFC.com's card also lists him. Third element
+    # replaces the wrong Sherdog URL. (UFC 332 card audit, 2026-09-28.)
+    "Eric Nolan": ("United States", "US", "https://www.sherdog.com/fighter/Eric-Nolan-346419"),
 }
 
 
@@ -255,11 +260,17 @@ def main():
 
     applied, inserted, not_found = 0, 0, []
     new_rows = []
-    for name, (nat, iso) in MANUAL.items():
+    for name, entry in MANUAL.items():
+        nat, iso = entry[0], entry[1]
+        fixed_url = entry[2] if len(entry) > 2 else None
         mask = df["name"] == name
         if mask.any():
             df.loc[mask, "nationality"] = nat
             df.loc[mask, "iso_code"] = iso
+            if fixed_url:
+                df.loc[mask, "sherdog_url"] = fixed_url
+                applied += 1
+                continue
             # Keep a real Sherdog URL if one was scraped -- src/audit_card.py
             # uses it to check the fighter's record/DOB.
             has_url = df.loc[mask, "sherdog_url"].astype(str).str.startswith("http")

@@ -181,7 +181,17 @@ def main():
         print(f"  [{status:9}] {field}: ours={ours} | {source}={theirs} {note}", flush=True)
 
     for bi, bout in enumerate(card):
-        ub = ufc_bouts[bi] if bi < len(ufc_bouts) else {"slugs": [], "countries": [], "names": []}
+        # Match UFC.com's listing by fighter last names, not position -- our
+        # order can differ (scrape_upcoming_card.MANUAL_CARDS) and a newly
+        # added bout may not be on UFC.com at all.
+        ub = {"slugs": [], "countries": [], "names": []}
+        for cand in ufc_bouts:
+            cl = [last_name(n) for n in cand["names"]]
+            if last_name(bout["nameA"]) in cl or last_name(bout["nameB"]) in cl:
+                ub = dict(cand)
+                if cl and cl[0] != last_name(bout["nameA"]):  # UFC.com lists the corners the other way round
+                    ub = {k: list(reversed(v)) for k, v in cand.items()}
+                break
         for side in ("A", "B"):
             fid, card_name = bout[f"id{side}"], bout[f"name{side}"]
             f = fighters.get(fid)
@@ -191,7 +201,11 @@ def main():
                 continue
             name = f["name"]
             k = 0 if side == "A" else 1
-            slug = ub["slugs"][k] if len(ub["slugs"]) > k else None
+            if len(ub["slugs"]) > k:
+                slug = ub["slugs"][k]
+            else:  # bout not on UFC.com's event page yet -- guess the athlete slug from the name
+                from src.data.scrape_fighting_style import _slugify
+                slug = _slugify(card_name)
             h = hist.get(fid, [])
 
             # ---- sources
