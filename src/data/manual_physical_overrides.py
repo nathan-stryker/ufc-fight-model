@@ -39,6 +39,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.data.fighter_renames import fighter_mask
+
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
 # name -> {field: value}. Every field here was confirmed missing (NaN) in
@@ -102,7 +104,7 @@ def main():
 
     applied, filled_fields, not_found = 0, 0, []
     for name, fields in MANUAL.items():
-        mask = df["name"] == name
+        mask = fighter_mask(df, name)
         if not mask.any():
             not_found.append(name)
             continue
@@ -128,7 +130,7 @@ def main():
 
     replaced = []
     for name, fields in REPLACE.items():
-        mask = df["name"] == name
+        mask = fighter_mask(df, name)
         for field, value in fields.items():
             if mask.any():
                 replaced.append(f"{name} {field}: {df.loc[mask, field].iloc[0]} -> {value}")

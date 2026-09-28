@@ -404,6 +404,68 @@ MANUAL_FIVE_ROUND_BOUTS = {
 }
 
 
+# User-supplied running order for an event, for when ufc.com's listing is
+# behind the real card (UFC 332, 2026-09-28: ufc.com still had the old order
+# and no Smith vs. Whitehead, a nine-days'-notice addition). Keyed by the
+# event name's prefix. "order" is most-prominent-first as (name, name)
+# pairs; "main_card" is how many of those are on the main card (the next
+# one is the featured prelim). "added" supplies weight class for bouts
+# ufc.com doesn't list yet. A scraped bout missing from "order" is kept at
+# the end with a warning rather than dropped.
+MANUAL_CARDS = {
+    "UFC 332": {
+        "main_card": 5,
+        "order": [
+            ("Natalia Silva", "Wang Cong"),
+            ("Deiveson Figueiredo", "Payton Talbott"),
+            ("Ateba Gautier", "Roman Kopylov"),
+            ("King Green", "Esteban Ribovics"),
+            ("Khaos Williams", "Roberto Soldic"),
+            ("Johnny Walker", "Mick Parkin"),
+            ("Imanol Rodriguez", "Alden Coria"),
+            ("Damian Pinas", "Andrey Pulyaev"),
+            ("Court McGee", "Eric Nolan"),
+            ("Marvin Vettori", "Ismail Naurdiev"),
+            ("Rafael Dos Anjos", "Alexander Hernandez"),
+            ("Marcus McGhee", "Benardo Sopaj"),
+            ("Anthony Wint", "Lucas Armand"),
+            ("Jacobe Smith", "Bruce Whitehead"),
+        ],
+        "added": {
+            # Welterweight, reported by MMA Mania / MMA Sucka (2026-09-27).
+            frozenset({"jacobe smith", "bruce whitehead"}): {"weight_class": "Welterweight", "is_title_fight": False},
+        },
+    },
+}
+
+
+def apply_manual_card(event_name, bouts):
+    spec = next((v for k, v in MANUAL_CARDS.items() if event_name.startswith(k)), None)
+    if spec is None:
+        return bouts
+    key = lambda a, b: frozenset({normalize_name(a), normalize_name(b)})
+    by_key = {key(b["fighter_a_name"], b["fighter_b_name"]): b for b in bouts}
+    ordered = []
+    for a, b in spec["order"]:
+        k = key(a, b)
+        bout = by_key.pop(k, None)
+        if bout is None:
+            extra = spec.get("added", {}).get(k)
+            if extra is None:
+                print(f"  manual card: {a} vs {b} not on ufc.com and not in 'added' -- skipped")
+                continue
+            bout = {"fighter_a_name": a, "fighter_b_name": b, "rank_a": None, "rank_b": None, **extra}
+        ordered.append(bout)
+    for bout in by_key.values():
+        print(f"  manual card: {bout['fighter_a_name']} vs {bout['fighter_b_name']} is on ufc.com but not in the manual order -- kept last")
+        ordered.append(bout)
+    n_main = spec["main_card"]
+    for i, bout in enumerate(ordered):
+        bout["tier"] = ("main_event" if i == 0 else "co_main" if i == 1 else "main_card" if i < n_main
+                        else "featured_prelim" if i == n_main else "prelim")
+    return ordered
+
+
 def _is_manual_five_rounds(b):
     key = frozenset({normalize_name(b["fighter_a_name"]), normalize_name(b["fighter_b_name"])})
     return key in MANUAL_FIVE_ROUND_BOUTS
@@ -472,6 +534,7 @@ def main():
     if bouts is None:
         bouts = assign_tiers(scrape_card(session, event["event_url"]))
 
+    bouts = apply_manual_card(event["event_name"], bouts)
     bouts = match_fighter_ids(bouts)
     bouts = add_model_predictions(bouts)
 

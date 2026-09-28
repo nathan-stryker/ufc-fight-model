@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.data.fighter_renames import fighter_mask
+
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
 # name -> (nationality display name, ISO code)
@@ -229,6 +231,10 @@ MANUAL = {
     # Sherdog lists United States; UFC.com's card lists him under Mexico, and
     # the user confirmed Mexico (2026-09-25).
     "Raul Rosas Jr.": ("Mexico", "MX"),
+    # UFC 332 (2026-10-03) debuts, user-supplied directly (2026-09-28).
+    "Bruce Whitehead": ("United States", "US"),
+    "Lucas Armand": ("United States", "US"),
+    "Roberto Soldic": ("Croatia", "HR"),
 }
 
 
@@ -260,9 +266,14 @@ def main():
             df.loc[mask & ~has_url.reindex(df.index, fill_value=False), "sherdog_url"] = "manual"
             applied += 1
             continue
-        fmatch = fighters[fighters["name"] == name]
+        fmatch = fighters[fighter_mask(fighters, name)]
         if fmatch.empty:
             not_found.append(name)
+            continue
+        if (df["fighter_id"] == fmatch.iloc[0]["fighter_id"]).any():  # renamed; row exists under the new name
+            m = df["fighter_id"] == fmatch.iloc[0]["fighter_id"]
+            df.loc[m, "nationality"], df.loc[m, "iso_code"] = nat, iso
+            applied += 1
             continue
         new_rows.append({
             "fighter_id": fmatch.iloc[0]["fighter_id"], "name": name,

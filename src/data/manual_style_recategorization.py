@@ -27,6 +27,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.data.fighter_renames import fighter_mask
+
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
 # name -> style, or None to clear to blank. User-supplied directly, no
@@ -489,6 +491,8 @@ MANUAL = {
     "Valesca Machado": "Aggressive Striker",
     "Melissa Amaya": "MMA",
     "Raul Rosas Jr.": "Freestyle",
+    # UFC 332 (2026-10-03), user-supplied directly (2026-09-28).
+    "Bruce Whitehead": "Brawler",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
@@ -519,9 +523,13 @@ def main():
             else:
                 set_count += 1
             continue
-        fmatch = fighters[fighters["name"] == name]
+        fmatch = fighters[fighter_mask(fighters, name)]
         if fmatch.empty:
             not_found.append(name)
+            continue
+        if (df["fighter_id"] == fmatch.iloc[0]["fighter_id"]).any():  # renamed; row exists under the new name
+            df.loc[df["fighter_id"] == fmatch.iloc[0]["fighter_id"], "style"] = style
+            set_count += 1
             continue
         new_rows.append({"fighter_id": fmatch.iloc[0]["fighter_id"], "name": name, "style": style})
         inserted += 1

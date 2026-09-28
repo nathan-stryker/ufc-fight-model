@@ -141,6 +141,11 @@ MANUAL_SHERDOG_URLS = {
     # 8-0 incl. a Contender Series win (2026-09-15) before his short-notice
     # UFC debut vs. Sedriques Dumas (UFC Fight Night 289), replacing Mickey Gall.
     "luis hernandez": "https://www.sherdog.com/fighter/Luis-Hernandez-371502",
+    # UFC 332 (2026-10-03) debuts -- Sherdog search matches, each confirmed
+    # by DOB (= fighters.csv) and nationality (= user-supplied) 2026-09-28.
+    "roberto soldic": "https://www.sherdog.com/fighter/Roberto-Soldic-180781",
+    "lucas armand": "https://www.sherdog.com/fighter/Lucas-Armand-420549",
+    "bruce whitehead": "https://www.sherdog.com/fighter/Bruce-Whitehead-176151",
 }
 
 

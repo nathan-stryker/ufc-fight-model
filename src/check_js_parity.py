@@ -32,9 +32,9 @@ TOLERANCE = 0.1  # percentage points
 DEFAULT_MATCHUPS = [
     ("Islam Makhachev", "Ilia Topuria", 5, None),
     ("Raul Rosas Jr.", "Raoni Barcelos", 5, "Bantamweight"),
-    ("Melissa Amaya", "Valesca Machado", 3, "Women's Strawweight"),
+    ("Melissa Amaya", "Tina Black", 3, "Women's Strawweight"),
     ("Alex Pereira", "Tom Aspinall", 5, None),
-    ("Mehemmedeli Osmanli", "Ilimbek Akylbek Uulu", 3, "Bantamweight"),
+    ("Mahammadali Osmanli", "Ilimbek Akylbek", 3, "Bantamweight"),
 ]
 
 
