@@ -146,6 +146,9 @@ MANUAL_SHERDOG_URLS = {
     "roberto soldic": "https://www.sherdog.com/fighter/Roberto-Soldic-180781",
     "lucas armand": "https://www.sherdog.com/fighter/Lucas-Armand-420549",
     "bruce whitehead": "https://www.sherdog.com/fighter/Bruce-Whitehead-176151",
+    # Sherdog spells him "Bernardo Sopai"; DOB 2000-09-25 and his three UFC
+    # fights match ours (UFC 332 audit, 2026-09-29).
+    "benardo sopaj": "https://www.sherdog.com/fighter/Bernardo-Sopai-226661",
 }
 
 
