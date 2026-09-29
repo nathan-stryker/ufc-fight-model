@@ -329,9 +329,11 @@ def main():
 
             # ---- career stats vs UFC.com's stat block
             # Non-UFC fights UFC.com's stat block counts but UFCStats doesn't:
-            # Contender Series and Road to UFC tournament rounds.
-            dwcs = [f"{'Road to UFC' if 'Road to UFC' in x['event'] else 'Contender Series'} {x['event_date']}"
-                    for x in (s["fights"] if s else []) if re.search(r"Contender|Road to UFC", x["event"] or "")]
+            # Contender Series, Road to UFC tournament rounds, and for some
+            # older fighters some Strikeforce fights (King Green: exactly his two
+            # 2011 Strikeforce Challengers fights account for the gap).
+            dwcs = [f"{re.search(r'Road to UFC|Contender|Strikeforce', x['event']).group(0)} {x['event_date']}"
+                    for x in (s["fights"] if s else []) if re.search(r"Contender|Road to UFC|Strikeforce", x["event"] or "")]
             if u:
                 for fld, ours_key, ukey, tol in [
                     ("Strikes landed/min", "career_slpm", "slpm", 0.02), ("Strikes absorbed/min", "career_sapm", "sapm", 0.02),
