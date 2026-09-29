@@ -734,6 +734,8 @@ MANUAL_BY_ID = {
     # Bruno Silva, not the 185 lbs one -- confirmed by weight_lbs in
     # fighters.csv, per the user (2026-09-16).
     "http://ufcstats.com/fighter-details/294aa73dbf37d281": "Aggressive MMA",
+    # The 185 lbs (middleweight) Bruno Silva -- user-supplied (2026-09-29).
+    "http://ufcstats.com/fighter-details/12ebd7d157e91701": "Pressure Striker",
 }
 
 
