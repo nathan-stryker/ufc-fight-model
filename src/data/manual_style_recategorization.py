@@ -723,6 +723,17 @@ CLAUDE_ASSIGNED = {
     # Catch weight (last fight at a catchweight)
     "Brian Ortega": "Jiu-Jitsu", "Chris Weidman": "Wrestler", "Eduardo Chapolin": "MMA", "Ernesta Kareckaite": "Striker",
     "James Llontop": "Striker", "Matt Schnell": "Brazilian Jiu-Jitsu", "Tim Elliott": "Wrestler",
+    # On roster.watch's active rosters but not in the site's own "fought in the
+    # last 24 months" set, so missed above (mostly TUF 34 cast / new signings with
+    # no UFC tape). Labeled from their Sherdog pro win methods (identity checked
+    # by DOB), UFC.com's tag where it had one, reputation for Yahya/Chookagian.
+    "Marcos Degli": "Aggressive MMA", "Asaf Chopurov": "Aggressive MMA", "Louis Lee Scott": "Aggressive Striker",
+    "Cody Chovancek": "MMA", "Louis Jourdain": "MMA", "Steven Koslow": "Grappler", "Ramiro Jimenez": "Aggressive MMA",
+    "Tom Pagliarulo": "Aggressive Striker", "Taner Trembley": "Grappler", "Piero Guaylupo": "Power Striker",
+    "Callum Connor": "Aggressive Striker", "Alvi Dasuyev": "Aggressive MMA", "Jonny Parsons": "Muay Thai",
+    "Adam Darby": "Aggressive MMA", "Jaden Ortega": "Aggressive Striker", "Mayton Perea": "Aggressive MMA",
+    "Igor Cavalcanti": "Power Striker", "Damian Piwowarczyk": "Aggressive MMA", "Roman Gabriel Puga": "Aggressive Striker",
+    "Rani Yahya": "Grappler", "Katlyn Cerminara": "Volume Striker",
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
