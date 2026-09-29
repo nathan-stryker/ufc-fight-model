@@ -597,6 +597,134 @@ MANUAL = {
     "Saimon Oliveira": "Grappler",
 }
 
+# --- Every other active fighter, 2026-09-29 -- ASSIGNED BY CLAUDE, not the user ---
+# The user asked Claude to categorize everyone they hadn't labeled, using the
+# same method as the bantamweight section above: reputation for well-known
+# fighters, UFC stat profile for newer ones, the user's own label vocabulary,
+# UFC.com's tag kept where it already fits. Applied BEFORE MANUAL, so any label
+# the user gives (now or later) always wins. A pre-change copy of
+# fighter_style.csv is at data/processed/fighter_style.before_claude_styles.csv.
+# Skipped: the middleweight Bruno Silva (same name as the user-labeled
+# flyweight one -- a name-keyed entry would hit both).
+CLAUDE_ASSIGNED = {
+    # Featherweight
+    "Aaron Pico": "Wrestle-Boxer", "Alberto Montes": "MMA", "Alexander Volkanovski": "Pressure Fighter",
+    "Aljamain Sterling": "Grappler", "Andre Fili": "MMA", "Arnold Allen": "Striker", "Austin Bashi": "Wrestler",
+    "Bogdan Grad": "Grappler", "Calvin Kattar": "Boxer", "Chepe Mariscal": "Brawler", "Christian Rodriguez": "MMA",
+    "Connor Matthews": "MMA", "Cub Swanson": "Aggressive Striker", "Damien Anderson": "MMA", "Daniel Pineda": "Grappler",
+    "Daniel Santos": "Muay Thai", "Danny Silva": "Boxer", "Darren Elkins": "Pressure Wrestler", "Dennis Buzukja": "Striker",
+    "Dooho Choi": "Power Striker", "Douglas Silva de Andrade": "Aggressive Striker", "Erik Silva": "MMA",
+    "Ezra Elliott": "Wrestler", "Felipe Lima": "MMA", "Fernando Padilla": "Aggressive Striker", "Gabriel Miranda": "Grappler",
+    "Gabriel Santos": "Wrestler", "Gaston Bolanos": "Kickboxer", "Gianni Vazquez": "MMA", "Giga Chikadze": "Kickboxer",
+    "Hyder Amil": "Aggressive Striker", "Isaac Dulgarian": "Wrestler", "Isaac Thomson": "MMA", "Jack Jenkins": "MMA",
+    "Jack Shore": "Grappler", "Jamall Emmers": "Aggressive MMA", "Javier Reyes": "Striker", "Jean Silva": "Aggressive Striker",
+    "Jeka Saragih": "Striker", "JeongYeong Lee": "MMA", "Jessie Rosas": "Grappler", "Joanderson Brito": "Explosive MMA",
+    "Jonathan Pearce": "Pressure Wrestler", "JooSang Yoo": "Striker", "Jose Aldo": "Kickboxer", "Jose Delano": "Volume Striker",
+    "Josh Emmett": "Power Striker", "Julian Erosa": "Brawler", "Kaan Ofli": "Grappler", "Keiichiro Nakamura": "Striker",
+    "Kevin Vallejos": "Aggressive Striker", "Kron Gracie": "Jiu-Jitsu", "Kurtis Campbell": "Wrestler",
+    "Lerone Murphy": "Technical Striker", "Lerryan Douglas": "Aggressive Striker", "Losene Keita": "Striker",
+    "Lucas Alexander": "Striker", "Lucas Almeida": "Striker", "Luke Riley": "Pressure Boxer", "Manolo Zecchini": "Striker",
+    "Marcio Barbosa": "Aggressive Striker", "Marwan Rahiki": "Aggressive Striker", "Melquizael Costa": "MMA",
+    "Melsik Baghdasaryan": "Kickboxer", "Miles Johns": "Boxer", "Mohammad Yahya": "MMA", "Morgan Charriere": "Aggressive Striker",
+    "Movsar Evloev": "Pressure Wrestler", "Muhammad Naimov": "MMA", "Murtazali Magomedov": "Grappler",
+    "Nathaniel Wood": "Pressure Fighter", "Ollie Schmid": "Striker", "Otari Tanzilovi": "Kickboxer", "Pat Sabatini": "Grappler",
+    "Pavel Andrusca": "Wrestler", "Ramon Taveras": "Striker", "Ricardo Ramos": "MMA", "Ricky Turcios": "MMA",
+    "Robert Ruchala": "MMA", "Rodrigo Vera": "MMA", "Ryan Kuse": "MMA", "Sean King III": "MMA", "Sean Woodson": "Rangy Striker",
+    "Sebastian Szalay": "Striker", "SeungWoo Choi": "Striker", "Shane Collins": "Grappler", "Steve Garcia": "Power Striker",
+    "Steven Nguyen": "Striker", "Tommy McMillen": "Volume Striker", "Victor Hugo": "MMA", "Vinicius Oliveira": "Aggressive Striker",
+    "Westin Wilson": "Grappler", "William Gomis": "Kickboxer", "Yadier del Valle": "Grappler", "Yair Rodriguez": "Dynamic Striker",
+    "Yizha": "MMA", "Youssef Zalal": "Grappler", "Zhu Kangjie": "Striker",
+    # Women's Flyweight
+    "Alexa Grasso": "Boxer", "Andrea Lee": "Muay Thai", "Anna Melisano": "MMA", "Ariane da Silva": "Muay Thai",
+    "Brogan Walker": "MMA", "Carli Judice": "Aggressive Striker", "Casey O'Neill": "Pressure Fighter",
+    "Diana Belbita": "Volume Striker", "Dione Barbosa": "Grappler", "Eduarda Moura": "Jiu-Jitsu", "Erin Blanchfield": "Grappler",
+    "Gabriella Fernandes": "Striker", "Ivana Petrovic": "MMA", "JJ Aldrich": "Striker", "Jamey-Lyn Horth": "Kickboxer",
+    "Jasmine Jasudavicius": "Pressure Grappler", "Jeisla Chaves": "MMA", "Juliana Miller": "Grappler",
+    "Julija Stoliarenko": "Grappler", "Karine Silva": "Grappler", "Lauren Murphy": "MMA", "Manon Fiorot": "Karate",
+    "Maycee Barber": "Pressure Fighter", "Melissa Gatto": "Aggressive MMA", "Miranda Maverick": "Grappler",
+    "Natalia Silva": "Taekwondo", "Ravena Oliveira": "MMA", "Rose Namajunas": "Technical Striker", "Tereza Bleda": "Wrestler",
+    "Tracy Cortez": "Wrestler", "Valentina Shevchenko": "Muay Thai", "Veronica Hardy": "MMA", "Viviane Araujo": "MMA",
+    "Wang Cong": "Kickboxer", "Yuneisy Duben": "MMA", "Zhang Weili": "Sanda",
+    # Welterweight (not on the user's welterweight list)
+    "Austin Vanderford": "Wrestler", "Bassil Hafez": "MMA", "Cam Nelson": "Wrestler", "Carlos Leal": "Brawler",
+    "Carlston Harris": "MMA", "Colby Covington": "Pressure Wrestler", "Court McGee": "Pressure Fighter",
+    "Daniel Frunza": "Muay Thai", "Ding Meng": "MMA", "Farman Hasanov": "Wrestler", "Geoff Neal": "Power Striker",
+    "Islam Dulatov": "Striker", "Islam Makhachev": "Sambo", "Jack Hermansson": "Pressure Fighter", "Jacobe Smith": "Explosive MMA",
+    "Jake Matthews": "Grappler", "Jared Gooden": "Brawler", "Joaquin Buckley": "Power Striker", "Jonathan Micallef": "MMA",
+    "Jose Souza": "MMA", "Khaos Williams": "Power Striker", "Leon Edwards": "Technical Striker", "Leon Shahbazyan": "MMA",
+    "Levan Chokheli": "Aggressive Striker", "Matthew Semelsberger": "Striker", "Max Griffin": "Kickboxer",
+    "Michael Chiesa": "Grappler", "Michael Morales": "Power Striker", "Michael Oliveira": "Kickboxer", "Mickey Gall": "Grappler",
+    "Mike Malott": "MMA", "Myktybek Orolbai": "Wrestler", "Niko Price": "Brawler", "Nikolay Veretennikov": "Striker",
+    "Oban Elliott": "MMA", "Phil Rowe": "Power Striker", "Preston Parsons": "Grappler", "Punahele Soriano": "Aggressive MMA",
+    "Sam Patterson": "MMA", "Santiago Ponzinibbio": "Aggressive Striker", "Saygid Izagakhmaev": "Sambo", "Sean Brady": "Grappler",
+    "Shavkat Rakhmonov": "Aggressive MMA", "Song Kenan": "Striker", "Stephen Thompson": "Karate", "Theodor Berggren": "MMA",
+    "Tim Means": "Muay Thai", "Ty Miller": "Aggressive Striker",
+    # Lightweight
+    "Anshul Jubli": "Aggressive Striker", "Austin Hubbard": "MMA", "Axel Sola": "Karate", "Beneil Dariush": "Grappler",
+    "Chase Hooper": "Grappler", "Clay Guida": "Pressure Wrestler", "Damian Rzepecki": "Wrestler", "Damon Jackson": "Grappler",
+    "Dustin Poirier": "Boxer", "Edson Barboza": "Muay Thai", "Elves Brener": "Aggressive MMA", "Evan Elder": "Striker",
+    "Francis Marshall": "Wrestler", "Guram Kutateladze": "Kickboxer", "Ismael Bonfim": "Muay Thai",
+    "Jamie Mullarkey": "Aggressive Striker", "Joe Solecki": "Grappler", "Jordan Vucenic": "MMA", "Kaue Fernandes": "Striker",
+    "Kurt Holobaugh": "MMA", "Lando Vannata": "Dynamic Striker", "Lucas Brennan": "Grappler", "Ludovit Klein": "MMA",
+    "Maheshate": "Striker", "Mark Choinski": "Wrestler", "Mason Jones": "Pressure Fighter", "Mateusz Gamrot": "Pressure Wrestler",
+    "Matheus Camilo": "Wrestler", "Michael Johnson": "Boxer", "Mike Davis": "MMA", "Milos Janicic": "Striker",
+    "Mitch Ramirez": "MMA", "Nikolas Motta": "Kickboxer", "Nurullo Aliev": "Wrestler", "Quillan Salkilld": "Explosive MMA",
+    "Rafael Fiziev": "Muay Thai", "Richie Miranda": "Wrestler", "Rolando Bedoya": "Volume Striker", "Sangwook Kim": "MMA",
+    "Shem Rock": "MMA", "Stan Dorsainvil": "Brawler", "Thiago Moises": "Grappler", "Viacheslav Borshchev": "Kickboxer",
+    "Vinc Pichel": "MMA", "Yanal Ashmouz": "Wrestler",
+    # Middleweight
+    "Abdul Razak Alhassan": "Power Striker", "Andre Muniz": "Grappler", "Antonio Trocoli": "MMA", "Armen Petrosyan": "Kickboxer",
+    "Bo Nickal": "Wrestler", "Brad Tavares": "MMA", "Caio Borralho": "MMA", "Cezary Oleksiejczuk": "Wrestler",
+    "Cody Brundage": "Wrestler", "Danny Barlow": "Striker", "Dylan Budka": "Wrestler", "Eryk Anders": "Power Striker",
+    "Gilbert Urbina": "Aggressive Striker", "Ihor Potieria": "Aggressive Striker", "Ikram Aliskerov": "Sambo",
+    "Jackson McVey": "Aggressive MMA", "Jose Daniel Medina": "MMA", "Julian Marquez": "Grappler", "Kamaru Usman": "Pressure Wrestler",
+    "Khamzat Chimaev": "Pressure Wrestler", "Luis Felipe Dias": "Striker", "Mansur Abdul-Malik": "Aggressive Striker",
+    "Michael Page": "Karate", "Michel Pereira": "Dynamic Striker", "Nassourdine Imavov": "Technical Striker", "Nick Klein": "Wrestler",
+    "Robert Bryczek": "Boxer", "Rodolfo Vieira": "Brazilian Jiu-Jitsu", "Ryan Loder": "Wrestler", "Torrez Finney": "Wrestler",
+    "Tre'ston Vines": "MMA", "Tresean Gore": "MMA", "Vicente Luque": "Aggressive MMA", "Yousri Belgaroui": "Kickboxer",
+    # Heavyweight
+    "Alexandr Romanov": "Wrestler", "Alvin Hines": "Striker", "Chris Barnett": "Brawler", "Derrick Lewis": "Brawler",
+    "Don'Tale Mayes": "Boxer", "Gokhan Saricam": "Boxer", "Guilherme Pat": "Striker", "Hamdy Abdelwahab": "Wrestler",
+    "Jailton Almeida": "Pressure Grappler", "Jairzinho Rozenstruik": "Kickboxer", "Jamal Pogues": "Boxer", "Jhonata Diniz": "Kickboxer",
+    "Jon Jones": "MMA", "Justin Tafa": "Power Striker", "Lukasz Brzeski": "Striker", "Marcin Tybura": "MMA", "Marek Bujlo": "Grappler",
+    "Mario Pinto": "Aggressive MMA", "Martin Buday": "MMA", "Max Gimenis": "MMA", "Mick Parkin": "MMA", "Mohammed Usman": "MMA",
+    "Robelis Despaigne": "Taekwondo", "Rodrigo Nascimento": "MMA", "Ryan Spann": "Aggressive MMA", "Sean Sharaf": "Brawler",
+    "Serghei Spivac": "Wrestler", "Shamil Gaziev": "MMA", "Stipe Miocic": "Wrestle-Boxer", "Tanner Boser": "Kickboxer",
+    # Flyweight
+    "Alibi Idiris": "Wrestler", "Allan Nascimento": "Grappler", "Andre Lima": "Kickboxer", "Asu Almabayev": "Pressure Grappler",
+    "Azat Maksum": "Wrestler", "Brandon Royval": "Aggressive MMA", "CJ Vergara": "Striker", "Carlos Hernandez": "MMA",
+    "Daniel Barez": "Striker", "Fabia Sintes": "Grappler", "Felipe Bunes": "Grappler", "Felipe dos Santos": "Muay Thai",
+    "HyunSung Park": "Aggressive MMA", "Jesus Aguilar": "MMA", "Jimmy Flick": "Grappler", "Jose Johnson": "MMA", "Kiru Sahota": "MMA",
+    "Lone'er Kavanagh": "Kickboxer", "Lucas Rocha": "Muay Thai", "Manel Kape": "Explosive Striker",
+    "Matheus Nicolau": "Technical Striker", "Namsrai Batbayar": "Striker", "Steve Erceg": "MMA", "Stewart Nicoll": "Wrestler",
+    "Tagir Ulanbekov": "Wrestler",
+    # Light Heavyweight
+    "Anthony Smith": "Aggressive MMA", "Austen Lane": "MMA", "Billy Elekana": "MMA", "Bruno Lopes": "Wrestler",
+    "Caio Machado": "Striker", "Carlos Ulberg": "Kickboxer", "Christian Edwards": "MMA", "Felipe Franco": "MMA",
+    "Ivan Erslan": "Boxer", "Jan Blachowicz": "Power Striker", "Jimmy Crute": "Grappler", "Jiri Prochazka": "Aggressive Striker",
+    "Julius Walker": "Wrestler", "Kevin Christian": "Striker", "Lucas Fernando": "Striker", "Magomed Gadzhiyasulov": "Wrestler",
+    "Marcin Prachnio": "Karate", "Navajo Stirling": "Kickboxer", "Nikita Krylov": "Aggressive MMA", "Oumar Sy": "MMA",
+    "Ovince Saint Preux": "MMA", "Paul Craig": "Grappler", "Rafael Cerqueira": "MMA", "Reinier de Ridder": "Grappler",
+    "Tuco Tokkos": "Grappler",
+    # Women's Bantamweight
+    "Bia Mesquita": "Grappler", "Hailey Cowan": "Wrestler", "Irina Alekseeva": "MMA", "Jacqueline Cavalcanti": "Striker",
+    "Joselyne Edwards": "Striker", "Julia Avila": "MMA", "Karol Rosa": "Muay Thai", "Kayla Harrison": "Judo", "Ketlen Vieira": "Judo",
+    "Luana Carolina": "Muay Thai", "Luana Santos": "Judo", "Macy Chiasson": "MMA", "Mayra Bueno Silva": "Grappler",
+    "Melissa Croden": "MMA", "Melissa Mullins": "MMA", "Michelle Montague": "Wrestler", "Miesha Tate": "Wrestler",
+    "Montse Rendon": "MMA", "Nora Cornolle": "Muay Thai", "Priscila Cachoeira": "Brawler", "Raquel Pennington": "Pressure Fighter",
+    "Tainara Lisboa": "Muay Thai", "Tamires Vidal": "Brazilian Jiu-Jitsu",
+    # Women's Strawweight
+    "Alexia Thainara": "Grappler", "Angela Hill": "Muay Thai", "Carol Foro": "Karate", "Delphine Benouaich": "Brawler",
+    "Gigi Canuto": "Grappler", "Gillian Robertson": "Grappler", "Jaqueline Amorim": "Grappler", "Julia Polastri": "Striker",
+    "Karolina Kowalkiewicz": "Muay Thai", "Ketlen Souza": "Boxer", "Loma Lookboonmee": "Muay Thai", "Luana Pinheiro": "Judo",
+    "Mackenzie Dern": "Brazilian Jiu-Jitsu", "Mizuki": "Karate", "Nicolle Caliari": "MMA", "Polyana Viana": "Jiu-Jitsu",
+    "Sam Hughes": "Pressure Fighter", "Shanelle Dyer": "Muay Thai", "Talita Alencar": "Grappler",
+    "Vanessa Demopoulos": "Jiu-Jitsu", "Virna Jandiroba": "Grappler",
+    # Catch weight (last fight at a catchweight)
+    "Brian Ortega": "Jiu-Jitsu", "Chris Weidman": "Wrestler", "Eduardo Chapolin": "MMA", "Ernesta Kareckaite": "Striker",
+    "James Llontop": "Striker", "Matt Schnell": "Brazilian Jiu-Jitsu", "Tim Elliott": "Wrestler",
+}
+
 # Rare escape hatch for a duplicate fighters.csv name where the two real
 # people are genuinely different (load_fights.py's own docstring names
 # this exact pair as its example) -- name-only matching in MANUAL above
@@ -616,7 +744,8 @@ def main():
 
     set_count, cleared, inserted, not_found = 0, 0, 0, []
     new_rows = []
-    for name, style in MANUAL.items():
+    # Claude's assignments first; the user's own MANUAL labels win on any overlap.
+    for name, style in {**CLAUDE_ASSIGNED, **MANUAL}.items():
         mask = df["name"] == name
         if mask.any():
             df.loc[mask, "style"] = style
