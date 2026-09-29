@@ -262,23 +262,12 @@ def export_fighters():
     # left untouched -- see that module's docstring for why. Degrades to a
     # no-op if the scraper hasn't run yet (prefight_history.csv missing) or
     # this fighter has no pre-UFC record on file, same as before this existed.
-    prefight_history_path = PROCESSED_DIR / "prefight_history.csv"
-    priors_path = PROCESSED_DIR / "population_priors.json"
-    if prefight_history_path.exists() and priors_path.exists():
-        prefight_history = pd.read_csv(prefight_history_path, parse_dates=["event_date"])
-        with open(priors_path) as f:
-            population_priors = json.load(f)
-        debut_snapshots = build_debut_snapshots(prefight_history, population_priors, pd.Timestamp(datetime.now().date()))
-        for fid, snap in debut_snapshots.items():
-            mask = (df["fighter_id"] == fid) & df["elo"].isna()
-            if not mask.any():
-                continue
-            df.loc[mask, "fights_entering"] = snap["fights_entering"]
-            df.loc[mask, "win_pct_entering"] = snap["win_pct_entering"]
-            df.loc[mask, "finish_rate_entering"] = snap["finish_rate_entering"]
-            df.loc[mask, "current_streak_entering"] = snap["current_streak_entering"]
-            if pd.notna(snap["last_fight_date"]):
-                df.loc[mask, "last_fight_epoch_days"] = (pd.Timestamp(snap["last_fight_date"]) - epoch).days
+    # 2026-09-29: NO LONGER applied. The pre-UFC record used to be baked into
+    # these model-input fields, which fed a 6-0 regional debut to the model as
+    # a 6-fight UFC veteran (never seen in training). Debuts are now modeled
+    # exactly as in training (engine.js buildWinFeats / predict.py
+    # build_feature_row, using payload["debut_priors"]); the pre-UFC record is
+    # still exported for display via _prefight_records_payload().
 
     # Model-input fields are exported at full precision, not r()'s 6 sig figs:
     # predict.py reads them unrounded, and rounding alone can flip an XGBoost
@@ -843,6 +832,10 @@ def main():
         },
         "blend_weight": 0.9,
         "method_priors": method_priors,
+        # A UFC debut's win/finish rate as the model saw it in training (the
+        # population prior) -- engine.js buildWinFeats, same as predict.py.
+        "debut_priors": {k: v for k, v in json.load(open(PROCESSED_DIR / "population_priors.json")).items()
+                         if k in ("win_pct", "finish_rate")},
         "feature_cols": [f"{c}_diff" for c in FEATURE_COLS],
         "alignment_cols": ALIGNMENT_COLS,
     }

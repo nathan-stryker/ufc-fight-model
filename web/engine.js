@@ -191,9 +191,12 @@ function buildWinFeats(f, todayDays) {
     feats.current_streak_entering = f.current_streak_entering === null ? NaN : f.current_streak_entering;
     feats.layoff_days_entering = f.last_fight_epoch_days != null ? todayDays - f.last_fight_epoch_days : NaN;
   } else {
+    // A UFC debut, exactly as training saw one (see predict.py
+    // build_feature_row): win/finish rate AT the population prior, not NaN.
+    const priors = (typeof MODEL_DATA !== "undefined" && MODEL_DATA.debut_priors) || {};
     feats.fights_entering = 0;
-    feats.win_pct_entering = NaN;
-    feats.finish_rate_entering = NaN;
+    feats.win_pct_entering = priors.win_pct !== undefined ? priors.win_pct : NaN;
+    feats.finish_rate_entering = priors.finish_rate !== undefined ? priors.finish_rate : NaN;
     feats.current_streak_entering = 0;
     feats.layoff_days_entering = NaN;
   }

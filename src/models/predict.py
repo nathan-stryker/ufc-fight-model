@@ -29,7 +29,6 @@ from xgboost import XGBClassifier
 
 from src.features.elo import BASE_RATING
 from src.features.method_features import METHODS, build_method_extras, matchup_division_context
-from src.features.prefight_snapshot import build_debut_snapshots
 from src.models.evaluate import XGB_BLEND_WEIGHT, blend_with_elo_baseline
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
@@ -97,37 +96,27 @@ DEBUT_DEFAULTS = {
 }
 
 
-def build_feature_row(fighter_row, snapshot: pd.DataFrame, as_of: pd.Timestamp, debut_snapshots: dict = None) -> dict:
+def build_feature_row(fighter_row, snapshot: pd.DataFrame, as_of: pd.Timestamp, debut_priors: dict = None) -> dict:
     fid = fighter_row["fighter_id"]
     snap = snapshot[snapshot["fighter_id"] == fid]
 
     if len(snap) == 0:
+        # A UFC debut is fed to the model exactly as build_features.py
+        # represented every debut in training: 0 fights, win/finish rate AT
+        # the population prior (shrinkage of 0/0), streak 0, no layoff, no
+        # strike stats. Their pre-UFC regional record is deliberately NOT used
+        # as model input any more (it's still shown on the site): it used to
+        # be fed in as if it were UFC experience, so a 6-0 regional debut
+        # looked like a 6-fight UFC veteran -- a record the model never saw a
+        # debut have in training. User flagged Wint (1-0 UFC) vs Armand (6-0
+        # regional, UFC debut) crediting Armand for "UFC experience",
+        # 2026-09-29.
         feats = dict(DEBUT_DEFAULTS)
-        debut_snap = (debut_snapshots or {}).get(fid)
-        if debut_snap:
-            # Real pre-UFC record (see src.features.prefight_snapshot) --
-            # only overrides the experience/record fields; elo stays at
-            # BASE_RATING (a regional record isn't on a UFC-calibrated Elo
-            # scale) and the strike/grappling stats stay NaN (not available
-            # from non-UFC promotions).
-            print(
-                f"  note: no UFC fight history found for {fighter_row['name']} -- "
-                f"using their {debut_snap['fights_entering']} pre-UFC fight(s) from "
-                f"other promotions instead (record-based stats only; still no "
-                f"strike/grappling data or UFC-calibrated Elo for this fighter)."
-            )
-            feats["fights_entering"] = debut_snap["fights_entering"]
-            feats["win_pct_entering"] = debut_snap["win_pct_entering"]
-            feats["finish_rate_entering"] = debut_snap["finish_rate_entering"]
-            feats["current_streak_entering"] = debut_snap["current_streak_entering"]
-            feats["layoff_days_entering"] = debut_snap["layoff_days_entering"]
-        else:
-            print(
-                f"  note: no fight history found for {fighter_row['name']} -- "
-                f"treating as a debut (base Elo, no rolling-form stats). Prediction "
-                f"will lean heavily on physical attributes for this fighter."
-            )
-            feats["layoff_days_entering"] = np.nan
+        if debut_priors:
+            feats["win_pct_entering"] = debut_priors["win_pct"]
+            feats["finish_rate_entering"] = debut_priors["finish_rate"]
+        feats["layoff_days_entering"] = np.nan
+        print(f"  note: {fighter_row['name']} is a UFC debut -- modeled as a debut (base Elo, league-average record).")
     else:
         snap = snap.iloc[0]
         feats = {f: snap[f] for f in SNAPSHOT_FIELDS}
@@ -205,19 +194,12 @@ def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as
     with open(PROCESSED_DIR / "method_priors.json") as f:
         method_priors = json.load(f)
 
-    # Optional: real pre-UFC record for debut fighters (see
-    # src.data.scrape_prefight_history / src.features.prefight_snapshot).
-    # Both degrade gracefully to "no data" if they don't exist yet (e.g. a
-    # fresh checkout that hasn't run the new scraper step) -- same
-    # "omit, don't guess" fallback debut fighters already had before this.
-    prefight_history_path = PROCESSED_DIR / "prefight_history.csv"
+    # Population priors: a debut's win/finish rate in training (see build_feature_row).
     priors_path = PROCESSED_DIR / "population_priors.json"
-    debut_snapshots = {}
-    if prefight_history_path.exists() and priors_path.exists():
-        prefight_history = pd.read_csv(prefight_history_path, parse_dates=["event_date"])
+    debut_priors = None
+    if priors_path.exists():
         with open(priors_path) as f:
-            population_priors = json.load(f)
-        debut_snapshots = build_debut_snapshots(prefight_history, population_priors, as_of)
+            debut_priors = json.load(f)
     with open(ARTIFACTS_DIR / "feature_cols.json") as f:
         win_feature_cols = json.load(f)
     with open(ARTIFACTS_DIR / "method_feature_cols.json") as f:
@@ -228,8 +210,8 @@ def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as
         round_feature_cols = json.load(f)
 
     # --- win probability (same as before) ---
-    feats_a = build_feature_row(a, snapshot, as_of, debut_snapshots)
-    feats_b = build_feature_row(b, snapshot, as_of, debut_snapshots)
+    feats_a = build_feature_row(a, snapshot, as_of, debut_priors)
+    feats_b = build_feature_row(b, snapshot, as_of, debut_priors)
     base_cols = [c[:-len("_diff")] for c in win_feature_cols]
     row_ab = {f"{c}_diff": feats_a[c] - feats_b[c] for c in base_cols}
     row_ba = {f"{c}_diff": feats_b[c] - feats_a[c] for c in base_cols}
