@@ -27,6 +27,18 @@ TRAIN_CUTOFF = "2022-01-01"
 TEST_CUTOFF = "2024-01-01"
 
 
+# A longer reach can only help, never hurt (+1 = win probability non-decreasing
+# in reach_in_diff). Unconstrained, the trees learned a jagged reach effect: on
+# 13.2% of 2024+ holdout fights, +2in of reach LOWERED the win probability, and
+# the Breakdown credited "Reach" to the shorter-reach fighter (Wint 78in vs
+# Armand 76in, flagged by the user 2026-09-29). Holdout with the constraint:
+# log loss 0.6446 vs 0.6452, AUC 0.6786 vs 0.6771, accuracy 63.8% vs 64.0%
+# (4 fights of 2574) -- no worse. Also constraining elo/win_pct added nothing
+# clear, so reach only. src.models.tune doesn't apply this; fine since it only
+# picks tree hyperparameters.
+MONOTONE_CONSTRAINTS = {"reach_in_diff": 1}
+
+
 def load_splits():
     df = pd.read_csv(PROCESSED_DIR / "model_features.csv", parse_dates=["event_date"])
     # Explicitly FEATURE_COLS-driven, not "every _diff column in the CSV" --
@@ -91,6 +103,7 @@ def main():
         early_stopping_rounds=30,
         missing=float("nan"),
         random_state=42,
+        monotone_constraints=tuple(MONOTONE_CONSTRAINTS.get(c, 0) for c in feature_cols),
         **tuned_params,
     )
     model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
