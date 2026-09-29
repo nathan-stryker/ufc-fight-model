@@ -87,6 +87,9 @@ MANUAL = {
     "Roberto Soldic": {"reach_in": 74.0, "stance": "Southpaw"},
     "Lucas Armand": {"height_in": 76.0, "reach_in": 76.0, "stance": "Orthodox"},  # 6'4" user-supplied
     "Bruce Whitehead": {"reach_in": 74.0, "stance": "Orthodox"},
+    # Stance user-supplied (2026-09-29); user also confirmed our DOB
+    # (1995-09-14) over Sherdog's 1995-01-14.
+    "Anthony Wint": {"stance": "Orthodox"},
 }
 
 
@@ -103,6 +106,8 @@ REPLACE = {
     # UFCStats 1991-05-04; Sherdog 1992-05-04 and UFC.com's "34" agree on
     # 1992 (UFC 332 card audit, 2026-09-28).
     "Roman Kopylov": {"dob": "1992-05-04"},
+    # UFCStats 70.0 vs UFC.com 72.0 -- user chose 6'0" (2026-09-29).
+    "Ismail Naurdiev": {"height_in": 72.0},
 }
 
 

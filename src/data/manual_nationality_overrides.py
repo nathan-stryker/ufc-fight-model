@@ -240,6 +240,9 @@ MANUAL = {
     # Hasanov) is American, as UFC.com's card also lists him. Third element
     # replaces the wrong Sherdog URL. (UFC 332 card audit, 2026-09-28.)
     "Eric Nolan": ("United States", "US", "https://www.sherdog.com/fighter/Eric-Nolan-346419"),
+    # Sherdog lists Austria; UFC.com's card lists Morocco -- user chose
+    # Morocco (2026-09-29).
+    "Ismail Naurdiev": ("Morocco", "MA"),
 }
 
 
