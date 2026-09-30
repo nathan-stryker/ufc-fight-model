@@ -416,22 +416,21 @@ MANUAL_CARDS = {
     "UFC 332": {
         "main_card": 5,
         "order": [
+            # Full running order from the user, 2026-09-30 (top of the card first).
             ("Natalia Silva", "Wang Cong"),
             ("Deiveson Figueiredo", "Payton Talbott"),
-            ("Ateba Gautier", "Roman Kopylov"),
             ("King Green", "Esteban Ribovics"),
             ("Khaos Williams", "Roberto Soldic"),
-            # Featured prelim -- user, 2026-09-30 (was Walker vs Parkin).
-            ("Imanol Rodriguez", "Alden Coria"),
-            ("Johnny Walker", "Mick Parkin"),
+            ("Ateba Gautier", "Roman Kopylov"),
+            ("Imanol Rodriguez", "Alden Coria"),  # featured prelim
             ("Damian Pinas", "Andrey Pulyaev"),
-            ("Marvin Vettori", "Ismail Naurdiev"),
-            ("Rafael Dos Anjos", "Alexander Hernandez"),
             ("Marcus McGhee", "Benardo Sopaj"),
             ("Anthony Wint", "Lucas Armand"),
+            ("Johnny Walker", "Mick Parkin"),
+            ("Rafael Dos Anjos", "Alexander Hernandez"),
+            ("Marvin Vettori", "Ismail Naurdiev"),
             ("Jacobe Smith", "Bruce Whitehead"),
-            # Opener -- user, 2026-09-30 (UFC.com lists it last too).
-            ("Court McGee", "Eric Nolan"),
+            ("Court McGee", "Eric Nolan"),  # opener
         ],
         "added": {
             # Welterweight, reported by MMA Mania / MMA Sucka (2026-09-27).
