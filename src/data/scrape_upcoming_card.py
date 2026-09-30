@@ -421,15 +421,17 @@ MANUAL_CARDS = {
             ("Ateba Gautier", "Roman Kopylov"),
             ("King Green", "Esteban Ribovics"),
             ("Khaos Williams", "Roberto Soldic"),
-            ("Johnny Walker", "Mick Parkin"),
+            # Featured prelim -- user, 2026-09-30 (was Walker vs Parkin).
             ("Imanol Rodriguez", "Alden Coria"),
+            ("Johnny Walker", "Mick Parkin"),
             ("Damian Pinas", "Andrey Pulyaev"),
-            ("Court McGee", "Eric Nolan"),
             ("Marvin Vettori", "Ismail Naurdiev"),
             ("Rafael Dos Anjos", "Alexander Hernandez"),
             ("Marcus McGhee", "Benardo Sopaj"),
             ("Anthony Wint", "Lucas Armand"),
             ("Jacobe Smith", "Bruce Whitehead"),
+            # Opener -- user, 2026-09-30 (UFC.com lists it last too).
+            ("Court McGee", "Eric Nolan"),
         ],
         "added": {
             # Welterweight, reported by MMA Mania / MMA Sucka (2026-09-27).
