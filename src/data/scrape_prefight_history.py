@@ -149,6 +149,9 @@ MANUAL_SHERDOG_URLS = {
     # Sherdog spells him "Bernardo Sopai"; DOB 2000-09-25 and his three UFC
     # fights match ours (UFC 332 audit, 2026-09-29).
     "benardo sopaj": "https://www.sherdog.com/fighter/Bernardo-Sopai-226661",
+    # Anthony "The Bully" Romero (Blackhouse MMA, 145, 7-2), UFC 332 debut --
+    # not "The Genius" (Anthony-Romero-221129, Canadian, 155).
+    "anthony romero": "https://www.sherdog.com/fighter/Anthony-Romero-211489",
 }
 
 

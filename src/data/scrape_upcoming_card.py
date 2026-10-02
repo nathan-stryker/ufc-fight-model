@@ -358,6 +358,15 @@ def _bout_division(weight_class):
     return re.sub(r"^women's\s+", "", weight_class, flags=re.IGNORECASE).strip()
 
 
+# Card name -> the exact UFCStats fighter_id, for a card name shared by more
+# than one fighters.csv row where weight class alone can't be trusted to pick.
+MANUAL_FIGHTER_IDS = {
+    # UFC 332: Anthony "The Bully" Romero (145, US), not the Canadian Anthony
+    # "The Genius" Romero (155) -- user, confirmed via Sherdog (2026-10-02).
+    "anthony romero": "http://ufcstats.com/fighter-details/4419acb81e6f0ea4",
+}
+
+
 def match_fighter_ids(bouts):
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv")
     by_norm_name = {}
@@ -369,7 +378,9 @@ def match_fighter_ids(bouts):
             key = normalize_name(b[side])
             key = NAME_ALIASES.get(key, key)
             candidates = by_norm_name.get(key, [])
-            if len(candidates) == 1:
+            if key in MANUAL_FIGHTER_IDS:
+                fid = MANUAL_FIGHTER_IDS[key]
+            elif len(candidates) == 1:
                 fid = candidates[0][0]
             elif len(candidates) > 1:
                 # Same real-world case this fixes in load_data.py's
@@ -424,7 +435,7 @@ MANUAL_CARDS = {
             ("Ateba Gautier", "Roman Kopylov"),
             ("Imanol Rodriguez", "Alden Coria"),  # featured prelim
             ("Damian Pinas", "Andrey Pulyaev"),
-            ("Marcus McGhee", "Benardo Sopaj"),
+            ("Marcus McGhee", "Anthony Romero"),  # replaced Benardo Sopaj (user, 2026-10-02)
             ("Anthony Wint", "Lucas Armand"),
             ("Johnny Walker", "Mick Parkin"),
             ("Rafael Dos Anjos", "Alexander Hernandez"),

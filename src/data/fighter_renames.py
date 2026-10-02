@@ -23,7 +23,11 @@ OLD_NAME_TO_ID = {
 
 def fighter_mask(df, name):
     """Boolean mask over a frame with name/fighter_id columns: rows for this
-    fighter by exact name, else by their known fighter_id after a rename."""
+    fighter by exact name, else by their known fighter_id after a rename.
+    A key that IS a UFCStats fighter URL matches that fighter_id directly --
+    for two fighters sharing a name (the two Anthony Romeros, 2026-10-02)."""
+    if name.startswith(UFCSTATS):
+        return df["fighter_id"] == name
     mask = df["name"] == name
     if not mask.any() and name in OLD_NAME_TO_ID:
         mask = df["fighter_id"] == OLD_NAME_TO_ID[name]

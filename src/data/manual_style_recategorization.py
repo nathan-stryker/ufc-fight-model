@@ -747,6 +747,9 @@ MANUAL_BY_ID = {
     "http://ufcstats.com/fighter-details/294aa73dbf37d281": "Aggressive MMA",
     # The 185 lbs (middleweight) Bruno Silva -- user-supplied (2026-09-29).
     "http://ufcstats.com/fighter-details/12ebd7d157e91701": "Pressure Striker",
+    # Anthony "The Bully" Romero, UFC 332 debut (not the Canadian "The Genius"
+    # Romero also in fighters.csv) -- user-supplied (2026-10-02).
+    "http://ufcstats.com/fighter-details/4419acb81e6f0ea4": "Pressure Fighter",
 }
 
 

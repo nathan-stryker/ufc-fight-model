@@ -243,6 +243,10 @@ MANUAL = {
     # Sherdog lists Austria; UFC.com's card lists Morocco -- user chose
     # Morocco (2026-09-29).
     "Ismail Naurdiev": ("Morocco", "MA"),
+    # Anthony "The Bully" Romero (UFC 332 debut vs. Marcus McGhee) -- keyed by
+    # fighter_id: a different, Canadian Anthony "The Genius" Romero is also in
+    # fighters.csv. User-supplied US; Sherdog agrees (2026-10-02).
+    "http://ufcstats.com/fighter-details/4419acb81e6f0ea4": ("United States", "US"),
 }
 
 
@@ -290,7 +294,7 @@ def main():
             applied += 1
             continue
         new_rows.append({
-            "fighter_id": fmatch.iloc[0]["fighter_id"], "name": name,
+            "fighter_id": fmatch.iloc[0]["fighter_id"], "name": fmatch.iloc[0]["name"],
             "sherdog_url": "manual", "nationality": nat, "iso_code": iso,
         })
         inserted += 1
