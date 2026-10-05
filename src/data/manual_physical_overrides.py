@@ -90,6 +90,8 @@ MANUAL = {
     # Stance user-supplied (2026-09-29); user also confirmed our DOB
     # (1995-09-14) over Sherdog's 1995-01-14.
     "Anthony Wint": {"stance": "Orthodox"},
+    # UFC Fight Night 290, user-supplied (2026-10-05).
+    "Allen Frye Jr.": {"stance": "Orthodox"},
 }
 
 
@@ -108,6 +110,10 @@ REPLACE = {
     "Roman Kopylov": {"dob": "1992-05-04"},
     # UFCStats 70.0 vs UFC.com 72.0 -- user chose 6'0" (2026-09-29).
     "Ismail Naurdiev": {"height_in": 72.0},
+    # UFC Fight Night 290 audit, user-supplied (2026-10-05): ours 74 vs UFC.com 77.
+    "Leon Shahbazyan": {"reach_in": 74.5},
+    # UFCStats 1996-09-08 vs Sherdog 1996-08-09 (day/month swap) -- user chose Aug 9.
+    "Brendson Ribeiro": {"dob": "1996-08-09"},
 }
 
 
