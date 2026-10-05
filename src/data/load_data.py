@@ -207,6 +207,25 @@ RAW_FIGHTER_NAME_ALIASES = {
     # user after the site showed him 0-1 in the UFC instead of his real
     # 1-2 (2026-09-14).
     "Patricio Freire": "Patricio Pitbull",
+    # Found by the UFC Fight Night 290 card audit (2026-10-05): 9 more UFC
+    # fights silently dropped by spelling variants. Each checked against
+    # Sherdog's fight list for that fighter.
+    "Kai Kamaka": "Kai Kamaka III",              # 4 fights 2020-21 (Kelley, Pearce, TJ Brown, Chavez draw)
+    "Rafael Cerquiera": "Rafael Cerqueira",      # misspelled; 3 fights incl. Julius Walker's 2025 win
+    "Bibulatov Magomed": "Magomed Bibulatov",    # surname-first; 3 fights 2017-19
+}
+
+# A raw fight row whose name matches two same-named fighters and the bout's
+# weight class can't tell them apart (e.g. a catchweight or a one-off
+# division change). (raw name, event date) -> the right fighter_id, each
+# confirmed against Sherdog / fight reports.
+RAW_FIGHT_FIGHTER_IDS = {
+    # Featherweight Jean Silva (b. 1996) beat Drew Dober at lightweight,
+    # 2024-07-13 -- Sherdog lists it on his record.
+    ("Jean Silva", "2024-07-13"): "http://ufcstats.com/fighter-details/52ef95b5860fb28c",
+    # UFC 243 vs Khalid Taha (137 lb catchweight, later overturned to NC) was
+    # Bruno Gustavo da Silva -- the 125 lb Bruno Silva, not the middleweight.
+    ("Bruno Silva", "2019-10-05"): "http://ufcstats.com/fighter-details/294aa73dbf37d281",
 }
 
 
@@ -254,7 +273,11 @@ def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
         for name, group in named[named["name"].isin(dupe_names)].groupby("name")
     }
 
-    def resolve_id(name, weightclass):
+    def resolve_id(name, weightclass, event_date=None):
+        if event_date is not None and pd.notna(event_date):
+            pinned = RAW_FIGHT_FIGHTER_IDS.get((name, pd.Timestamp(event_date).strftime("%Y-%m-%d")))
+            if pinned:
+                return pinned
         name = RAW_FIGHTER_NAME_ALIASES.get(name, name)
         if name in unique_map.index:
             return unique_map[name]
@@ -264,8 +287,8 @@ def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
         matches = [fid for fid, div in candidates if div == weightclass]
         return matches[0] if len(matches) == 1 else np.nan
 
-    fights["fighter_1_id"] = [resolve_id(n, w) for n, w in zip(fights["fighter_1_name"], fights["weightclass"])]
-    fights["fighter_2_id"] = [resolve_id(n, w) for n, w in zip(fights["fighter_2_name"], fights["weightclass"])]
+    fights["fighter_1_id"] = [resolve_id(n, w, d) for n, w, d in zip(fights["fighter_1_name"], fights["weightclass"], fights["event_date"])]
+    fights["fighter_2_id"] = [resolve_id(n, w, d) for n, w, d in zip(fights["fighter_2_name"], fights["weightclass"], fights["event_date"])]
 
     outcome_split = fights["OUTCOME"].str.split("/", expand=True)
     fights["result_1"] = outcome_split[0]
