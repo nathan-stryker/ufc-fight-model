@@ -85,14 +85,19 @@ function _canonicalStyle(style) {
 // after adding Omar Morales's style, because Omar Morales himself isn't
 // on the active roster). `fights` carries the actual matching bouts so a
 // caller can list them, not just show a bare tally.
-function recordVsStyle(fighterId, opponentStyle, fighterHistory) {
+// styleIndex picks which of the opponent's style fields to compare: 7 = the
+// single hand/Claude label (default), 8 = striking style, 9 = grappling
+// style (src/features/fighting_axes.py, 2026-10-05).
+function recordVsStyle(fighterId, opponentStyle, fighterHistory, styleIndex = 7) {
   if (!opponentStyle) return null;
   const history = fighterHistory && fighterHistory[fighterId];
   if (!history || !history.length) return null;
   let wins = 0, losses = 0;
   const fights = [];
   const targetStyle = _canonicalStyle(opponentStyle);
-  for (const [oppId, outcome, method, round, event, eventDate, opponentName, oppStyle] of history) {
+  for (const entry of history) {
+    const [oppId, outcome, method, round, event, eventDate, opponentName] = entry;
+    const oppStyle = entry[styleIndex];
     if (!oppStyle) continue;
     if (_canonicalStyle(oppStyle) !== targetStyle) continue;
     if (outcome === "W") wins++; else losses++;

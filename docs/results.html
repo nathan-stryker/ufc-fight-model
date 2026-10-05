@@ -828,6 +828,11 @@
   }
   .style-tag-row:last-child { border-bottom: none; }
   .style-tag-row .factor-label { font-size: 0.8rem; }
+  /* Striking + grappling chips (explain.js fightingStylesHtml), with the
+     fighter's single label as a dimmer "background" chip. */
+  .style-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: flex-end; align-items: center; }
+  .fc-style-bg { opacity: 0.6; border-style: dashed; }
+  .fc-style-note { font-size: 0.62rem; color: var(--ink-dim); }
   /* Record vs. opponent's style -- reuses .debut-fight-row (below) for the
      actual fight list so a visitor doesn't learn two different "fight
      history row" visual languages on the same site. */

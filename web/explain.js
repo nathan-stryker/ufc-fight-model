@@ -309,6 +309,89 @@ function dataGapHtml(fighterA, fighterB, model) {
   return notes.length ? `<div class="data-gap-note">Data gap: ${notes.map(escHtml).join(" ")}</div>` : "";
 }
 
+// ---------------------------------------------------------------------------
+// Two-axis fighting style (striking + grappling), shared by both pages
+// ---------------------------------------------------------------------------
+// strike_style / grapple_style come from src/features/fighting_axes.py (UFC
+// career stats vs the fighter's own division, >= 3 UFC fights). Fighters
+// below that fall back to their single hand/Claude "style" label.
+const STRIKE_LABEL = {
+  Power: ["Power Striker", "Power Strikers"], Pressure: ["Pressure Striker", "Pressure Strikers"],
+  Volume: ["Volume Striker", "Volume Strikers"], Counter: ["Counter Striker", "Counter Strikers"],
+  Technical: ["Technical Striker", "Technical Strikers"], Balanced: ["Balanced Striker", "Balanced Strikers"],
+  Minimal: ["Minimal Striking", "fighters with minimal striking"],
+};
+const GRAPPLE_LABEL = {
+  Wrestler: ["Wrestler", "Wrestlers"], Submission: ["Submission Grappler", "Submission Grapplers"],
+  "Takedown Defense": ["Takedown Defender", "Takedown Defenders"], Balanced: ["Balanced Grappler", "Balanced Grapplers"],
+  Minimal: ["Minimal Grappling", "fighters with minimal grappling"],
+};
+
+// One-line style for a fighter: "Volume Striker · Wrestler", else their label.
+function styleSummary(f) {
+  if (!f) return null;
+  if (f.strike_style && f.grapple_style) return `${STRIKE_LABEL[f.strike_style][0]} · ${GRAPPLE_LABEL[f.grapple_style][0]}`;
+  return f.style || null;
+}
+
+function _styleChip(text) {
+  return text ? `<div class="fc-style mono">${escHtml(text)}</div>` : "";
+}
+
+// "Fighting Styles" tape: each fighter's striking and grappling style, plus
+// their single label as a smaller "background" tag when they have both.
+function fightingStylesHtml(fA, fB, nameA, nameB) {
+  const rows = [[fA, nameA], [fB, nameB]].filter(([f]) => f && (f.strike_style || f.style)).map(([f, name]) => {
+    const chips = f.strike_style
+      ? _styleChip(STRIKE_LABEL[f.strike_style][0]) + _styleChip(GRAPPLE_LABEL[f.grapple_style][0]) +
+        (f.style ? `<div class="fc-style fc-style-bg mono">${escHtml(f.style)}</div>` : "")
+      : _styleChip(f.style) + `<div class="fc-style-note">fewer than 3 UFC fights</div>`;
+    return `<div class="style-tag-row"><div class="factor-label">${escHtml(name)}</div><div class="style-chips">${chips}</div></div>`;
+  });
+  return rows.length ? `<div class="tape"><div class="tape-title"><span>Fighting Styles</span></div>${rows.join("")}</div>` : "";
+}
+
+function _fightRowHtml(f) {
+  const parts = [];
+  if (f.method) parts.push(f.method);
+  if (f.round) parts.push(`R${f.round}`);
+  if (f.event) parts.push(f.event);
+  if (f.eventDate) parts.push(epochOrIsoMonthYear(f.eventDate));
+  return `<div class="debut-fight-row"><span class="debut-fight-result ${f.outcome === "W" ? "win" : "loss"}">${f.outcome}</span>` +
+    `<span class="debut-fight-body"><span class="debut-fight-opp">${f.outcome === "W" ? "def." : "lost to"} ${escHtml(f.opponentName || "")}</span>` +
+    `<span class="debut-fight-detail mono">${escHtml(parts.join(" · "))}</span></span></div>`;
+}
+
+function epochOrIsoMonthYear(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}
+
+function _styleRecordBlock(name, vsText, rec) {
+  if (!rec) return "";
+  return `<div class="style-record-block"><div class="style-record-summary">${escHtml(name)}: ${rec.wins}-${rec.losses} vs ${escHtml(vsText)} ` +
+    `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span></div>` +
+    rec.fights.map(_fightRowHtml).join("") + "</div>";
+}
+
+// Each fighter's record vs the OTHER's striking style and grappling style
+// (or vs their single label when the opponent has no axes yet).
+function styleRecordSectionHtml(fA, fB, nameA, nameB, model) {
+  const hist = model.fighter_history;
+  const blocks = [];
+  for (const [me, opp, myName] of [[fA, fB, nameA], [fB, fA, nameB]]) {
+    if (!me || !opp) continue;
+    if (opp.strike_style) {
+      blocks.push(_styleRecordBlock(myName, STRIKE_LABEL[opp.strike_style][1], recordVsStyle(me.fighter_id, opp.strike_style, hist, 8)));
+      blocks.push(_styleRecordBlock(myName, GRAPPLE_LABEL[opp.grapple_style][1], recordVsStyle(me.fighter_id, opp.grapple_style, hist, 9)));
+    } else if (opp.style) {
+      blocks.push(_styleRecordBlock(myName, opp.style, recordVsStyle(me.fighter_id, opp.style, hist, 7)));
+    }
+  }
+  const body = blocks.join("");
+  return body ? `<div class="tape"><div class="tape-title"><span>Record vs. Opponent's Style</span></div>${body}</div>` : "";
+}
+
 // "Raul Rosas Jr." -> "Rosas Jr.", "Raoni Barcelos" -> "Barcelos", mononyms
 // unchanged -- for compact "A vs B" section labels.
 const NAME_SUFFIXES = new Set(["Jr.", "Jr", "Sr.", "Sr", "II", "III", "IV"]);

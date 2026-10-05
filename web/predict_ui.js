@@ -85,7 +85,7 @@
     if (f.height_in != null) metaParts.push(`${Math.floor(f.height_in / 12)}'${Math.round(f.height_in % 12)}"`);
     if (f.reach_in != null) metaParts.push(`${f.reach_in}" reach`);
     if (f.stance) metaParts.push(f.stance);
-    if (f.style) metaParts.push(f.style);
+    if (styleSummary(f)) metaParts.push(styleSummary(f));
     if (f.elo == null) metaParts.push("no UFC history yet");
     document.getElementById(`meta-${corner}`).textContent = metaParts.join(" - ");
 
@@ -169,50 +169,6 @@
     renderBreakdown(explanation);
   }
 
-  function formatMonthYear(isoDate) {
-    if (!isoDate) return "";
-    const d = new Date(isoDate + "T00:00:00");
-    if (isNaN(d.getTime())) return isoDate;
-    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
-  }
-
-  // One fight from engine.js's recordVsStyle() -- DOM-node equivalent of
-  // ui.js's reuse of prefightRowHtml() (same .debut-fight-row classes for
-  // visual consistency, this file just doesn't have that function since
-  // it's not a fight-card page).
-  function makeStyleFightRow(f) {
-    const row = document.createElement("div");
-    row.className = "debut-fight-row";
-    const detailParts = [];
-    if (f.method) detailParts.push(f.method);
-    if (f.round) detailParts.push(`R${f.round}`);
-    if (f.event) detailParts.push(f.event);
-    if (f.eventDate) detailParts.push(formatMonthYear(f.eventDate));
-    row.innerHTML =
-      `<span class="debut-fight-result ${f.outcome === "W" ? "win" : "loss"}">${f.outcome}</span>` +
-      `<span class="debut-fight-body">` +
-      `<span class="debut-fight-opp">${f.outcome === "W" ? "def." : "lost to"} ${escapeHtml(f.opponentName)}</span>` +
-      `<span class="debut-fight-detail mono">${escapeHtml(detailParts.join(" · "))}</span>` +
-      `</span>`;
-    return row;
-  }
-
-  function makeStyleRecordBlock(fighterName, opponentStyle, rec) {
-    if (!rec) return null;
-    const block = document.createElement("div");
-    block.className = "style-record-block";
-    const summary = document.createElement("div");
-    summary.className = "style-record-summary";
-    // No pluralization attempted ("vs Wrestlers"/"vs Sambo fighters") --
-    // UFC.com's own style tags mix person-nouns and discipline names
-    // inconsistently, so there's no single grammatically-safe rule.
-    summary.innerHTML = `${escapeHtml(fighterName)}: ${rec.wins}-${rec.losses} vs ${escapeHtml(opponentStyle)} ` +
-      `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span>`;
-    block.appendChild(summary);
-    rec.fights.forEach((f) => block.appendChild(makeStyleFightRow(f)));
-    return block;
-  }
-
   // "Breakdown" -- odds/method/round are already always shown above this
   // (this page has no per-bout toggle, unlike the fight card); this panel
   // is everything explain.js/recordVsStyle add on top: categorized
@@ -233,37 +189,10 @@
     stats.innerHTML = statComparisonHtml(selected.a, selected.b, explanation, MODEL_DATA);
     panel.appendChild(stats);
 
-    if (explanation.styleA || explanation.styleB) {
-      const stylesSection = document.createElement("div");
-      stylesSection.className = "tape";
-      stylesSection.innerHTML = `<div class="tape-title"><span>Fighting Styles</span></div>`;
-      if (explanation.styleA) {
-        const row = document.createElement("div");
-        row.className = "style-tag-row";
-        row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div>`;
-        stylesSection.appendChild(row);
-      }
-      if (explanation.styleB) {
-        const row = document.createElement("div");
-        row.className = "style-tag-row";
-        row.innerHTML = `<div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div>`;
-        stylesSection.appendChild(row);
-      }
-      panel.appendChild(stylesSection);
-    }
-
-    const recA = recordVsStyle(selected.a.fighter_id, selected.b.style, MODEL_DATA.fighter_history);
-    const recB = recordVsStyle(selected.b.fighter_id, selected.a.style, MODEL_DATA.fighter_history);
-    if (recA || recB) {
-      const recordSection = document.createElement("div");
-      recordSection.className = "tape";
-      recordSection.innerHTML = `<div class="tape-title"><span>Record vs. Opponent's Style</span></div>`;
-      const blockA = makeStyleRecordBlock(explanation.nameA, selected.b.style, recA);
-      const blockB = makeStyleRecordBlock(explanation.nameB, selected.a.style, recB);
-      if (blockA) recordSection.appendChild(blockA);
-      if (blockB) recordSection.appendChild(blockB);
-      panel.appendChild(recordSection);
-    }
+    const styles = document.createElement("div");
+    styles.innerHTML = fightingStylesHtml(selected.a, selected.b, explanation.nameA, explanation.nameB) +
+      styleRecordSectionHtml(selected.a, selected.b, explanation.nameA, explanation.nameB, MODEL_DATA);
+    panel.appendChild(styles);
 
     const caption = document.createElement("div");
     caption.className = "why-caption";

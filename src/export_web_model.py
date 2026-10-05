@@ -191,6 +191,21 @@ def _career_display_stats():
     return out.replace([np.inf, -np.inf], np.nan).reset_index()
 
 
+_AXES_CACHE = None
+
+
+def _fighting_axes():
+    """Striking/grappling style for every fighter with >= 3 UFC fights (see
+    src/features/fighting_axes.py), computed once per export."""
+    global _AXES_CACHE
+    if _AXES_CACHE is None:
+        from src.features.fighting_axes import compute_axes
+        fights = pd.read_csv(PROCESSED_DIR / "fights.csv", parse_dates=["event_date"])
+        rs = pd.read_csv(PROCESSED_DIR / "round_stats.csv")
+        _AXES_CACHE = compute_axes(fights, rs)
+    return _AXES_CACHE
+
+
 def export_fighters():
     fighters = pd.read_csv(PROCESSED_DIR / "fighters.csv", parse_dates=["dob"])
     snapshot = pd.read_csv(PROCESSED_DIR / "fighter_snapshot.csv", parse_dates=["last_fight_date"])
@@ -246,8 +261,14 @@ def export_fighters():
     method_dist_fields = [f"{tier}_{outcome}_{m}" for tier in ("last5", "career") for outcome in ("win", "loss") for m in METHODS]
 
     fields = ["fighter_id", "name", "nickname", "dob_epoch_days", "height_in", "reach_in", "stance", "last_fight_epoch_days"] \
-        + win_snapshot_fields + method_dist_fields + ["weightclass", "rank", "n_in_division", "iso_code", "style"] \
+        + win_snapshot_fields + method_dist_fields + ["weightclass", "rank", "n_in_division", "iso_code", "style",
+                                                      "strike_style", "grapple_style"] \
         + CAREER_DISPLAY_FIELDS
+
+    # Two-axis style (src/features/fighting_axes.py) -- display only.
+    axes = _fighting_axes()
+    df = df.drop(columns=[c for c in ("strike_style", "grapple_style") if c in df.columns]).merge(
+        axes, left_on="fighter_id", right_index=True, how="left")
 
     epoch = pd.Timestamp("1970-01-01")
     df["dob_epoch_days"] = (df["dob"] - epoch).dt.days
@@ -388,6 +409,10 @@ def _fighter_full_history_payload(fighters_payload):
         style_df = pd.read_csv(style_path)
         style_by_id = dict(zip(style_df["fighter_id"], style_df["style"]))
 
+    axes = _fighting_axes()
+    strike_by_id = axes["strike_style"].dropna().to_dict()
+    grapple_by_id = axes["grapple_style"].dropna().to_dict()
+
     history = {}
     for fid in ids:
         mine = fights[(fights["fighter_1_id"] == fid) | (fights["fighter_2_id"] == fid)]
@@ -409,6 +434,9 @@ def _fighter_full_history_payload(fighters_payload):
                 r["event_date"] if pd.notna(r["event_date"]) else None,
                 name_by_id.get(opponent_id),
                 opp_style if pd.notna(opp_style) else None,
+                # [8], [9]: opponent's striking / grappling style (2026-10-05)
+                strike_by_id.get(opponent_id),
+                grapple_by_id.get(opponent_id),
             ])
         if rows:
             history[fid] = rows

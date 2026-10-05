@@ -74,8 +74,11 @@
   // one on file yet (a multi-hour scrape, and UFC.com itself doesn't tag
   // every athlete) -- omitted rather than shown blank, same convention as
   // the nickname line right above it.
+  // Striking · grappling style when the fighter has 3+ UFC fights (explain.js
+  // styleSummary), else their single label.
   function styleTagHtml(f) {
-    return f && f.style ? `<div class="fc-style mono">${escapeHtml(f.style)}</div>` : "";
+    const s = styleSummary(f);
+    return s ? `<div class="fc-style mono">${escapeHtml(s)}</div>` : "";
   }
 
   // Full model breakdown (odds bar + method/round tapes), rendered as an
@@ -132,35 +135,6 @@
       </div>`;
   }
 
-  // One fighter's record vs. THIS bout's opponent's style, with the actual
-  // matching fight(s) listed out (not just the tally) -- reuses the exact
-  // row markup/classes prefightRowHtml() below already established for
-  // debut fighters' pre-UFC records, just fed engine.js's recordVsStyle()
-  // shape instead. Omitted whenever recordVsStyle() itself returns null
-  // (see its own comment for why that's the common, expected case, not a
-  // bug) -- never shown as an empty "0-0" block.
-  function styleRecordDetailHtml(fighterName, opponentStyle, rec) {
-    if (!rec) return "";
-    const fightRows = rec.fights.map((f) => prefightRowHtml({
-      result: f.outcome === "W" ? "win" : "loss",
-      opponent: f.opponentName,
-      method: f.method,
-      round: f.round,
-      event: f.event,
-      date: f.eventDate,
-    })).join("");
-    // No pluralization attempted ("vs Wrestlers"/"vs Sambo fighters") --
-    // UFC.com's own style tags mix person-nouns ("Striker") and discipline
-    // names ("Sambo", "Muay Thai") inconsistently, so there's no single
-    // grammatically-safe rule; "vs {style}" reads fine either way.
-    return `
-      <div class="style-record-block">
-        <div class="style-record-summary">${escapeHtml(fighterName)}: ${rec.wins}-${rec.losses} vs ${escapeHtml(opponentStyle)} ` +
-      `<span class="fc-style-record-note">(${rec.knownCount} of ${rec.totalFights} career fights)</span></div>
-        ${fightRows}
-      </div>`;
-  }
-
   // Assembles the "Breakdown" panel's content BELOW the odds-bar/method/
   // round tape (predictBreakdownHtml above) -- the UFC.com-style stat
   // comparison (explain.js's statComparisonHtml, shared with predict_ui.js),
@@ -171,19 +145,8 @@
   function breakdownExtrasHtml(explanation, fA, fB) {
     const sections = statComparisonHtml(fA, fB, explanation, MODEL_DATA);
 
-    const styleRows = [];
-    if (explanation.styleA) styleRows.push(`<div class="style-tag-row"><div class="factor-label">${escapeHtml(explanation.nameA)}</div><div class="fc-style mono">${escapeHtml(explanation.styleA)}</div></div>`);
-    if (explanation.styleB) styleRows.push(`<div class="style-tag-row"><div class="factor-label">${escapeHtml(explanation.nameB)}</div><div class="fc-style mono">${escapeHtml(explanation.styleB)}</div></div>`);
-    const stylesHtml = styleRows.length
-      ? `<div class="tape"><div class="tape-title"><span>Fighting Styles</span></div>${styleRows.join("")}</div>`
-      : "";
-
-    const recA = recordVsStyle(fA.fighter_id, fB.style, MODEL_DATA.fighter_history);
-    const recB = recordVsStyle(fB.fighter_id, fA.style, MODEL_DATA.fighter_history);
-    const recordHtml = (recA || recB)
-      ? `<div class="tape"><div class="tape-title"><span>Record vs. Opponent's Style</span></div>` +
-        `${styleRecordDetailHtml(explanation.nameA, fB.style, recA)}${styleRecordDetailHtml(explanation.nameB, fA.style, recB)}</div>`
-      : "";
+    const stylesHtml = fightingStylesHtml(fA, fB, explanation.nameA, explanation.nameB);
+    const recordHtml = styleRecordSectionHtml(fA, fB, explanation.nameA, explanation.nameB, MODEL_DATA);
 
     return `
       ${sections}
