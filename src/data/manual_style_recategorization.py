@@ -224,7 +224,7 @@ MANUAL = {
     "Lance Gibson Jr.": "Pankration",
     "Magomed Zaynukov": "Muay Thai",
     "Mairon Santos": "MMA",
-    "Mandel Nallo": "MMA",
+    "Mandel Nallo": "Aggressive Striker",  # user, 2026-10-12
     "Manoel Sousa": "Aggressive MMA",
     "Manuel Torres": "Aggressive Striker",
     "MarQuel Mederos": "Striker",
@@ -434,7 +434,7 @@ MANUAL = {
     "Jared Cannonier": "Power Striker",
     "Joe Pyfer": "MMA",
     "Joe Kropschot": "Jiu-Jitsu",
-    "Julien Leblanc": "MMA",
+    "Julien Leblanc": "Aggressive MMA",  # user delegated, 2026-10-12: 8 of 10 pro wins finishes (combat-edge)
     "JunYong Park": "Pressure Fighter",
     "Kelvin Gastelum": "Pressure Striker",
     "Kyle Daukaus": "Jiu-Jitsu",
