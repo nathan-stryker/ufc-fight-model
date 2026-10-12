@@ -728,12 +728,20 @@ CLAUDE_ASSIGNED = {
     # no UFC tape). Labeled from their Sherdog pro win methods (identity checked
     # by DOB), UFC.com's tag where it had one, reputation for Yahya/Chookagian.
     "Marcos Degli": "Aggressive MMA", "Asaf Chopurov": "Aggressive MMA", "Louis Lee Scott": "Aggressive Striker",
-    "Cody Chovancek": "MMA", "Louis Jourdain": "MMA", "Steven Koslow": "Grappler", "Ramiro Jimenez": "Aggressive MMA",
+    "Ramiro Jimenez": "Aggressive MMA",
     "Tom Pagliarulo": "Aggressive Striker", "Taner Trembley": "Grappler", "Piero Guaylupo": "Power Striker",
     "Callum Connor": "Aggressive Striker", "Alvi Dasuyev": "Aggressive MMA", "Jonny Parsons": "Muay Thai",
     "Adam Darby": "Aggressive MMA", "Jaden Ortega": "Aggressive Striker", "Mayton Perea": "Aggressive MMA",
     "Igor Cavalcanti": "Power Striker", "Damian Piwowarczyk": "Aggressive MMA", "Roman Gabriel Puga": "Aggressive Striker",
     "Rani Yahya": "Grappler", "Katlyn Cerminara": "Volume Striker",
+    # UFC Fight Night 291 (2026-10-12), from combat-edge.com's fighter bios and
+    # its Contender Series / early-UFC stat lines (1-2 fights, so a hint, not a
+    # profile), plus Sherdog win methods where neither exists.
+    "Cody Chovancek": "Muay Thai",       # Muay Thai base per bio; 0 TD/15, 83% TD def
+    "Louis Jourdain": "Boxer",           # boxing background per bio; 7.3 sig. str./min
+    "Steven Koslow": "Jiu-Jitsu",        # 10th Planet, 6/6 wins by sub; 5.3 TD/15
+    "Joel Faglier": "Grappler",          # no stats; 4 of 6 pro wins by submission
+    "Mackenzie Stiller": "Grappler",     # no stats; 5 of 6 pro wins by submission
 }
 
 # Rare escape hatch for a duplicate fighters.csv name where the two real
