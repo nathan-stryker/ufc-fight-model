@@ -118,6 +118,11 @@ REPLACE = {
     "Roman Kopylov": {"dob": "1992-05-04"},
     # UFCStats 70.0 vs UFC.com 72.0 -- user chose 6'0" (2026-09-29).
     "Ismail Naurdiev": {"height_in": 72.0},
+    # UFC Fight Night 291 card audit -- user chose Sherdog's DOBs
+    # (2026-10-12). Kept ours for Koslow (age 29) and Daukaus (6'2").
+    "Javad Mahjoub": {"dob": "1991-05-26"},
+    "Chelsea Chandler": {"dob": "1994-01-29"},
+    "Nate Landwehr": {"dob": "1988-06-07"},
     # UFC Fight Night 290 audit, user-supplied (2026-10-05): ours 74 vs UFC.com 77.
     "Leon Shahbazyan": {"reach_in": 74.5},
     # UFCStats 1996-09-08 vs Sherdog 1996-08-09 (day/month swap) -- user chose Aug 9.
