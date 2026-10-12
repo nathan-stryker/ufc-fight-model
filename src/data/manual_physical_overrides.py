@@ -92,6 +92,14 @@ MANUAL = {
     "Anthony Wint": {"stance": "Orthodox"},
     # UFC Fight Night 290, user-supplied (2026-10-05).
     "Allen Frye Jr.": {"stance": "Orthodox"},
+    # UFC Fight Night 291: reach and stance user-supplied (2026-10-12); heights
+    # from Sherdog (card audit). Fill-only.
+    "Nicholas Galanti": {"height_in": 73.0, "reach_in": 75.0, "stance": "Southpaw"},
+    "Javad Mahjoub": {"height_in": 73.0, "reach_in": 73.0, "stance": "Orthodox"},
+    "Joel Faglier": {"height_in": 74.0, "reach_in": 74.0, "stance": "Orthodox"},
+    "Mackenzie Stiller": {"height_in": 62.0, "reach_in": 62.0, "stance": "Orthodox"},
+    "Julien Leblanc": {"stance": "Southpaw"},
+    "Melissa Croden": {"stance": "Orthodox"},
 }
 
 
