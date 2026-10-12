@@ -18,7 +18,27 @@ OLD_NAME_TO_ID = {
     "Valesca Machado": UFCSTATS + "a1a91dbf41a029c4",       # now "Tina Black"
     "Cameron Nelson": UFCSTATS + "34d4cae19105eb68",        # now "Cam Nelson"
     "Eduardo Henrique": UFCSTATS + "62f3039da2f92a8c",      # now "Eduardo Chapolin"
+    "SuYoung You": UFCSTATS + "a474aade8eb3a8f0",           # shown as "Soo Young Yoo", see DISPLAY_NAMES
 }
+
+# fighter_id -> the name the user wants shown, where UFCStats' spelling is
+# wrong or not the fighter's known name. load_data.py applies this to
+# fighters.csv and fights.csv after the raw mirror is parsed (so every
+# downstream file and the website use it), and scrape_upcoming_card.py to
+# matched card names. Add the old name to OLD_NAME_TO_ID above as well so
+# name-keyed override files keep applying.
+DISPLAY_NAMES = {
+    # User-supplied (2026-10-12, UFC Fight Night 291 card).
+    UFCSTATS + "a474aade8eb3a8f0": "Soo Young Yoo",
+}
+
+
+def apply_display_names(fighters, fights):
+    """Rewrite names in fighters.csv/fights.csv frames per DISPLAY_NAMES."""
+    for fid, name in DISPLAY_NAMES.items():
+        fighters.loc[fighters["fighter_id"] == fid, "name"] = name
+        for n in ("1", "2"):
+            fights.loc[fights[f"fighter_{n}_id"] == fid, f"fighter_{n}_name"] = name
 
 
 def fighter_mask(df, name):

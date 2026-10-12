@@ -152,6 +152,11 @@ MANUAL_SHERDOG_URLS = {
     # Anthony "The Bully" Romero (Blackhouse MMA, 145, 7-2), UFC 332 debut --
     # not "The Genius" (Anthony-Romero-221129, Canadian, 155).
     "anthony romero": "https://www.sherdog.com/fighter/Anthony-Romero-211489",
+    # ufc.com lists him as "Cristian Perez Gonzalez" (no Sherdog match); he's
+    # Sherdog's Cristian Perez "Puas" (155, Victory Fight Club), matching our
+    # "El Puas" lightweight. Several other Cristian Perez profiles exist
+    # (UFC Fight Night 291, 2026-10-12).
+    "cristian perez gonzalez": "https://www.sherdog.com/fighter/Cristian-Perez-244701",
 }
 
 

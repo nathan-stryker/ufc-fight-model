@@ -63,6 +63,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from src.data.fighter_renames import DISPLAY_NAMES
 from src.data.load_data import _weight_to_division
 from src.models.predict import predict_full_by_id
 
@@ -250,6 +251,13 @@ NAME_ALIASES = {
     # UFC Fight Night 282 -- not a guess. Direct UFCStats confirmation isn't
     # possible (the site's own bot-detection blocks a live lookup).
     "muhammad saidov": "muhammad said",
+    # UFC Fight Night 291 (2026-10-17), confirmed by the user (2026-10-12):
+    # the same fighters as fighters.csv's "Cristian Perez" (El Puas, Mexico)
+    # and "Nicholas Galanti". "SuYoung You" is fighters.csv's old UFCStats
+    # spelling, now shown as "Soo Young Yoo" (fighter_renames.DISPLAY_NAMES).
+    "cristian perez gonzalez": "cristian perez",
+    "nick galanti": "nicholas galanti",
+    "suyoung you": "soo young yoo",
     # normalize_name()'s NFKD+ascii-encode strips "ł" (U+0142) entirely
     # rather than converting it to "l" -- unlike an accented letter (e.g.
     # "á"), "ł" has no NFKD decomposition into a base letter + combining
@@ -396,6 +404,8 @@ def match_fighter_ids(bouts):
             else:
                 fid = None
             b[side.replace("_name", "_id")] = fid
+            if fid in DISPLAY_NAMES:
+                b[side] = DISPLAY_NAMES[fid]
     return bouts
 
 

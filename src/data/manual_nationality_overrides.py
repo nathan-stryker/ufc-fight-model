@@ -247,6 +247,18 @@ MANUAL = {
     # fighter_id: a different, Canadian Anthony "The Genius" Romero is also in
     # fighters.csv. User-supplied US; Sherdog agrees (2026-10-02).
     "http://ufcstats.com/fighter-details/4419acb81e6f0ea4": ("United States", "US"),
+    # UFC Fight Night 291 (Buckley vs. Malott, Edmonton) -- user-supplied
+    # directly (2026-10-12). Card fighters booked after the weekly
+    # nationality scrape ran, so none had a row yet.
+    "Cody Chovancek": ("Canada", "CA"),
+    "Steven Koslow": ("United States", "US"),
+    "Katlyn Cerminara": ("United States", "US"),
+    "Mackenzie Stiller": ("United States", "US"),
+    "Javad Mahjoub": ("Canada", "CA"),
+    "Joel Faglier": ("United States", "US"),
+    "Nicholas Galanti": ("United States", "US"),
+    "Louis Jourdain": ("Canada", "CA"),
+    "Cristian Perez": ("Mexico", "MX"),
 }
 
 

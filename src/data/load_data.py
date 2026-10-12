@@ -433,6 +433,10 @@ def main():
     fights = load_fights(fighters, real_events)
     round_stats = load_round_stats(fighters, fights, real_events)
 
+    # After round stats: load_round_stats() joins on the raw UFCStats names.
+    from src.data.fighter_renames import apply_display_names
+    apply_display_names(fighters, fights)
+
     fighters.to_csv(PROCESSED_DIR / "fighters.csv", index=False)
     fights.to_csv(PROCESSED_DIR / "fights.csv", index=False)
     round_stats.to_csv(PROCESSED_DIR / "round_stats.csv", index=False)
