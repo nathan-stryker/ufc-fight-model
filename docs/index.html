@@ -1,6 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Call the Card</title>
+<title>Call the Card: UFC Predictions, Picks & Fight Odds Every Week</title>
+<meta name="description" content="Data-driven UFC predictions for every fight on this week's card: win probability, method and round odds, fighter stats and a public track record.">
+<link rel="canonical" href="https://callthecard.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Call the Card">
+<meta property="og:title" content="Call the Card: UFC Predictions & Picks">
+<meta property="og:description" content="Win probability, method and round odds for every fight on this week's UFC card.">
+<meta property="og:url" content="https://callthecard.com/">
+<meta name="twitter:card" content="summary">
 <style>
   /* Palette pulled from the sport's own materials, not a generic UI kit:
      ring-canvas black, corner-pad red/blue (the sport's own convention),
@@ -490,6 +498,7 @@
   }
   .fc-event-name { font-size: clamp(1.15rem, 3vw, 1.5rem); margin: 0 0 0.25rem; }
   .fc-event-meta { color: var(--ink-dim); font-size: 0.78rem; }
+  .fc-event-link { display: inline-block; margin-top: 0.4rem; font-size: 0.78rem; color: var(--gold); }
 
   /* Tiered card layout -- main event stands alone (gold), the rest of the
      main card follows with the co-main called out (silver), then prelims
@@ -3366,6 +3375,13 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
   // one on file yet (a multi-hour scrape, and UFC.com itself doesn't tag
   // every athlete) -- omitted rather than shown blank, same convention as
   // the nickname line right above it.
+  // Same slug rule as src/build_seo_pages.py's slug() -- links the card to its
+  // static, search-indexable event page.
+  function eventSlug(name) {
+    return String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
   // Striking · grappling style when the fighter has 3+ UFC fights (explain.js
   // styleSummary), else their single label.
   function styleTagHtml(f) {
@@ -3652,6 +3668,7 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
         <div class="fc-eyebrow">This week's card</div>
         <h2 class="fc-event-name display">${escapeHtml(card.eventName)}</h2>
         <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>
+        <a class="fc-event-link" href="/events/${eventSlug(card.eventName)}/">Every pick on one page &rarr;</a>
       </div>
       ${bodyHtml}`;
 

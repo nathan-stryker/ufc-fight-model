@@ -115,3 +115,10 @@ print(f"wrote {predict_site_path} ({predict_site_path.stat().st_size / 1e6:.2f} 
 predict_docs_path = docs_dir / "predict.html"
 predict_docs_path.write_text(predict_out, encoding="utf-8")
 print(f"wrote {predict_docs_path} (GitHub Pages copy)")
+
+# Static, search-indexable fight/event pages + sitemap (src/build_seo_pages.py),
+# rebuilt every time the site is -- including the weekly scheduled refresh.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.build_seo_pages import main as _build_seo_pages
+_build_seo_pages()

@@ -120,6 +120,19 @@ def main():
     plt.savefig(out_path, dpi=150)
     print(f"\nSaved calibration plot -> {out_path}")
 
+    # --- Public track record (read by src/build_seo_pages.py) ---
+    # One row per fight (corner A's view), and the >= 60% confident subset.
+    per_fight = test.groupby("fight_id").first()
+    right = (per_fight["sym_prob"] >= 0.5) == (per_fight["label"] == 1)
+    conf = (per_fight["sym_prob"] - 0.5).abs() + 0.5
+    metrics = {
+        "since": TEST_CUTOFF, "n_fights": int(len(per_fight)), "accuracy": float(right.mean()),
+        "n_confident": int((conf >= 0.6).sum()), "accuracy_confident": float(right[conf >= 0.6].mean()),
+    }
+    with open(ARTIFACTS_DIR / "holdout_metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
+    print(f"\nHoldout track record: {metrics}")
+
     # --- Feature importance ---
     importances = pd.Series(model.feature_importances_, index=feature_cols).sort_values(ascending=False)
     print("\nTop 10 feature importances:")
