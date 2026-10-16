@@ -203,6 +203,13 @@
     </svg>`;
     const FORM_VERB = { W: "def.", L: "lost to", D: "drew", NC: "no contest vs." };
 
+    // Same slug rule as src/build_seo_pages.py's slug(), so each row can
+    // link to its own written-breakdown page under docs/events/.
+    function seoSlug(s) {
+      return String(s).normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    }
+
     // Last-up-to-5 UFC results per fighter, data from fights.csv via
     // export_web_model.py's _recent_results_payload() -- scoped to just
     // this week's card fighters for now. Each badge is a <button> (not a
@@ -292,6 +299,7 @@
           ${myPickHtml}
           <button class="breakdown-toggle" type="button" aria-expanded="false" aria-label="Breakdown" title="Breakdown">${BREAKDOWN_ICON_SVG}</button>
           <div class="breakdown-panel" hidden>
+            <a class="breakdown-full-link" href="/events/${seoSlug(card.eventName)}/${seoSlug(fA.name)}-vs-${seoSlug(fB.name)}/">Read the full breakdown &rarr;</a>
             ${predictBreakdownHtml(result)}
             <div class="breakdown-extras-mount"></div>
           </div>
