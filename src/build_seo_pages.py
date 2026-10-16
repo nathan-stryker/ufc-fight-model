@@ -118,15 +118,15 @@ def tape_rows(a, b, history, prefight):
     body = "".join(f'<tr><td class="a">{esc(x if x is not None else "—")}</td><td class="l">{esc(lbl)}</td>'
                    f'<td class="a">{esc(y if y is not None else "—")}</td></tr>' for lbl, x, y in rows)
     return (f'<table><tr><th>{esc(a["name"])}</th><th></th><th>{esc(b["name"])}</th></tr>{body}</table>'
-            f'<p class="note">Striking and grappling numbers are UFC career stats (official UFC fights only).</p>')
+            f'<p class="note">Career stats count official UFC fights only.</p>')
 
 
 def track_record_html(metrics):
     if not metrics:
         return ""
-    return (f'<p class="note">Model track record on {metrics["n_fights"]:,} UFC fights since {metrics["since"][:4]} that it '
-            f'never trained on: {pct(metrics["accuracy"])} correct overall, and {pct(metrics["accuracy_confident"])} '
-            f'when it gives a fighter 60% or more ({metrics["n_confident"]:,} fights).</p>')
+    return (f'<p class="note">Track record: {pct(metrics["accuracy"])} correct on {metrics["n_fights"]:,} UFC fights since '
+            f'{metrics["since"][:4]} that the model never trained on, and {pct(metrics["accuracy_confident"])} when it gives '
+            f'a fighter 60% or better.</p>')
 
 
 def page(title, description, canonical, body, og_image=None, jsonld=None):
@@ -207,7 +207,7 @@ def build_event(card, payload, metrics, preds=None, graded=None):
             rnd = ""
             if top_m != "dec" and r.get("round_given_finish"):
                 top_r = max(r["round_given_finish"], key=r["round_given_finish"].get)
-                rnd = f", most likely in round {top_r}"
+                rnd = f" in round {top_r}"
             pick_line = f"Pick: {win['name']} ({round(p * 100)}%)"
             pick_html = (f'<div class="pick"><div class="meta">Model pick</div><strong>{esc(win["name"])} &mdash; {round(p * 100)}%</strong>'
                          f'<div class="bar"><span style="width:{p_a * 100:.1f}%"></span><span style="width:{(1 - p_a) * 100:.1f}%"></span></div>'
@@ -215,7 +215,7 @@ def build_event(card, payload, metrics, preds=None, graded=None):
                          f'<p>Most likely result: <b>{METHOD_NAMES[top_m]}</b>{rnd}. Method odds: Decision {pct(m["dec"])}, '
                          f'KO/TKO {pct(m["ko"])}, Submission {pct(m["sub"])}.</p></div>')
             desc = (f"{a['name']} vs {c['name']} prediction for {short_ev} ({ev_date}): our model picks {win['name']} "
-                    f"({round(p * 100)}%) over {lose['name']}, most likely by {METHOD_NAMES[top_m]}. Stats, odds and breakdown.")
+                    f"({round(p * 100)}%) over {lose['name']}, most likely by {METHOD_NAMES[top_m]}. Odds, stats and the tale of the tape.")
             li_extra = f" &mdash; pick: <b>{esc(win['name'])}</b> ({round(p * 100)}%, {METHOD_NAMES[top_m]})"
         elif graded is not None:
             g = next((x for x in graded if x["idA"] == b["idA"] and x["idB"] == b["idB"]), None)

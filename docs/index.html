@@ -1258,8 +1258,7 @@
   </div>
 
   <footer class="disclaimer">
-    Trained on <span class="mono" id="fight-count">&mdash;</span> UFC fights, 1994&ndash;2026. Runs
-    entirely client-side &mdash; nothing you type is sent anywhere.
+    Built from <span class="mono" id="fight-count">&mdash;</span> UFC fights since 1994. Everything runs in your browser.
   </footer>
   </div>
 </div>
@@ -1804,10 +1803,9 @@ const FACTOR_LABELS = {
 
 // Shared by the fight card and Fantasy Matchup Breakdown panels.
 const BREAKDOWN_CAPTION =
-  "Striking, grappling and record numbers cover each fighter's whole UFC career (official UFC fights only -- " +
-  "UFC.com also counts Contender Series fights for some fighters, so a few can differ slightly from theirs). " +
-  "Recent form is this site's own Elo rating. The model weighs recent fights most, so what it leaned on can " +
-  "favor the fighter with the lower career number.";
+  "Career stats count official UFC fights only, so a few differ from UFC.com, which also counts the Contender Series. " +
+  "Recent form is our Elo rating. The model weights recent fights more heavily, so a factor can favor the fighter " +
+  "with the weaker career number.";
 
 // ---------------------------------------------------------------------------
 // UFC.com-style side-by-side stat comparison for the Breakdown panel
@@ -1973,9 +1971,9 @@ function dataGapHtml(fighterA, fighterB, model) {
     const hist = model.fighter_history && model.fighter_history[f.fighter_id];
     if (!hist || !hist.length) return null;
     const missing = DATA_GAP_FIELDS.filter(([field]) => f[field] == null).map(([, label]) => label);
-    return missing.length ? `${f.name} has UFC fights but no ${missing.join(", ")} on file -- the model used its learned default.` : null;
+    return missing.length ? `No ${missing.join(", ")} on file for ${f.name}.` : null;
   }).filter(Boolean);
-  return notes.length ? `<div class="data-gap-note">Data gap: ${notes.map(escHtml).join(" ")}</div>` : "";
+  return notes.length ? `<div class="data-gap-note">Missing data: ${notes.map(escHtml).join(" ")}</div>` : "";
 }
 
 // ---------------------------------------------------------------------------
@@ -2013,7 +2011,9 @@ function fightingStylesHtml(fA, fB, nameA, nameB) {
   const rows = [[fA, nameA], [fB, nameB]].filter(([f]) => f && (f.strike_style || f.style)).map(([f, name]) => {
     const chips = f.strike_style
       ? _styleChip(STRIKE_LABEL[f.strike_style][0]) + _styleChip(GRAPPLE_LABEL[f.grapple_style][0]) +
-        (f.style ? `<div class="fc-style fc-style-bg mono">${escHtml(f.style)}</div>` : "")
+        // old single label as a background chip, unless it just repeats an axis label
+        (f.style && ![STRIKE_LABEL[f.strike_style][0], GRAPPLE_LABEL[f.grapple_style][0]].includes(f.style)
+          ? `<div class="fc-style fc-style-bg mono">${escHtml(f.style)}</div>` : "")
       : _styleChip(f.style) + `<div class="fc-style-note">fewer than 3 UFC fights</div>`;
     return `<div class="style-tag-row"><div class="factor-label">${escHtml(name)}</div><div class="style-chips">${chips}</div></div>`;
   });
@@ -2516,7 +2516,7 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
     wrap.appendChild(roundRow);
 
     wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" class="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
-    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="optional -- why you think that"></div>`));
+    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="Optional: your reasoning"></div>`));
 
     const addBtn = el("button", "predict-btn pt-add-btn", "Log My Prediction");
     addBtn.type = "button";
@@ -2567,7 +2567,7 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
   function renderAddForm() {
     if (!matchup) {
       const empty = el("div", "pt-add");
-      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
+      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your pick."));
       return empty;
     }
     const existing = findPendingPredictionByFighters(matchup.result.nameA, matchup.result.nameB);
@@ -2642,7 +2642,7 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
     const box = el("div");
     box.appendChild(el("div", "lr-header", '<h2 class="lr-title display">My Predictions</h2>'));
     if (preds.length === 0) {
-      box.appendChild(el("div", "pt-empty-hint", "Call a matchup and log your own pick to start building a track record."));
+      box.appendChild(el("div", "pt-empty-hint", "Log your picks to build your own track record."));
     } else {
       const summary = el("div", "mp-teaser-summary mono");
       summary.innerHTML = rep.n

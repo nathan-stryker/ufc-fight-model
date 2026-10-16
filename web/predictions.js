@@ -337,7 +337,7 @@
     wrap.appendChild(roundRow);
 
     wrap.appendChild(el("div", "pt-row", `<label>Event</label><input type="text" class="mp-event" placeholder="e.g. UFC 300" value="${escapeHtml(r.nameA)} vs ${escapeHtml(r.nameB)}">`));
-    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="optional -- why you think that"></div>`));
+    wrap.appendChild(el("div", "pt-row", `<label>Note</label><input type="text" class="mp-note" placeholder="Optional: your reasoning"></div>`));
 
     const addBtn = el("button", "predict-btn pt-add-btn", "Log My Prediction");
     addBtn.type = "button";
@@ -388,7 +388,7 @@
   function renderAddForm() {
     if (!matchup) {
       const empty = el("div", "pt-add");
-      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your own prediction on it."));
+      empty.appendChild(el("div", "pt-empty-hint", "Call a matchup above to log your pick."));
       return empty;
     }
     const existing = findPendingPredictionByFighters(matchup.result.nameA, matchup.result.nameB);
@@ -463,7 +463,7 @@
     const box = el("div");
     box.appendChild(el("div", "lr-header", '<h2 class="lr-title display">My Predictions</h2>'));
     if (preds.length === 0) {
-      box.appendChild(el("div", "pt-empty-hint", "Call a matchup and log your own pick to start building a track record."));
+      box.appendChild(el("div", "pt-empty-hint", "Log your picks to build your own track record."));
     } else {
       const summary = el("div", "mp-teaser-summary mono");
       summary.innerHTML = rep.n
