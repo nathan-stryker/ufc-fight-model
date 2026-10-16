@@ -227,6 +227,20 @@ def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as
     prob_a_wins = 0.5 * (blended[0] + (1 - blended[1]))
     prob_b_wins = 1.0 - prob_a_wins
 
+    # Per-feature contribution toward A winning (XGBoost's own pred_contribs,
+    # symmetrized like the probability above: positive = pushes toward A).
+    # Used for written analysis (src/build_seo_pages.py); doesn't change any number above.
+    factor_contribs = {}
+    try:
+        import xgboost as xgb
+        booster = win_model.get_booster()
+        best = booster.attr("best_iteration")
+        kw = {"iteration_range": (0, int(best) + 1)} if best is not None else {}
+        contribs = booster.predict(xgb.DMatrix(X_win, missing=np.nan), pred_contribs=True, **kw)
+        factor_contribs = {f: 0.5 * (float(contribs[0][i]) - float(contribs[1][i])) for i, f in enumerate(win_feature_cols)}
+    except Exception:
+        pass
+
     # --- method of victory, conditioned on winner then marginalized ---
     dist_a = build_method_dist(a["fighter_id"], method_snapshot, method_priors)
     dist_b = build_method_dist(b["fighter_id"], method_snapshot, method_priors)
@@ -287,6 +301,7 @@ def _predict_full_for_rows(a: pd.Series, b: pd.Series, scheduled_rounds: int, as
     return {
         "name_a": a["name"], "name_b": b["name"],
         "prob_a_wins": prob_a_wins, "prob_b_wins": prob_b_wins,
+        "factor_contribs": factor_contribs,
         "method": method_overall,
         # Per-fighter method breakdown (P(A wins AND method=m), not just P(method=m)
         # overall) -- needed for prop markets like "Fighter A by Submission", which

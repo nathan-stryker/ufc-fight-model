@@ -60,6 +60,10 @@ EXTRA_CSS = """<style>
   .seo-more a { display: block; padding: 0.5rem 0; border-bottom: 1px solid var(--canvas-line); color: var(--ink); text-decoration: none; }
   .seo-more a:hover { color: var(--gold); }
   .seo-more .mono { color: var(--ink-dim); font-size: 0.75rem; margin-left: 0.4rem; }
+  .seo-analysis { margin: 0.6rem 0 1.8rem; }
+  .seo-h3 { font-family: 'Oswald', sans-serif; font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase;
+            color: var(--gold); margin: 1.2rem 0 0.35rem; }
+  .seo-para { line-height: 1.7; margin: 0; max-width: 68ch; }
 </style>"""
 
 
@@ -321,6 +325,267 @@ def og_png(path, event_name, a_name, b_name, pick_line, p_a):
     img.save(path, optimize=True)
 
 
+# ---------------------------------------------------------------- written breakdown
+FACTOR_PHRASE = {
+    "elo_diff": "recent form", "height_in_diff": "height", "reach_in_diff": "reach", "age_years_diff": "the age gap",
+    "fights_entering_diff": "UFC experience", "win_pct_entering_diff": "win rate", "finish_rate_entering_diff": "finishing rate",
+    "current_streak_entering_diff": "current streak", "layoff_days_entering_diff": "time between fights",
+    "sig_str_landed_per_min_diff": "striking output", "sig_str_absorbed_per_min_diff": "absorbing fewer strikes",
+    "sig_str_acc_diff": "striking accuracy", "td_avg_per15_diff": "takedown volume", "td_acc_diff": "takedown accuracy",
+    "td_def_diff": "takedown defense", "sub_att_per15_diff": "submission threat", "ctrl_pct_diff": "control time",
+}
+SUFFIXES = {"Jr.", "Jr", "Sr.", "II", "III", "IV"}
+KO_METHODS = {"KO/TKO", "TKO - Doctor's Stoppage"}
+
+
+def last(name):
+    p = name.split()
+    if len(p) > 2 and p[-1] in SUFFIXES:
+        return f"{p[-2]} {p[-1]}"
+    return p[-1] if len(p) > 1 else name
+
+
+def num(n):
+    return ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] if 0 <= n < 10 else str(n)
+
+
+def join_words(xs):
+    xs = list(xs)
+    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1]
+
+
+def ufc_wins_by(f, history):
+    h = history.get(f["fighter_id"]) or []
+    return {"n": len(h), "w": sum(1 for x in h if x[1] == "W"),
+            "ko": sum(1 for x in h if x[1] == "W" and x[2] in KO_METHODS),
+            "sub": sum(1 for x in h if x[1] == "W" and x[2] == "Submission")}
+
+
+def form_sentence(nm, f, payload):
+    res = (payload.get("recent_results") or {}).get(f["fighter_id"]) or []
+    dec = [x for x in res if x["result"] in ("W", "L")]
+    if not dec:
+        return ""
+    first = dec[0]["result"]
+    run = 0
+    for x in dec:
+        if x["result"] != first:
+            break
+        run += 1
+    opps = [x["opponent"] for x in dec[:run]][:2]
+    if run >= 2:
+        verb = "has won" if first == "W" else "has lost"
+        tail = f", most recently over {opps[0]}" if first == "W" else f", most recently to {opps[0]}"
+        return f"{nm} {verb} {num(run)} straight{tail}."
+    w = sum(1 for x in dec if x["result"] == "W")
+    last_one = f"beat {opps[0]}" if first == "W" else f"lost to {opps[0]}"
+    return f"{nm} is {w}-{len(dec) - w} over the last {num(len(dec))} and {last_one} last time out."
+
+
+def band_for(p, metrics):
+    for bd in (metrics or {}).get("bands", []):
+        if bd["lo"] <= p < bd["hi"]:
+            return bd
+    return None
+
+
+def analysis_html(b, a, c, r, payload, metrics, short_ev, ev_date, rounds):
+    hist, pre = payload["fighter_history"], payload.get("prefight_records", {})
+    na, nc = last(a["name"]), last(c["name"])
+    wa, wc_ = ufc_wins_by(a, hist), ufc_wins_by(c, hist)
+    secs = []
+
+    # --- the setup
+    def who(f, name, rank, w):
+        bits = []
+        if rank == "C":
+            bits.append("the champion")
+        elif rank:
+            bits.append(f"ranked No. {rank.lstrip('#')}")
+        if w["n"]:
+            bits.append(f"{w['w']}-{w['n'] - w['w']} in the UFC")
+        else:
+            p = pre.get(f["fighter_id"])
+            bits.append(f"debuting at {p['wins']}-{p['losses']} pro" if p else "debuting")
+        return f"{name} ({', '.join(bits)})"
+    kind = {"main_event": "main event", "co_main": "co-main event"}.get(b.get("tier"), "bout")
+    title = "title " if b.get("isTitleFight") else ""
+    s = [f"{who(a, b['nameA'], b.get('rankA'), wa)} faces {who(c, b['nameB'], b.get('rankB'), wc_)} in a "
+         f"{num(rounds)}-round {(b.get('weightClass') or '').lower()} {title}{kind} at {short_ev} on {nice_date(ev_date)}."]
+    for nm, f in ((na, a), (nc, c)):
+        fs = form_sentence(nm, f, payload)
+        if fs:
+            s.append(fs)
+        lf = f.get("last_fight_epoch_days")
+        if lf is not None and (hist.get(f["fighter_id"])):
+            months = int(((date.today() - date(1970, 1, 1)).days - lf) / 30.44)
+            if months >= 12:
+                s.append(f"It's {nm}'s first fight in {months} months.")
+    ag, cg = age(a), age(c)
+    if ag and cg and abs(ag - cg) >= 4:
+        s.append(f"{na if ag < cg else nc} is the younger fighter by {abs(ag - cg)} years.")
+    ha, hc, ra, rc = a.get("height_in"), c.get("height_in"), a.get("reach_in"), c.get("reach_in")
+    h_gap = abs(ha - hc) if ha and hc else 0
+    r_gap = abs(ra - rc) if ra and rc else 0
+    taller = na if (ha or 0) > (hc or 0) else nc
+    longer = na if (ra or 0) > (rc or 0) else nc
+    shorter_of = lambda x: nc if x == na else na
+    if h_gap >= 2 and r_gap >= 2 and taller == longer:
+        s.append(f"{taller} has {h_gap:g} inches of height and {r_gap:g} inches of reach on {shorter_of(taller)}.")
+    else:
+        if h_gap >= 2:
+            s.append(f"{taller} is {h_gap:g} inches taller.")
+        if r_gap >= 2:
+            s.append(f"{longer} has a {r_gap:g}-inch reach advantage.")
+    sa, sc = a.get("stance"), c.get("stance")
+    if sa and sc and sa != sc and "Switch" not in (sa, sc):
+        art = "an" if sa.lower()[0] in "aeiou" else "a"
+        s.append(f"It's {art} {sa.lower()} vs {sc.lower()} matchup.")
+    secs.append(("The setup", s))
+
+    # --- on the feet
+    s = []
+    have = lambda f: f.get("career_slpm") is not None and (hist.get(f["fighter_id"]))
+    def pre_line(nm, f):
+        p = pre.get(f["fighter_id"])
+        wins = [x for x in (p or {}).get("fights", []) if x.get("result") == "win"]
+        if not wins:
+            return None
+        ko = sum(1 for x in wins if re.search(r"KO", x.get("method") or ""))
+        sb = sum(1 for x in wins if "Submission" in (x.get("method") or ""))
+        return f"{nm} won {len(wins)} fights before the UFC, {ko} by knockout and {sb} by submission."
+
+    if have(a) and have(c):
+        s.append(f"{na} lands {a['career_slpm']:.2f} significant strikes per minute at {pct(a['career_str_acc'])} accuracy "
+                 f"and absorbs {a['career_sapm']:.2f}. {nc} lands {c['career_slpm']:.2f} at {pct(c['career_str_acc'])} "
+                 f"and absorbs {c['career_sapm']:.2f}.")
+        da, dc = a["career_slpm"] - a["career_sapm"], c["career_slpm"] - c["career_sapm"]
+        if abs(da - dc) >= 0.3:
+            hi, lo, dh, dl = (na, nc, da, dc) if da > dc else (nc, na, dc, da)
+            s.append(f"That gives {hi} the better striking differential, {dh:+.2f} per minute to {lo}'s {dl:+.2f}.")
+        else:
+            s.append("Their striking differentials are close, so neither has a clear edge on volume.")
+        if a.get("career_str_def") is not None and c.get("career_str_def") is not None and abs(a["career_str_def"] - c["career_str_def"]) >= 0.05:
+            hi, lo = (na, nc) if a["career_str_def"] > c["career_str_def"] else (nc, na)
+            s.append(f"{hi} is the harder target, avoiding {pct(max(a['career_str_def'], c['career_str_def']))} of strikes "
+                     f"to {lo}'s {pct(min(a['career_str_def'], c['career_str_def']))}.")
+        kos = [(nm, w["ko"], w["n"]) for nm, w in ((na, wa), (nc, wc_)) if w["ko"] >= 2]
+        if kos:
+            s.append(" ".join(f"{nm} has {k} knockout wins in {n} UFC fights." for nm, k, n in kos))
+        if a.get("strike_style") and c.get("strike_style"):
+            if a["strike_style"] == c["strike_style"]:
+                s.append(f"By our numbers both are {STRIKE[a['strike_style']].lower()}s." if a["strike_style"] != "Minimal"
+                         else "Neither does much on the feet by our numbers.")
+            else:
+                s.append(f"By our numbers {na} is a {STRIKE[a['strike_style']].lower()} and {nc} a {STRIKE[c['strike_style']].lower()}."
+                         .replace("a minimal striking", "light on striking"))
+    elif not have(a) and not have(c):
+        s.append("Both fighters are making their UFC debuts, so there's no UFC striking data on either. "
+                 "The model goes mostly on age, size and record.")
+        s += [x for x in (pre_line(na, a), pre_line(nc, c)) if x]
+    else:
+        (debut, df), (other, of) = ((na, a), (nc, c)) if not have(a) else ((nc, c), (na, a))
+        s.append(f"There's no UFC striking data on {debut} yet, so the model goes on age, size and record there.")
+        s.append(f"{other} lands {of['career_slpm']:.2f} significant strikes per minute at {pct(of['career_str_acc'])} "
+                 f"accuracy and absorbs {of['career_sapm']:.2f}.")
+        s += [x for x in (pre_line(debut, df),) if x]
+    secs.append(("On the feet", s))
+
+    # --- on the mat
+    s = []
+    if have(a) and have(c):
+        tda, tdc = a.get("career_td_avg") or 0, c.get("career_td_avg") or 0
+        if max(tda, tdc) < 1.0:
+            s.append(f"Neither leans on wrestling ({tda:.2f} and {tdc:.2f} takedowns per 15 minutes), so this should mostly "
+                     f"be fought standing.")
+        elif abs(tda - tdc) < 0.6 and max(tda, tdc) < 2.5:
+            s.append(f"Both mix in takedowns at a similar rate ({tda:.2f} and {tdc:.2f} per 15 minutes), and "
+                     f"{na} stops {pct(a.get('career_td_def') or 0)} of attempts to {nc}'s {pct(c.get('career_td_def') or 0)}.")
+        else:
+            wr, df_ = (a, c) if tda >= tdc else (c, a)
+            nw, nd = (na, nc) if tda >= tdc else (nc, na)
+            acc = f" at {pct(wr['career_td_acc'])} accuracy" if wr.get("career_td_acc") is not None else ""
+            tdd = (f", and {nd} stops {pct(df_['career_td_def'])} of takedown attempts" if df_.get("career_td_def") is not None else "")
+            s.append(f"{nw} brings more of the wrestling, averaging {wr['career_td_avg']:.2f} takedowns per 15 minutes{acc}{tdd}.")
+            if df_.get("career_td_def") is not None and df_["career_td_def"] >= 0.75:
+                s.append(f"That defense is a real obstacle, so {nw} may have to work hard to get it down.")
+            elif df_.get("career_td_def") is not None and df_["career_td_def"] < 0.6:
+                s.append(f"{nd} gets taken down often, which plays into {nw}'s hands.")
+        sa_, sc_ = a.get("career_sub_avg") or 0, c.get("career_sub_avg") or 0
+        if max(sa_, sc_) >= 0.5 or max(wa["sub"], wc_["sub"]) >= 2:
+            hi, w_hi, sub_hi = (na, wa, sa_) if (sa_, wa["sub"]) >= (sc_, wc_["sub"]) else (nc, wc_, sc_)
+            s.append(f"{hi} carries the bigger submission threat: {sub_hi:.2f} attempts per 15 minutes and "
+                     f"{w_hi['sub']} submission win{'s' if w_hi['sub'] != 1 else ''} in the UFC.")
+        ca, cc = a.get("career_ctrl_pct"), c.get("career_ctrl_pct")
+        if ca is not None and cc is not None and abs(ca - cc) >= 0.15:
+            hi, lo = (na, nc) if ca > cc else (nc, na)
+            s.append(f"{hi} spends {pct(max(ca, cc))} of fight time in control, to {pct(min(ca, cc))} for {lo}.")
+        # record against this opponent's grappling style
+        for me, nm, opp in ((a, na, c), (c, nc, a)):
+            g = opp.get("grapple_style")
+            if g and g not in ("Balanced", "Minimal"):
+                h = [x for x in (hist.get(me["fighter_id"]) or []) if len(x) > 9 and x[9] == g]
+                if len(h) >= 2:
+                    w = sum(1 for x in h if x[1] == "W")
+                    s.append(f"Against {GRAPPLE[g].lower()}s, {nm} is {w}-{len(h) - w} in the UFC.")
+    elif have(a) or have(c):
+        nm, f = (na, a) if have(a) else (nc, c)
+        s.append(f"{nm} averages {f.get('career_td_avg') or 0:.2f} takedowns per 15 minutes and stops "
+                 f"{pct(f.get('career_td_def') or 0)} of takedown attempts. With the other fighter debuting, "
+                 f"there's nothing in the UFC to compare that against yet.")
+    else:
+        s.append("Neither fighter has UFC grappling numbers yet.")
+    secs.append(("On the mat", s))
+
+    # --- how it ends
+    s = []
+    ma, mc = r.get("method_given_a") or {}, r.get("method_given_b") or {}
+    if ma and mc:
+        ka, kc = max(ma, key=ma.get), max(mc, key=mc.get)
+        pa_, pc_ = METHOD_NAMES[ka].replace("KO/TKO", "knockout").lower(), METHOD_NAMES[kc].replace("KO/TKO", "knockout").lower()
+        if ka == kc:
+            s.append(f"The likeliest way for either fighter to win is by {pa_}: {pct(ma[ka])} for {na}, {pct(mc[kc])} for {nc}.")
+        else:
+            s.append(f"{na}'s likeliest path is by {pa_} ({pct(ma[ka])}), while {nc}'s is by {pc_} ({pct(mc[kc])}).")
+    pf = r["method"]["ko"] + r["method"]["sub"]
+    rgf = r.get("round_given_finish") or {}
+    if rgf:
+        top = max(rgf, key=rgf.get)
+        early = sum(v for k, v in rgf.items() if k <= 2)
+        s.append(f"The model gives it a {pct(pf)} chance of ending early. If it does, round {top} is the most likely "
+                 f"({pct(rgf[top])} of finishes), and {pct(early)} come in the first two rounds.")
+    if pf < 0.45:
+        s.append("More often than not, this one goes to the judges.")
+    secs.append(("How it ends", s))
+
+    # --- the pick
+    s = []
+    p_a = r["prob_a_wins"]
+    win, lose, p, sign = (na, nc, p_a, 1) if p_a >= 0.5 else (nc, na, 1 - p_a, -1)
+    tone = ("close to a coin flip" if p < 0.55 else "a slight lean" if p < 0.6 else "a clear lean" if p < 0.65
+            else "a confident pick" if p < 0.7 else "one of the model's stronger calls")
+    s.append(f"The model takes {win} at {pct(p)}, {tone}.")
+    bd = band_for(p, metrics)
+    if bd and bd["n"] >= 50:
+        s.append(f"Picks in the {round(bd['lo'] * 100)}-{min(round(bd['hi'] * 100), 100)}% range have been right "
+                 f"{pct(bd['accuracy'])} of the time on {bd['n']} UFC fights since 2024.")
+    fc = dict(r.get("factor_contribs") or {})
+    stance = sum(v for k, v in fc.items() if k.startswith("stance_"))
+    fc = {k: v for k, v in fc.items() if k in FACTOR_PHRASE}
+    fc["stance"] = stance
+    phrase = lambda k: "the stance matchup" if k == "stance" else FACTOR_PHRASE[k]
+    pro = [k for k, v in sorted(fc.items(), key=lambda kv: -kv[1] * sign) if v * sign > 0.03][:3]
+    con = [k for k, v in sorted(fc.items(), key=lambda kv: kv[1] * sign) if v * sign < -0.03][:2]
+    if pro:
+        s.append(f"What's pushing it toward {win}: {join_words(phrase(k) for k in pro)}.")
+    if con:
+        s.append(f"{lose}'s case rests on {join_words(phrase(k) for k in con)}.")
+    secs.append(("The pick", s))
+
+    body = "".join(f'<h3 class="seo-h3">{esc(t)}</h3><p class="seo-para">{esc(" ".join(x))}</p>' for t, x in secs if x)
+    return f'<!--analysis--><div class="seo-analysis"><div class="tape-title"><span>Breakdown</span></div>{body}</div><!--/analysis-->'
+
+
 # ---------------------------------------------------------------- pages
 def build_event(card, payload, metrics, preds=None, graded=None):
     """preds: {(idA, idB): predict_full result} for an upcoming card; graded:
@@ -383,6 +648,7 @@ def build_event(card, payload, metrics, preds=None, graded=None):
             desc = (f"{b['nameA']} vs {b['nameB']} prediction for {short_ev}: the model picks {win} ({round(p * 100)}%) over {lose}, "
                     f"most likely by {METHOD_NAMES[top_m]}. Odds, stats and the tale of the tape.")
             details = odds_html(b["nameA"], b["nameB"], r)
+            writeup = analysis_html(b, a, c, r, payload, metrics, short_ev, ev_date, rounds)
             og_line, og_p = f"Pick: {win} ({round(p * 100)}%)", p_a
             h1 = f"{b['nameA']} vs {b['nameB']} Prediction"
         else:
@@ -390,12 +656,19 @@ def build_event(card, payload, metrics, preds=None, graded=None):
             desc = f"{b['nameA']} vs {b['nameB']} at {short_ev}: the result, our model's pick and the full stat comparison."
             details, og_line, og_p = "", "Result and model pick", None
             h1 = f"{b['nameA']} vs {b['nameB']}"
+            # keep the pre-fight breakdown written when this was the upcoming card
+            writeup = ""
+            old = f_dir / "index.html"
+            if old.exists():
+                m_ = re.search(r"<!--analysis-->.*?<!--/analysis-->", old.read_text(encoding="utf-8"), re.S)
+                if m_:
+                    writeup = m_.group(0).replace("<span>Breakdown</span>", "<span>Pre-fight breakdown</span>")
         others = "".join(f'<a href="{ev_url}{o[3]}/">{esc(o[0]["nameA"])} vs {esc(o[0]["nameB"])}'
                          f'<span class="mono">{esc(o[0].get("weightClass") or "")}</span></a>' for j, o in enumerate(bouts) if j != i)
         body = (f'<div class="results-page-header"><a class="results-back-link" href="{ev_url}">&larr; {esc(ev_name)}</a></div>'
                 f'<div class="fc-header"><div class="fc-eyebrow">{esc(short_ev)}</div>'
                 f'<h2 class="fc-event-name display seo-title">{esc(h1)}</h2><div class="fc-event-meta mono">{esc(when_where)}</div></div>'
-                f'<p class="seo-intro">{esc(intro)}</p>'
+                f'{writeup or f"<p class=seo-intro>{esc(intro)}</p>"}'
                 f'{bout_row(b, a, c, payload, inner)}{details}{tale_of_tape(a, c, hist, pre)}{track_record_html(metrics)}'
                 f'<div class="seo-section"><div class="tape-title"><span>More from this card</span></div><div class="seo-more">{others}</div></div>')
         jsonld = {"@context": "https://schema.org", "@type": "SportsEvent", "name": f"{b['nameA']} vs {b['nameB']}",

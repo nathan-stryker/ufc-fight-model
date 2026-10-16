@@ -128,6 +128,10 @@ def main():
     metrics = {
         "since": TEST_CUTOFF, "n_fights": int(len(per_fight)), "accuracy": float(right.mean()),
         "n_confident": int((conf >= 0.6).sum()), "accuracy_confident": float(right[conf >= 0.6].mean()),
+        # how often the pick was right, by how confident the model was
+        "bands": [{"lo": lo, "hi": hi, "n": int(((conf >= lo) & (conf < hi)).sum()),
+                   "accuracy": float(right[(conf >= lo) & (conf < hi)].mean())}
+                  for lo, hi in [(0.5, 0.55), (0.55, 0.6), (0.6, 0.65), (0.65, 0.7), (0.7, 1.01)]],
     }
     with open(ARTIFACTS_DIR / "holdout_metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
