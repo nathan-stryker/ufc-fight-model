@@ -769,17 +769,19 @@
     padding-top: 0.75rem;
     border-top: 1px dashed var(--canvas-line);
   }
-  .breakdown-full-link {
-    display: inline-block;
-    margin-bottom: 0.6rem;
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.8rem;
+  /* Text link to the fight's written-breakdown page (docs/events/...),
+     under the "Model predicts" line on each card row. */
+  .fc-full-link {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-top: 0.45rem;
+    font-size: 0.7rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink-dim);
     text-decoration: none;
   }
-  .breakdown-full-link:hover { text-decoration: underline; }
+  .fc-full-link:hover { color: var(--gold); text-decoration: underline; }
   /* UFC.com-style side-by-side stat rows (explain.js statComparisonHtml):
      A's number | stat name | B's number, the better number in that
      fighter's corner color. */
@@ -3605,11 +3607,13 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
         // link like "Make Your Pick" below it -- per direct user feedback
         // that the original text-button read as too heavy/prominent for
         // something optional (2026-09-10).
+        // Written analysis page for this fight, built by src/build_seo_pages.py.
+        const fullLink = `<a class="fc-full-link" href="/events/${seoSlug(card.eventName)}/${seoSlug(fA.name)}-vs-${seoSlug(fB.name)}/">Read the full breakdown &rarr;</a>`;
         action = `
+          ${fullLink}
           ${myPickHtml}
           <button class="breakdown-toggle" type="button" aria-expanded="false" aria-label="Breakdown" title="Breakdown">${BREAKDOWN_ICON_SVG}</button>
           <div class="breakdown-panel" hidden>
-            <a class="breakdown-full-link" href="/events/${seoSlug(card.eventName)}/${seoSlug(fA.name)}-vs-${seoSlug(fB.name)}/">Read the full breakdown &rarr;</a>
             ${predictBreakdownHtml(result)}
             <div class="breakdown-extras-mount"></div>
           </div>

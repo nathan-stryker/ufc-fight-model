@@ -765,17 +765,19 @@
     padding-top: 0.75rem;
     border-top: 1px dashed var(--canvas-line);
   }
-  .breakdown-full-link {
-    display: inline-block;
-    margin-bottom: 0.6rem;
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.8rem;
+  /* Text link to the fight's written-breakdown page (docs/events/...),
+     under the "Model predicts" line on each card row. */
+  .fc-full-link {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-top: 0.45rem;
+    font-size: 0.7rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink-dim);
     text-decoration: none;
   }
-  .breakdown-full-link:hover { text-decoration: underline; }
+  .fc-full-link:hover { color: var(--gold); text-decoration: underline; }
   /* UFC.com-style side-by-side stat rows (explain.js statComparisonHtml):
      A's number | stat name | B's number, the better number in that
      fighter's corner color. */

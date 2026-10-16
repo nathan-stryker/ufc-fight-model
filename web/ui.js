@@ -295,11 +295,13 @@
         // link like "Make Your Pick" below it -- per direct user feedback
         // that the original text-button read as too heavy/prominent for
         // something optional (2026-09-10).
+        // Written analysis page for this fight, built by src/build_seo_pages.py.
+        const fullLink = `<a class="fc-full-link" href="/events/${seoSlug(card.eventName)}/${seoSlug(fA.name)}-vs-${seoSlug(fB.name)}/">Read the full breakdown &rarr;</a>`;
         action = `
+          ${fullLink}
           ${myPickHtml}
           <button class="breakdown-toggle" type="button" aria-expanded="false" aria-label="Breakdown" title="Breakdown">${BREAKDOWN_ICON_SVG}</button>
           <div class="breakdown-panel" hidden>
-            <a class="breakdown-full-link" href="/events/${seoSlug(card.eventName)}/${seoSlug(fA.name)}-vs-${seoSlug(fB.name)}/">Read the full breakdown &rarr;</a>
             ${predictBreakdownHtml(result)}
             <div class="breakdown-extras-mount"></div>
           </div>
