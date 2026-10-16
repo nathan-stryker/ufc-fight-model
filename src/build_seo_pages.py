@@ -124,12 +124,18 @@ def site_style():
     return _STYLE
 
 
+# Favicon set from web/make_icons.py, copied to the docs/ root by build_site.py.
+ICON_LINKS = ('<link rel="icon" href="/favicon.ico" sizes="48x48">'
+              '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">'
+              '<link rel="apple-touch-icon" href="/apple-touch-icon.png">')
+
+
 def page(title, description, canonical, body, og_image=None, jsonld=None):
     og = (f'<meta property="og:image" content="{og_image}"><meta name="twitter:image" content="{og_image}">'
           f'<meta name="twitter:card" content="summary_large_image">') if og_image else '<meta name="twitter:card" content="summary">'
     ld = f'<script type="application/ld+json">{json.dumps(jsonld)}</script>' if jsonld else ""
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">{ICON_LINKS}
 <title>{esc(title)}</title><meta name="description" content="{esc(description)}">
 <link rel="canonical" href="{canonical}">
 <meta property="og:type" content="article"><meta property="og:site_name" content="Call the Card">
