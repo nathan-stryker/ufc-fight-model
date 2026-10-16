@@ -74,13 +74,6 @@
   // one on file yet (a multi-hour scrape, and UFC.com itself doesn't tag
   // every athlete) -- omitted rather than shown blank, same convention as
   // the nickname line right above it.
-  // Same slug rule as src/build_seo_pages.py's slug() -- links the card to its
-  // static, search-indexable event page.
-  function eventSlug(name) {
-    return String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  }
-
   // Striking · grappling style when the fighter has 3+ UFC fights (explain.js
   // styleSummary), else their single label.
   function styleTagHtml(f) {
@@ -366,9 +359,7 @@
       `<div class="fc-header">
         <div class="fc-eyebrow">This week's card</div>
         <h2 class="fc-event-name display">${escapeHtml(card.eventName)}</h2>
-        <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>
-        <a class="fc-event-link" href="/events/${eventSlug(card.eventName)}/">Every pick on one page &rarr;</a>
-      </div>
+        <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>      </div>
       ${bodyHtml}`;
 
     section.querySelectorAll(".fc-form-badge").forEach((btn) => {

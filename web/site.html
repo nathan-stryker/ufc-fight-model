@@ -498,8 +498,6 @@
   }
   .fc-event-name { font-size: clamp(1.15rem, 3vw, 1.5rem); margin: 0 0 0.25rem; }
   .fc-event-meta { color: var(--ink-dim); font-size: 0.78rem; }
-  .fc-event-link { display: inline-block; margin-top: 0.4rem; font-size: 0.78rem; color: var(--gold); }
-
   /* Tiered card layout -- main event stands alone (gold), the rest of the
      main card follows with the co-main called out (silver), then prelims
      with the featured prelim called out (bronze). Tier comes from ufc.com's
@@ -3375,13 +3373,6 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
   // one on file yet (a multi-hour scrape, and UFC.com itself doesn't tag
   // every athlete) -- omitted rather than shown blank, same convention as
   // the nickname line right above it.
-  // Same slug rule as src/build_seo_pages.py's slug() -- links the card to its
-  // static, search-indexable event page.
-  function eventSlug(name) {
-    return String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  }
-
   // Striking · grappling style when the fighter has 3+ UFC fights (explain.js
   // styleSummary), else their single label.
   function styleTagHtml(f) {
@@ -3667,9 +3658,7 @@ const MODEL_DATA = {"total_fights":8781,"win_model":{"features":["elo_diff","hei
       `<div class="fc-header">
         <div class="fc-eyebrow">This week's card</div>
         <h2 class="fc-event-name display">${escapeHtml(card.eventName)}</h2>
-        <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>
-        <a class="fc-event-link" href="/events/${eventSlug(card.eventName)}/">Every pick on one page &rarr;</a>
-      </div>
+        <div class="fc-event-meta mono">${escapeHtml(eventDate)} &middot; ${escapeHtml(card.eventLocation)}</div>      </div>
       ${bodyHtml}`;
 
     section.querySelectorAll(".fc-form-badge").forEach((btn) => {
