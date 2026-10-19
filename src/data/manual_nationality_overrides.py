@@ -261,6 +261,10 @@ MANUAL = {
     "Cristian Perez": ("Mexico", "MX"),
     # UFC 333 (Volkanovski vs. Evloev) -- user-supplied directly (2026-10-19).
     "Asaf Chopurov": ("Russia", "RU"),
+    # Sources disagree; user's call (2026-10-19). Krylov: Sherdog Ukraine vs
+    # UFC.com Russia. Magomedov: Sherdog Russia vs UFC.com Germany.
+    "Nikita Krylov": ("Ukraine", "UA"),
+    "Abus Magomedov": ("Germany", "DE"),
 }
 
 

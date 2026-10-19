@@ -236,7 +236,10 @@ MANUAL = {
     "Nasrat Haqparast": "Pressure Striker",
     "Nate Landwehr": "Pressure Striker",
     "Nazim Sadykhov": "Pressure Striker",
-    "Noah Gugnon": "MMA",
+    # Was "MMA"; user asked for a real label (2026-10-19). No site lists one,
+    # so from his Sherdog record: 10 of 11 wins finished (6 KO/TKO, mostly
+    # elbows and punches; 4 rear-naked chokes), all in rounds 1-2.
+    "Noah Gugnon": "Aggressive Finisher",
     "Ottman Azaitar": "Aggressive Striker",
     "Paddy Pimblett": "Aggressive MMA",
     "Rafa Garcia": "Grappler",

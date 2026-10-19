@@ -35,6 +35,7 @@ zero pre-UFC fights on file is negligible at this scale.
 Run: python -m src.data.scrape_prefight_history
 Writes: data/processed/prefight_history.csv
 """
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -189,6 +190,11 @@ def _method_bucket(method_text):
     if not method_text:
         return None
     lower = method_text.strip().lower()
+    # The part before the parenthesis decides: "TKO (Submission to Punches)"
+    # is a TKO (the fighter tapped to strikes), which the old whole-string
+    # substring check bucketed as a submission (found 2026-10-19).
+    if re.match(r"(t?ko)\b", lower.split("(")[0].strip()):
+        return "ko"
     # Substring, not just prefix -- "Technical Submission (Armbar)" and
     # "TKO (Doctor Stoppage)" both need to match despite not literally
     # starting with the bucket keyword. Checked in this priority order

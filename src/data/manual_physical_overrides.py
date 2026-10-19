@@ -100,6 +100,10 @@ MANUAL = {
     "Mackenzie Stiller": {"height_in": 62.0, "reach_in": 62.0, "stance": "Orthodox"},
     "Julien Leblanc": {"stance": "Southpaw"},
     "Melissa Croden": {"stance": "Orthodox"},
+    # UFC 333 card audit, user-supplied (2026-10-19). Chopurov's 5'7" matches Sherdog.
+    "Asaf Chopurov": {"height_in": 67.0, "reach_in": 69.0, "stance": "Orthodox"},
+    "Abubakar Vagaev": {"reach_in": 73.0, "stance": "Orthodox"},
+    "Noah Gugnon": {"reach_in": 71.0, "stance": "Orthodox"},
 }
 
 
@@ -127,6 +131,8 @@ REPLACE = {
     "Leon Shahbazyan": {"reach_in": 74.5},
     # UFCStats 1996-09-08 vs Sherdog 1996-08-09 (day/month swap) -- user chose Aug 9.
     "Brendson Ribeiro": {"dob": "1996-08-09"},
+    # UFC 333 audit: ours 5'8" vs UFC.com 5'9" -- user chose 5'9" (2026-10-19).
+    "Losene Keita": {"height_in": 69.0},
 }
 
 
