@@ -259,6 +259,8 @@ MANUAL = {
     "Nicholas Galanti": ("United States", "US"),
     "Louis Jourdain": ("Canada", "CA"),
     "Cristian Perez": ("Mexico", "MX"),
+    # UFC 333 (Volkanovski vs. Evloev) -- user-supplied directly (2026-10-19).
+    "Asaf Chopurov": ("Russia", "RU"),
 }
 
 

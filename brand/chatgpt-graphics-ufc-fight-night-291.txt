@@ -1,0 +1,152 @@
+HOW TO USE
+1. Paste PROMPT 1 into ChatGPT for the full-card picks graphic.
+2. For each fight graphic, paste PROMPT 2 followed by that fight's block from FIGHT DATA below.
+3. Before posting, check every name and number in each image against this file. Image
+   generators often misspell names and change numbers.
+
+
+PROMPT 1 (full card graphic)
+
+Make a 1080x1350 social media graphic of UFC fight predictions. Style: dark background
+(#16130E), bold condensed sports type like Oswald, red (#D20A0A) and blue (#6376E9) as the
+two corner colours, gold (#C6963C) accents. Header: "CALL THE CARD" with "UFC Fight Night 291:
+Buckley vs Malott, October 17". Then two sections, MAIN CARD and PRELIMS, one row per fight
+showing both fighters, the picked fighter highlighted, and the win percentage. Footer:
+"callthecard.com". Use exactly these names and numbers and nothing else:
+
+MAIN CARD
+Joaquin Buckley vs Mike Malott: Buckley 52% (Main Event)
+Erin Blanchfield vs Jasmine Jasudavicius: Blanchfield 61% (Co-Main)
+Kyle Nelson vs Cristian Perez: Perez 57%
+Marc-Andre Barriault vs Kyle Daukaus: Daukaus 74%
+Louis Jourdain vs Timmy Cuamba: Cuamba 53%
+Mandel Nallo vs Nate Landwehr: Nallo 59%
+
+PRELIMS
+Tanner Boser vs Jhonata Diniz: Diniz 57% (Featured Prelim)
+Julien Leblanc vs Nicholas Galanti: Galanti 57%
+Javad Mahjoub vs Joel Faglier: Faglier 63%
+Katlyn Cerminara vs Mackenzie Stiller: Cerminara 57%
+Chad Anheliger vs Steven Koslow: Koslow 59%
+Melissa Croden vs Chelsea Chandler: Croden 59%
+Cody Chovancek vs Soo Young Yoo: Yoo 55%
+
+
+PROMPT 2 (one fight breakdown graphic, paste the fight's data block after it)
+
+Make a 1080x1350 social media graphic breaking down this UFC fight prediction. Same style:
+dark background (#16130E), bold condensed sports type like Oswald, first-listed fighter in
+red (#D20A0A), second in blue (#6376E9), gold (#C6963C) accents, "CALL THE CARD" small at the
+top and "callthecard.com" at the bottom. Include: the matchup and its spot on the card, a
+red/blue win probability bar, how each fighter is most likely to win, a side-by-side tale of
+the tape (record, age, height, reach, stance, striking and grappling numbers where given), and
+the "why" line. Use exactly these names and numbers and nothing else. If a stat isn't listed
+for a fighter (UFC debut), leave it out rather than inventing one.
+
+
+FIGHT DATA
+
+Joaquin Buckley vs Mike Malott (Main Event, Welterweight, 5 rounds)
+- Pick: Joaquin Buckley, 52% (Joaquin Buckley 52% / Mike Malott 48%)
+- Joaquin Buckley wins by: KO/TKO 27%, Sub 6%, Decision 19%
+- Mike Malott wins by: KO/TKO 24%, Sub 7%, Decision 18%
+- Why the model leans Joaquin Buckley: the age gap, UFC experience, the stance matchup
+- Joaquin Buckley: UFC #10; 11-6 in the UFC; age 32; height 5'10"; reach 76"; stance Southpaw; 3.62 strikes landed/min, 3.10 absorbed/min, 36% accuracy; 1.43 takedowns/15 min, 70% takedown defense; style: Power Striker / Balanced Grappler
+- Mike Malott: UFC #13; 7-1 in the UFC; age 34; height 6'1"; reach 73"; stance Orthodox; 3.94 strikes landed/min, 2.83 absorbed/min, 52% accuracy; 1.57 takedowns/15 min, 73% takedown defense; style: Power Striker / Submission Grappler
+
+Erin Blanchfield vs Jasmine Jasudavicius (Co-Main, Women's Flyweight, 3 rounds)
+- Pick: Erin Blanchfield, 61% (Erin Blanchfield 61% / Jasmine Jasudavicius 39%)
+- Erin Blanchfield wins by: KO/TKO 13%, Sub 11%, Decision 37%
+- Jasmine Jasudavicius wins by: KO/TKO 6%, Sub 7%, Decision 26%
+- Why the model leans Erin Blanchfield: the age gap, win rate, takedown defense
+- Erin Blanchfield: UFC #4; 8-1 in the UFC; age 27; height 5'4"; reach 66"; stance Orthodox; 5.24 strikes landed/min, 4.25 absorbed/min, 44% accuracy; 1.96 takedowns/15 min, 78% takedown defense; style: Volume Striker / Submission Grappler
+- Jasmine Jasudavicius: UFC #6; 9-3 in the UFC; age 37; height 5'7"; reach 68"; stance Orthodox; 3.35 strikes landed/min, 3.38 absorbed/min, 44% accuracy; 2.49 takedowns/15 min, 75% takedown defense; style: Balanced Striker / Wrestler
+
+Kyle Nelson vs Cristian Perez (Main Card, Lightweight, 3 rounds)
+- Pick: Cristian Perez, 57% (Kyle Nelson 43% / Cristian Perez 57%)
+- Kyle Nelson wins by: KO/TKO 18%, Sub 4%, Decision 21%
+- Cristian Perez wins by: KO/TKO 21%, Sub 10%, Decision 26%
+- Why the model leans Cristian Perez: the age gap, win rate, recent form
+- Kyle Nelson: 5-6 in the UFC; age 35; height 5'11"; reach 71"; stance Switch; 3.60 strikes landed/min, 4.58 absorbed/min, 46% accuracy; 1.18 takedowns/15 min, 67% takedown defense; style: Balanced Striker / Balanced Grappler
+- Cristian Perez: UFC debut (15-2 pro); age 27; height 5'9"; reach 72"; stance Orthodox
+
+Marc-Andre Barriault vs Kyle Daukaus (Main Card, Middleweight, 3 rounds)
+- Pick: Kyle Daukaus, 74% (Marc-Andre Barriault 26% / Kyle Daukaus 74%)
+- Marc-Andre Barriault wins by: KO/TKO 12%, Sub 2%, Decision 12%
+- Kyle Daukaus wins by: KO/TKO 27%, Sub 16%, Decision 32%
+- Why the model leans Kyle Daukaus: absorbing fewer strikes, the age gap, recent form
+- Marc-Andre Barriault: 6-10 in the UFC; age 36; height 6'1"; reach 74"; stance Orthodox; 5.65 strikes landed/min, 5.94 absorbed/min, 47% accuracy; 0.34 takedowns/15 min, 68% takedown defense; style: Pressure Striker / Balanced Grappler
+- Kyle Daukaus: 4-5 in the UFC; age 33; height 6'2"; reach 76"; stance Southpaw; 2.86 strikes landed/min, 3.23 absorbed/min, 49% accuracy; 1.96 takedowns/15 min, 71% takedown defense; style: Minimal Striking / Submission Grappler
+
+Louis Jourdain vs Timmy Cuamba (Main Card, Bantamweight, 3 rounds)
+- Pick: Timmy Cuamba, 53% (Louis Jourdain 47% / Timmy Cuamba 53%)
+- Louis Jourdain wins by: KO/TKO 13%, Sub 10%, Decision 24%
+- Timmy Cuamba wins by: KO/TKO 18%, Sub 6%, Decision 29%
+- Why the model leans Timmy Cuamba: UFC experience, the age gap
+- Louis Jourdain: UFC debut (9-3 pro); age 29; height 5'9"; reach 69"; stance Orthodox
+- Timmy Cuamba: 2-3 in the UFC; age 27; height 5'9"; reach 71"; stance Orthodox; 2.89 strikes landed/min, 3.54 absorbed/min, 46% accuracy; 1.47 takedowns/15 min, 67% takedown defense; style: Balanced Striker / Balanced Grappler
+
+Mandel Nallo vs Nate Landwehr (Main Card, Lightweight, 3 rounds)
+- Pick: Mandel Nallo, 59% (Mandel Nallo 59% / Nate Landwehr 41%)
+- Mandel Nallo wins by: KO/TKO 17%, Sub 10%, Decision 32%
+- Nate Landwehr wins by: KO/TKO 14%, Sub 6%, Decision 20%
+- Why the model leans Mandel Nallo: absorbing fewer strikes, takedown defense, takedown volume
+- Mandel Nallo: 0-1 in the UFC; age 37; height 6'0"; reach 75"; stance Orthodox; 7.68 strikes landed/min, 9.12 absorbed/min, 52% accuracy; 0.00 takedowns/15 min, 0% takedown defense
+- Nate Landwehr: 5-6 in the UFC; age 38; height 5'9"; reach 72"; stance Orthodox; 5.55 strikes landed/min, 5.96 absorbed/min, 46% accuracy; 0.73 takedowns/15 min, 72% takedown defense; style: Pressure Striker / Submission Grappler
+
+Tanner Boser vs Jhonata Diniz (Featured Prelim, Heavyweight, 3 rounds)
+- Pick: Jhonata Diniz, 57% (Tanner Boser 43% / Jhonata Diniz 57%)
+- Tanner Boser wins by: KO/TKO 20%, Sub 3%, Decision 20%
+- Jhonata Diniz wins by: KO/TKO 24%, Sub 4%, Decision 28%
+- Why the model leans Jhonata Diniz: recent form, absorbing fewer strikes, win rate
+- Tanner Boser: 5-6 in the UFC; age 35; height 6'2"; reach 75"; stance Orthodox; 4.82 strikes landed/min, 3.00 absorbed/min, 54% accuracy; 0.00 takedowns/15 min, 70% takedown defense; style: Volume Striker / Balanced Grappler
+- Jhonata Diniz: 3-2 in the UFC; age 35; height 6'4"; reach 79"; stance Orthodox; 3.67 strikes landed/min, 3.41 absorbed/min, 59% accuracy; 0.00 takedowns/15 min, 69% takedown defense; style: Counter Striker / Balanced Grappler
+
+Julien Leblanc vs Nicholas Galanti (Prelim, Middleweight, 3 rounds)
+- Pick: Nicholas Galanti, 57% (Julien Leblanc 43% / Nicholas Galanti 57%)
+- Julien Leblanc wins by: KO/TKO 16%, Sub 9%, Decision 18%
+- Nicholas Galanti wins by: KO/TKO 20%, Sub 18%, Decision 19%
+- Why the model leans Nicholas Galanti: the age gap, win rate, recent form
+- Julien Leblanc: 0-1 in the UFC; age 34; height 6'2"; reach 74.5"; stance Southpaw; 1.69 strikes landed/min, 2.96 absorbed/min, 67% accuracy; 0.00 takedowns/15 min, 0% takedown defense
+- Nicholas Galanti: UFC debut (8-1 pro); age 28; height 6'1"; reach 75"; stance Southpaw
+
+Javad Mahjoub vs Joel Faglier (Prelim, Heavyweight, 3 rounds)
+- Pick: Joel Faglier, 63% (Javad Mahjoub 37% / Joel Faglier 63%)
+- Javad Mahjoub wins by: KO/TKO 15%, Sub 6%, Decision 16%
+- Joel Faglier wins by: KO/TKO 28%, Sub 11%, Decision 24%
+- Why the model leans Joel Faglier: the age gap
+- Javad Mahjoub: UFC debut (5-0 pro); age 35; height 6'1"; reach 73"; stance Orthodox
+- Joel Faglier: UFC debut (6-0 pro); age 25; height 6'2"; reach 74"; stance Orthodox
+
+Katlyn Cerminara vs Mackenzie Stiller (Prelim, Women's Flyweight, 3 rounds)
+- Pick: Katlyn Cerminara, 57% (Katlyn Cerminara 57% / Mackenzie Stiller 43%)
+- Katlyn Cerminara wins by: KO/TKO 16%, Sub 7%, Decision 34%
+- Mackenzie Stiller wins by: KO/TKO 10%, Sub 7%, Decision 26%
+- Why the model leans Katlyn Cerminara: recent form, win rate, reach
+- Katlyn Cerminara: 11-6 in the UFC; age 37; height 5'9"; reach 68"; stance Orthodox; 4.58 strikes landed/min, 4.48 absorbed/min, 35% accuracy; 0.31 takedowns/15 min, 50% takedown defense; style: Pressure Striker / Balanced Grappler
+- Mackenzie Stiller: UFC debut (6-1 pro); age 27; height 5'2"; reach 62"; stance Orthodox
+
+Chad Anheliger vs Steven Koslow (Prelim, Bantamweight, 3 rounds)
+- Pick: Steven Koslow, 59% (Chad Anheliger 41% / Steven Koslow 59%)
+- Chad Anheliger wins by: KO/TKO 14%, Sub 5%, Decision 22%
+- Steven Koslow wins by: KO/TKO 16%, Sub 22%, Decision 21%
+- Why the model leans Steven Koslow: the age gap, takedown volume, reach
+- Chad Anheliger: 2-3 in the UFC; age 39; height 5'6"; reach 64"; stance Orthodox; 3.11 strikes landed/min, 2.90 absorbed/min, 44% accuracy; 0.82 takedowns/15 min, 27% takedown defense; style: Balanced Striker / Balanced Grappler
+- Steven Koslow: 0-1 in the UFC; age 29; height 5'7"; reach 69"; stance Switch; 0.77 strikes landed/min, 3.73 absorbed/min, 38% accuracy; 5.28 takedowns/15 min, 0% takedown defense
+
+Melissa Croden vs Chelsea Chandler (Prelim, Women's Bantamweight, 3 rounds)
+- Pick: Melissa Croden, 59% (Melissa Croden 59% / Chelsea Chandler 41%)
+- Melissa Croden wins by: KO/TKO 18%, Sub 6%, Decision 34%
+- Chelsea Chandler wins by: KO/TKO 11%, Sub 6%, Decision 25%
+- Why the model leans Melissa Croden: absorbing fewer strikes, striking output, win rate
+- Melissa Croden: UFC #14; 2-1 in the UFC; age 35; height 5'9"; reach 68.5"; stance Orthodox; 4.27 strikes landed/min, 2.13 absorbed/min, 47% accuracy; 2.02 takedowns/15 min, 67% takedown defense; style: Balanced Striker / Wrestler
+- Chelsea Chandler: 3-3 in the UFC; age 32; height 5'8"; reach 68"; stance Southpaw; 3.52 strikes landed/min, 4.27 absorbed/min, 45% accuracy; 0.81 takedowns/15 min, 25% takedown defense; style: Balanced Striker / Balanced Grappler
+
+Cody Chovancek vs Soo Young Yoo (Prelim, Bantamweight, 3 rounds)
+- Pick: Soo Young Yoo, 55% (Cody Chovancek 45% / Soo Young Yoo 55%)
+- Cody Chovancek wins by: KO/TKO 14%, Sub 11%, Decision 20%
+- Soo Young Yoo wins by: KO/TKO 13%, Sub 9%, Decision 33%
+- Why the model leans Soo Young Yoo: UFC experience, win rate, recent form
+- Cody Chovancek: UFC debut (9-0 pro); age 28; height 5'8"; reach 67"; stance Switch
+- Soo Young Yoo: 3-1 in the UFC; age 30; height 5'6"; reach 65"; stance Orthodox; 2.37 strikes landed/min, 2.13 absorbed/min, 52% accuracy; 3.23 takedowns/15 min, 0% takedown defense; style: Counter Striker / Wrestler
+

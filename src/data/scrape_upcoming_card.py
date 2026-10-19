@@ -458,6 +458,32 @@ MANUAL_CARDS = {
             frozenset({"jacobe smith", "bruce whitehead"}): {"weight_class": "Welterweight", "is_title_fight": False},
         },
     },
+    "UFC 333": {
+        "main_card": 5,
+        "order": [
+            # Full running order from the user, 2026-10-19 (top of the card first).
+            ("Alexander Volkanovski", "Movsar Evloev"),
+            ("Petr Yan", "Merab Dvalishvili"),
+            ("Lone'er Kavanagh", "Ramazan Temirov"),
+            ("Alexander Volkov", "Rizvan Kuniev"),
+            ("Aaron Pico", "Losene Keita"),
+            ("Azamat Murzakanov", "Dominick Reyes"),  # featured prelim
+            ("Nikita Krylov", "Abdul Rakhman Yakhyaev"),
+            ("Abus Magomedov", "Cam Rowston"),
+            ("Grant Dawson", "Nurullo Aliev"),
+            ("Colby Thicknesse", "Asaf Chopurov"),
+            ("Abubakar Vagaev", "Jacob Malkoun"),
+            ("Bolaji Oki", "Daniel Santos"),
+            ("Kody Steele", "Noah Gugnon"),
+            ("Iasmin Lucindo", "Nicolle Caliari"),  # opener
+        ],
+        "added": {
+            # Not on ufc.com yet; weight classes from Sherdog's event page (2026-10-19).
+            frozenset({"bolaji oki", "daniel santos"}): {"weight_class": "Featherweight", "is_title_fight": False},
+            frozenset({"kody steele", "noah gugnon"}): {"weight_class": "Lightweight", "is_title_fight": False},
+            frozenset({"iasmin lucindo", "nicolle caliari"}): {"weight_class": "Women's Strawweight", "is_title_fight": False},
+        },
+    },
 }
 
 
