@@ -457,8 +457,10 @@ def analysis_html(b, a, c, r, payload, metrics, short_ev, ev_date, rounds):
         wins = [x for x in (p or {}).get("fights", []) if x.get("result") == "win"]
         if not wins:
             return None
-        ko = sum(1 for x in wins if re.search(r"KO", x.get("method") or ""))
-        sb = sum(1 for x in wins if "Submission" in (x.get("method") or ""))
+        # judge by the part before the parenthesis: "TKO (Submission to Punches)" is a TKO only
+        kind = lambda x: (x.get("method") or "").split("(")[0]
+        ko = sum(1 for x in wins if re.search(r"KO", kind(x)))
+        sb = sum(1 for x in wins if "Submission" in kind(x))
         return f"{nm} won {len(wins)} fights before the UFC, {ko} by knockout and {sb} by submission."
 
     if have(a) and have(c):
