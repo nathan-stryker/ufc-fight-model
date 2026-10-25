@@ -492,7 +492,55 @@ MANUAL_CARDS = {
             frozenset({"iasmin lucindo", "nicolle caliari"}): {"weight_class": "Women's Strawweight", "is_title_fight": False},
         },
     },
+    "UFC Fight Night 292": {
+        "main_card": 6,
+        "order": [
+            # Full running order from the user, 2026-10-25 (top of the card first).
+            # Names as Sherdog lists them (ufc.com hadn't split the card yet).
+            ("Renato Carneiro", "Tom Nolan"),
+            ("Randy Brown", "Jacobe Smith"),
+            ("Yana Santos", "Luana Santos"),
+            ("Cody Durden", "Ode Osbourne"),
+            ("Zachary Reese", "Mickey Gall"),
+            ("Jean-Paul Lebosnoyani", "Farman Hasanov"),
+            ("Francis Marshall", "Dakota Hope"),  # featured prelim
+            ("Rodrigo Sezinando", "Theodor Berggren"),
+            ("Julian Erosa", "Jeong Yeong Lee"),
+            ("Nick Klein", "Joseph Kropschot"),
+            ("Piera Rodriguez", "Talita Alencar"),
+            ("Lucia Szabova", "Tainara Lisboa"),  # opener
+        ],
+    },
 }
+
+
+def fix_sherdog_fallback(bouts):
+    """Sherdog's event page differs from ufc.com in two ways that matter
+    (found 2026-10-25, UFC Fight Night 292, before ufc.com split the card):
+    it drops "Women's" from women's weight classes -- and the method/round
+    model reads that label to pick women's finishing rates -- and it uses
+    legal names ("Renato Carneiro" for Renato Moicano). Re-add "Women's" when
+    either fighter's last UFC bout was in a women's division, and show our
+    UFCStats name unless the two differ only in spacing ("Jeong Yeong Lee")."""
+    fights = pd.read_csv(PROCESSED_DIR / "fights.csv", parse_dates=["event_date"]).sort_values("event_date")
+    last_wc = {}
+    for r in fights.itertuples():
+        for fid in (r.fighter_1_id, r.fighter_2_id):
+            if isinstance(fid, str):
+                last_wc[fid] = r.weightclass
+    names = pd.read_csv(PROCESSED_DIR / "fighters.csv").set_index("fighter_id")["name"].to_dict()
+    for b in bouts:
+        wc = b.get("weight_class") or ""
+        ids = [b.get("fighter_a_id"), b.get("fighter_b_id")]
+        if wc and not wc.lower().startswith("women's") and any(
+                str(last_wc.get(fid, "")).lower().startswith("women's") for fid in ids if fid):
+            b["weight_class"] = f"Women's {wc}"
+        for side, fid in (("fighter_a_name", ids[0]), ("fighter_b_name", ids[1])):
+            ours = names.get(fid)
+            if ours and fid not in DISPLAY_NAMES and (
+                    normalize_name(ours).replace(" ", "") != normalize_name(b[side]).replace(" ", "")):
+                b[side] = ours
+    return bouts
 
 
 def apply_manual_card(event_name, bouts):
@@ -592,6 +640,8 @@ def main():
 
     bouts = apply_manual_card(event["event_name"], bouts)
     bouts = match_fighter_ids(bouts)
+    if source.startswith("sherdog"):
+        bouts = fix_sherdog_fallback(bouts)
     bouts = add_model_predictions(bouts)
 
     rows = []

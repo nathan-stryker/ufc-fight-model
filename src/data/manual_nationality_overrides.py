@@ -265,6 +265,8 @@ MANUAL = {
     # UFC.com Russia. Magomedov: Sherdog Russia vs UFC.com Germany.
     "Nikita Krylov": ("Ukraine", "UA"),
     "Abus Magomedov": ("Germany", "DE"),
+    # UFC Fight Night 292 (Moicano vs. Nolan) -- user-supplied (2026-10-25).
+    "Joe Kropschot": ("United States", "US"),
 }
 
 

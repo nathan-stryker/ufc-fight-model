@@ -69,6 +69,9 @@ MANUAL_SHERDOG_URLS = {
     # Sherdog lists him under his full given name; confirmed via matching
     # nickname "El Chapo" (UFC Fight Night 283 card, 2026-08-01).
     "vlasto cepo": "https://www.sherdog.com/fighter/Vlastislav-Cepo-330615",
+    # Listed as "Joseph" on Sherdog; the link comes from the UFC Fight Night 292
+    # event page, his own bout vs. Nick Klein (2026-10-25).
+    "joe kropschot": "https://www.sherdog.com/fighter/Joseph-Kropschot-248331",
     # Sherdog lists her under her full given name; confirmed via matching
     # nickname "Queen Beast" (UFC Fight Night 283 card, 2026-08-01).
     "nina milosevic": "https://www.sherdog.com/fighter/Nina-Nikolija-Milosevic-399822",
