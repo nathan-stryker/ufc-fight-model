@@ -288,6 +288,14 @@ NAME_ALIASES = {
     # which matched fighters.csv directly; Sherdog has a third spelling,
     # "Mehemmedali"). Same fighter, same bout.
     "mahammadali osmanli": "mehemmedeli osmanli",
+    # UFC Fight Night 292 (2026-10-31), Sherdog-fallback spellings. Each is
+    # the only fighters.csv candidate at the bout's weight class (Lee: 4 UFC
+    # featherweight bouts; Reese: UFC middleweight, 9 bouts); Kropschot/Reese
+    # pairs were already recorded in manual_style_recategorization.py from
+    # roster.watch's identical "Joseph"/"Zachary" spellings.
+    "jeong yeong lee": "jeongyeong lee",
+    "joseph kropschot": "joe kropschot",
+    "zachary reese": "zach reese",
 }
 
 
