@@ -267,6 +267,10 @@ MANUAL = {
     "Abus Magomedov": ("Germany", "DE"),
     # UFC Fight Night 292 (Moicano vs. Nolan) -- user-supplied (2026-10-25).
     "Joe Kropschot": ("United States", "US"),
+    # The scraped Sherdog match was a different Zach Reese (no UFC fights). The
+    # real one is Sherdog's "Zachary Reese" -- same UFC fights as ours (Gandra,
+    # Pereira, McVey, ...), also American. (UFC Fight Night 292 audit, 2026-10-26.)
+    "Zach Reese": ("United States", "US", "https://www.sherdog.com/fighter/Zachary-Reese-100903"),
 }
 
 

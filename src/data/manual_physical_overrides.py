@@ -104,6 +104,8 @@ MANUAL = {
     "Asaf Chopurov": {"height_in": 67.0, "reach_in": 69.0, "stance": "Orthodox"},
     "Abubakar Vagaev": {"reach_in": 73.0, "stance": "Orthodox"},
     "Noah Gugnon": {"reach_in": 71.0, "stance": "Orthodox"},
+    # UFC Fight Night 292 debut: UFC.com athlete page lists 6'3" / 79" (2026-10-26).
+    "Joe Kropschot": {"height_in": 75.0, "reach_in": 79.0},
 }
 
 
