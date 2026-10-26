@@ -547,14 +547,19 @@ def apply_manual_card(event_name, bouts):
     spec = next((v for k, v in MANUAL_CARDS.items() if event_name.startswith(k)), None)
     if spec is None:
         return bouts
-    key = lambda a, b: frozenset({normalize_name(a), normalize_name(b)})
+    # Alias- and spacing-insensitive, so an order written with Sherdog's names
+    # ("Renato Carneiro", "Jeong Yeong Lee") still matches once ufc.com lists
+    # the card ("Renato Moicano", "JeongYeong Lee") -- FN 292, 2026-10-26.
+    one = lambda n: NAME_ALIASES.get(normalize_name(n), normalize_name(n)).replace(" ", "")
+    key = lambda a, b: frozenset({one(a), one(b)})
     by_key = {key(b["fighter_a_name"], b["fighter_b_name"]): b for b in bouts}
+    added = {frozenset(map(one, k)): v for k, v in spec.get("added", {}).items()}
     ordered = []
     for a, b in spec["order"]:
         k = key(a, b)
         bout = by_key.pop(k, None)
         if bout is None:
-            extra = spec.get("added", {}).get(k)
+            extra = added.get(k)
             if extra is None:
                 print(f"  manual card: {a} vs {b} not on ufc.com and not in 'added' -- skipped")
                 continue
