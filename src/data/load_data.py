@@ -233,6 +233,15 @@ RAW_FIGHT_FIGHTER_IDS = {
     ("Bruno Silva", "2019-10-05"): "http://ufcstats.com/fighter-details/294aa73dbf37d281",
 }
 
+# Results later overturned to a no contest that the raw data still shows as a
+# win/loss. Keyed by UFCStats fight URL.
+OVERTURNED_TO_NC = {
+    # Ode Osbourne vs. Alibi Idiris, 2026-02-21: Sherdog lists "No Contest
+    # (Overturned)"; UFC.com still counts it as an Osbourne loss. User chose
+    # no contest (UFC Fight Night 292 audit, 2026-10-27).
+    "http://ufcstats.com/fight-details/7ffdaa44fc8d111b",
+}
+
 
 def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
     results = pd.read_csv(RAW_DIR / "ufc_fight_results.csv")
@@ -295,6 +304,9 @@ def load_fights(fighters: pd.DataFrame, real_events: set) -> pd.DataFrame:
     fights["fighter_1_id"] = [resolve_id(n, w, d) for n, w, d in zip(fights["fighter_1_name"], fights["weightclass"], fights["event_date"])]
     fights["fighter_2_id"] = [resolve_id(n, w, d) for n, w, d in zip(fights["fighter_2_name"], fights["weightclass"], fights["event_date"])]
 
+    overturned = fights["URL"].str.strip().isin(OVERTURNED_TO_NC)
+    fights.loc[overturned, "OUTCOME"] = "NC/NC"
+    fights.loc[overturned, "METHOD"] = "Overturned"
     outcome_split = fights["OUTCOME"].str.split("/", expand=True)
     fights["result_1"] = outcome_split[0]
     fights["result_2"] = outcome_split[1]

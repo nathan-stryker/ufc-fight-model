@@ -105,7 +105,11 @@ MANUAL = {
     "Abubakar Vagaev": {"reach_in": 73.0, "stance": "Orthodox"},
     "Noah Gugnon": {"reach_in": 71.0, "stance": "Orthodox"},
     # UFC Fight Night 292 debut: UFC.com athlete page lists 6'3" / 79" (2026-10-26).
-    "Joe Kropschot": {"height_in": 75.0, "reach_in": 79.0},
+    "Joe Kropschot": {"height_in": 75.0, "reach_in": 79.0, "stance": "Orthodox"},
+    # UFC Fight Night 292 audit, user-supplied (2026-10-27). Szabova's 5'7" matches Sherdog.
+    "Lucia Szabova": {"height_in": 67.0, "reach_in": 68.0, "stance": "Orthodox"},
+    "Farman Hasanov": {"reach_in": 74.0, "stance": "Orthodox"},
+    "Dakota Hope": {"reach_in": 68.0, "stance": "Southpaw"},
 }
 
 
@@ -135,6 +139,8 @@ REPLACE = {
     "Brendson Ribeiro": {"dob": "1996-08-09"},
     # UFC 333 audit: ours 5'8" vs UFC.com 5'9" -- user chose 5'9" (2026-10-19).
     "Losene Keita": {"height_in": 69.0},
+    # UFC Fight Night 292 audit: ours 5'11" vs UFC.com 6'0" -- user chose 6'0" (2026-10-27).
+    "Theodor Berggren": {"height_in": 72.0},
 }
 
 

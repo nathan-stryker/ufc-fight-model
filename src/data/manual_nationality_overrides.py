@@ -271,6 +271,9 @@ MANUAL = {
     # real one is Sherdog's "Zachary Reese" -- same UFC fights as ours (Gandra,
     # Pereira, McVey, ...), also American. (UFC Fight Night 292 audit, 2026-10-26.)
     "Zach Reese": ("United States", "US", "https://www.sherdog.com/fighter/Zachary-Reese-100903"),
+    # Sherdog lists United States; UFC.com lists Jamaica (born Kingston) --
+    # user chose Jamaica (2026-10-27).
+    "Ode Osbourne": ("Jamaica", "JM"),
 }
 
 
