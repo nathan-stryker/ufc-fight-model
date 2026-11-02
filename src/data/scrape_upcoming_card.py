@@ -511,6 +511,27 @@ MANUAL_CARDS = {
             ("Lucia Szabova", "Tainara Lisboa"),  # opener
         ],
     },
+    "UFC Fight Night 293": {
+        "main_card": 6,
+        "order": [
+            # Full running order from the user via Tapology, 2026-11-02 (top first).
+            ("Waldo Cortes Acosta", "Johnny Walker"),
+            ("Tatiana Suarez", "Virna Jandiroba"),
+            ("Davey Grant", "Elijah Smith"),
+            ("Seokhyeon Ko", "Wellington Turman"),
+            ("Billy Elekana", "Lucas Fernando"),
+            ("Mantas Kondratavicius", "Andre Petroski"),
+            ("Gabriel Lorenco", "Thomas Petersen"),  # featured prelim
+            ("Karine Silva", "Gabriella Fernandes"),
+            ("Mitch Raposo", "Marcos Degli"),
+            ("Jose Delano", "Murtazali Magomedov"),
+            ("Keiichiro Nakamura", "Ollie Schmid"),
+            ("Priscila Cachoeira", "Nina Milosevic"),
+            ("Jonny Parsons", "Jose Souza"),  # opener
+        ],
+        # Not in the user's Tapology order (2026-11-02) -- off the card.
+        "removed": [("Austin Bashi", "Lucas Brennan")],
+    },
 }
 
 
@@ -565,7 +586,11 @@ def apply_manual_card(event_name, bouts):
                 continue
             bout = {"fighter_a_name": a, "fighter_b_name": b, "rank_a": None, "rank_b": None, **extra}
         ordered.append(bout)
-    for bout in by_key.values():
+    removed = {key(a, b) for a, b in spec.get("removed", [])}
+    for k, bout in by_key.items():
+        if k in removed:
+            print(f"  manual card: {bout['fighter_a_name']} vs {bout['fighter_b_name']} removed (off the card per the user)")
+            continue
         print(f"  manual card: {bout['fighter_a_name']} vs {bout['fighter_b_name']} is on ufc.com but not in the manual order -- kept last")
         ordered.append(bout)
     n_main = spec["main_card"]
