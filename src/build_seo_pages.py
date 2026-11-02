@@ -23,6 +23,7 @@ Run: python -m src.build_seo_pages   (also run at the end of web/build_site.py)
 """
 import html
 import json
+import shutil
 import re
 import sys
 import unicodedata
@@ -712,6 +713,17 @@ def build_event(card, payload, metrics, preds=None, graded=None):
                                        encoding="utf-8")
     (ev_dir / "event.json").write_text(json.dumps({"name": ev_name, "date": ev_date, "updated": date.today().isoformat(),
                                                    "fights": len(bouts), "graded": graded is not None}), encoding="utf-8")
+    # Stale fight pages linger in the sitemap. On an upcoming card, drop any
+    # page not on the card (a scratched bout). On any card, drop a page whose
+    # pairing is live under the other corner order -- the source flipping
+    # corners mid-week otherwise leaves a duplicate. Other graded pages stay:
+    # they hold the saved pre-fight breakdown.
+    live = {s for _, _, _, s, _, _ in bouts}
+    live_pairs = {frozenset(s.split("-vs-")) for s in live}
+    for d in ev_dir.iterdir():
+        if d.is_dir() and d.name not in live and (d / "index.html").exists():
+            if preds is not None or frozenset(d.name.split("-vs-")) in live_pairs:
+                shutil.rmtree(d)
     return len(bouts)
 
 
