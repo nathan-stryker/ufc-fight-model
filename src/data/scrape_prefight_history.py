@@ -72,6 +72,9 @@ MANUAL_SHERDOG_URLS = {
     # Listed as "Joseph" on Sherdog; the link comes from the UFC Fight Night 292
     # event page, his own bout vs. Nick Klein (2026-10-25).
     "joe kropschot": "https://www.sherdog.com/fighter/Joseph-Kropschot-248331",
+    # Spelled "Lourenco" on Sherdog; link from the UFC Fight Night 293 event
+    # page, his bout vs. Thomas Petersen (2026-11-02).
+    "gabriel lorenco": "https://www.sherdog.com/fighter/Gabriel-Lourenco-398156",
     # Sherdog lists her under her full given name; confirmed via matching
     # nickname "Queen Beast" (UFC Fight Night 283 card, 2026-08-01).
     "nina milosevic": "https://www.sherdog.com/fighter/Nina-Nikolija-Milosevic-399822",

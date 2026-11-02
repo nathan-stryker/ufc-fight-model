@@ -110,6 +110,13 @@ MANUAL = {
     "Lucia Szabova": {"height_in": 67.0, "reach_in": 68.0, "stance": "Orthodox"},
     "Farman Hasanov": {"reach_in": 74.0, "stance": "Orthodox"},
     "Dakota Hope": {"reach_in": 68.0, "stance": "Southpaw"},
+    # UFC Fight Night 293 debut: UFC.com athlete page lists 6'2" / 76" (2026-11-02).
+    "Gabriel Lorenco": {"height_in": 74.0, "reach_in": 76.0, "stance": "Orthodox"},
+    "Marcos Degli": {"height_in": 66.0, "reach_in": 67.0, "stance": "Orthodox"},  # size from UFC.com
+    # Stances/reaches user-supplied (2026-11-02). Nakamura: user kept our 5'10" over UFC.com's 5'8".
+    "Lucas Fernando": {"stance": "Orthodox"},
+    "Ollie Schmid": {"reach_in": 71.0, "stance": "Orthodox"},
+    "Nina Milosevic": {"reach_in": 67.0, "stance": "Orthodox"},
 }
 
 

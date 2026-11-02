@@ -274,6 +274,16 @@ MANUAL = {
     # Sherdog lists United States; UFC.com lists Jamaica (born Kingston) --
     # user chose Jamaica (2026-10-27).
     "Ode Osbourne": ("Jamaica", "JM"),
+    # UFC Fight Night 293 (Cortes-Acosta vs. Walker): the nationality scrape
+    # found no Sherdog match for these three; links come from the event
+    # page's own bouts, nationality from each Sherdog profile (2026-11-02).
+    "Gabriel Lorenco": ("Brazil", "BR", "https://www.sherdog.com/fighter/Gabriel-Lourenco-398156"),
+    "Marcos Degli": ("Brazil", "BR", "https://www.sherdog.com/fighter/Marcos-Degli-377798"),
+    "Jonny Parsons": ("United States", "US", "https://www.sherdog.com/fighter/Jonny-Parsons-65875"),
+    # Scraped Sherdog match was a different, American Jose Souza (no UFC
+    # fights). The real one (b. 2002-05-23 = ours, beat Meng Ding) is
+    # Brazilian, as UFC.com's card also lists him (audit, 2026-11-02).
+    "Jose Souza": ("Brazil", "BR", "https://www.sherdog.com/fighter/Jose-Henrique-Souza-362437"),
 }
 
 
