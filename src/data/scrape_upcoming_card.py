@@ -524,13 +524,14 @@ MANUAL_CARDS = {
             ("Gabriel Lorenco", "Thomas Petersen"),  # featured prelim
             ("Karine Silva", "Gabriella Fernandes"),
             ("Mitch Raposo", "Marcos Degli"),
+            # Replaced Bashi vs. Brennan; user placed it between Petroski and
+            # Delano (2026-11-05). Featherweight per ufc.com and Sherdog.
+            ("Austin Bashi", "Carlos Calderon"),
             ("Jose Delano", "Murtazali Magomedov"),
             ("Keiichiro Nakamura", "Ollie Schmid"),
             ("Priscila Cachoeira", "Nina Milosevic"),
             ("Jonny Parsons", "Jose Souza"),  # opener
         ],
-        # Not in the user's Tapology order (2026-11-02) -- off the card.
-        "removed": [("Austin Bashi", "Lucas Brennan")],
     },
 }
 

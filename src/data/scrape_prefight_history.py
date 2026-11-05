@@ -75,6 +75,9 @@ MANUAL_SHERDOG_URLS = {
     # Spelled "Lourenco" on Sherdog; link from the UFC Fight Night 293 event
     # page, his bout vs. Thomas Petersen (2026-11-02).
     "gabriel lorenco": "https://www.sherdog.com/fighter/Gabriel-Lourenco-398156",
+    # A different, Spanish Carlos Calderon matched by name; this is the one
+    # booked on UFC Fight Night 293, link from its event page (2026-11-05).
+    "carlos calderon": "https://www.sherdog.com/fighter/Carlos-Calderon-247279",
     # Sherdog lists her under her full given name; confirmed via matching
     # nickname "Queen Beast" (UFC Fight Night 283 card, 2026-08-01).
     "nina milosevic": "https://www.sherdog.com/fighter/Nina-Nikolija-Milosevic-399822",

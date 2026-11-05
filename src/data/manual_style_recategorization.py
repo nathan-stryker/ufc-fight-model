@@ -240,6 +240,9 @@ MANUAL = {
     # so from his Sherdog record: 10 of 11 wins finished (6 KO/TKO, mostly
     # elbows and punches; 4 rear-naked chokes), all in rounds 1-2.
     "Noah Gugnon": "Aggressive Finisher",
+    # UFC Fight Night 293 debut. No site lists a style; from his Sherdog record:
+    # 6 of 11 pro wins by submission (2026-11-05).
+    "Carlos Calderon": "Grappler",
     "Ottman Azaitar": "Aggressive Striker",
     "Paddy Pimblett": "Aggressive MMA",
     "Rafa Garcia": "Grappler",
