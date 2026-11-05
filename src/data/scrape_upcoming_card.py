@@ -511,28 +511,6 @@ MANUAL_CARDS = {
             ("Lucia Szabova", "Tainara Lisboa"),  # opener
         ],
     },
-    "UFC Fight Night 293": {
-        "main_card": 6,
-        "order": [
-            # Full running order from the user via Tapology, 2026-11-02 (top first).
-            ("Waldo Cortes Acosta", "Johnny Walker"),
-            ("Tatiana Suarez", "Virna Jandiroba"),
-            ("Davey Grant", "Elijah Smith"),
-            ("Seokhyeon Ko", "Wellington Turman"),
-            ("Billy Elekana", "Lucas Fernando"),
-            ("Mantas Kondratavicius", "Andre Petroski"),
-            ("Gabriel Lorenco", "Thomas Petersen"),  # featured prelim
-            ("Karine Silva", "Gabriella Fernandes"),
-            ("Mitch Raposo", "Marcos Degli"),
-            # Replaced Bashi vs. Brennan; user placed it between Petroski and
-            # Delano (2026-11-05). Featherweight per ufc.com and Sherdog.
-            ("Austin Bashi", "Carlos Calderon"),
-            ("Jose Delano", "Murtazali Magomedov"),
-            ("Keiichiro Nakamura", "Ollie Schmid"),
-            ("Priscila Cachoeira", "Nina Milosevic"),
-            ("Jonny Parsons", "Jose Souza"),  # opener
-        ],
-    },
 }
 
 
