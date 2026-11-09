@@ -117,6 +117,9 @@ MANUAL = {
     "Lucas Fernando": {"stance": "Orthodox"},
     "Ollie Schmid": {"reach_in": 71.0, "stance": "Orthodox"},
     "Nina Milosevic": {"reach_in": 67.0, "stance": "Orthodox"},
+    # UFC 334, user-supplied (2026-11-09).
+    "Bilal Hasan": {"stance": "Switch"},
+    "Juan Diaz": {"stance": "Orthodox"},
 }
 
 
