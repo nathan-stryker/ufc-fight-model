@@ -511,6 +511,30 @@ MANUAL_CARDS = {
             ("Lucia Szabova", "Tainara Lisboa"),  # opener
         ],
     },
+    "UFC 334": {
+        "main_card": 5,
+        "order": [
+            # Full running order from the user, 2026-11-09 (top of the card first).
+            ("Ciryl Gane", "Josh Hokit"),
+            ("Kayla Harrison", "Amanda Nunes"),
+            ("Caio Borralho", "Yousri Belgaroui"),
+            ("Uros Medic", "Kevin Holland"),
+            ("Bilal Hasan", "Luis Gurule"),
+            ("Stephen Thompson", "Charles Radtke"),  # featured prelim
+            ("Drew Dober", "Chris Duncan"),
+            ("Jim Miller", "Terrance McKinney"),
+            ("Donte Johnson", "Cesar Almeida"),
+            ("Jared Gordon", "Melquizael Costa"),
+            ("Macy Chiasson", "Bia Mesquita"),
+            ("Alatengheili", "Juan Diaz"),  # replaced Adrian Yanez
+            ("Evan Elder", "Samuel Sanches"),  # opener
+        ],
+        "added": {
+            # Sherdog already lists "Juan Diaz vs Heili Alateng", bantamweight (2026-11-09).
+            frozenset({"alatengheili", "juan diaz"}): {"weight_class": "Bantamweight", "is_title_fight": False},
+        },
+        "removed": [("Adrian Yanez", "Juan Diaz")],
+    },
 }
 
 
