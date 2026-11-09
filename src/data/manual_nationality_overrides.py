@@ -288,6 +288,8 @@ MANUAL = {
     # one (b. 1996-02-10 = ours, "The Chief") is American; UFC.com lists Los
     # Angeles. Link from the event page (UFC Fight Night 293, 2026-11-05).
     "Carlos Calderon": ("United States", "US", "https://www.sherdog.com/fighter/Carlos-Calderon-247279"),
+    # Ours USA vs UFC.com's card Indonesia -- user chose Indonesia (UFC 334, 2026-11-09).
+    "Bilal Hasan": ("Indonesia", "ID"),
 }
 
 
