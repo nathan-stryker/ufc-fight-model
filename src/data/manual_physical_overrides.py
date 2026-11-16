@@ -151,6 +151,8 @@ REPLACE = {
     "Losene Keita": {"height_in": 69.0},
     # UFC Fight Night 292 audit: ours 5'11" vs UFC.com 6'0" -- user chose 6'0" (2026-10-27).
     "Theodor Berggren": {"height_in": 72.0},
+    # UFC Fight Night 294 audit (2026-11-16): user kept ours over UFC.com --
+    # Horiguchi 5'5"/66" (UFC.com 5'4"/69"), Abdullayev 5'8" (UFC.com 5'10").
 }
 
 
