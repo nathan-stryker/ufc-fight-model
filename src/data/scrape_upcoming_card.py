@@ -535,6 +535,28 @@ MANUAL_CARDS = {
         },
         "removed": [("Adrian Yanez", "Juan Diaz")],
     },
+    "UFC Fight Night 294": {
+        "main_card": 5,
+        "order": [
+            # Full running order from the user, 2026-11-16 (top of the card first).
+            ("Jiri Prochazka", "Navajo Stirling"),
+            ("Aljamain Sterling", "Kevin Vallejos"),
+            ("Dan Hooker", "Brian Ortega"),
+            ("Kyoji Horiguchi", "Asu Almabayev"),
+            ("Jared Cannonier", "Ikram Aliskerov"),
+            ("Aleksandre Topuria", "Santiago Luna"),  # featured prelim
+            ("Shamil Gaziev", "Tallison Teixeira"),
+            ("Amir Albazi", "Alessandro Costa"),
+            ("Jake Matthews", "Tahir Abdullayev"),
+            ("Nikolas Motta", "Dom Mar Fan"),
+            ("Diyar Nurgozhay", "Alik Lorenz"),  # opener
+        ],
+        "added": {
+            # Not on ufc.com yet; weight classes from Sherdog's event page (2026-11-16).
+            frozenset({"nikolas motta", "dom mar fan"}): {"weight_class": "Lightweight", "is_title_fight": False},
+            frozenset({"diyar nurgozhay", "alik lorenz"}): {"weight_class": "Light Heavyweight", "is_title_fight": False},
+        },
+    },
 }
 
 
