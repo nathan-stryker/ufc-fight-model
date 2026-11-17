@@ -549,12 +549,14 @@ MANUAL_CARDS = {
             ("Amir Albazi", "Alessandro Costa"),
             ("Jake Matthews", "Tahir Abdullayev"),
             ("Nikolas Motta", "Dom Mar Fan"),
-            ("Diyar Nurgozhay", "Alik Lorenz"),  # opener
+            ("Diyar Nurgozhay", "Alik Lorenz"),
+            ("John Mitchell", "Shoaib Yousaf"),  # opener, added 2026-11-17
         ],
         "added": {
             # Not on ufc.com yet; weight classes from Sherdog's event page (2026-11-16).
             frozenset({"nikolas motta", "dom mar fan"}): {"weight_class": "Lightweight", "is_title_fight": False},
             frozenset({"diyar nurgozhay", "alik lorenz"}): {"weight_class": "Light Heavyweight", "is_title_fight": False},
+            frozenset({"john mitchell", "shoaib yousaf"}): {"weight_class": "Lightweight", "is_title_fight": False},
         },
     },
 }
