@@ -295,6 +295,8 @@ MANUAL = {
     # been given Blindado's Sherdog page. Link from the UFC Fight Night 295
     # event page (vs. Jafel Filho), 2026-11-23.
     "http://ufcstats.com/fighter-details/294aa73dbf37d281": ("Brazil", "BR", "https://www.sherdog.com/fighter/Bruno-Silva-118601"),
+    # Ours Germany (Sherdog) vs UFC.com's card Türkiye -- user chose Türkiye (UFC Fight Night 295, 2026-11-23).
+    "Islam Dulatov": ("Turkey", "TR"),
 }
 
 

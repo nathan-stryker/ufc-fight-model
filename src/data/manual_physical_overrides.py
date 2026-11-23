@@ -120,6 +120,13 @@ MANUAL = {
     # UFC 334, user-supplied (2026-11-09).
     "Bilal Hasan": {"stance": "Switch"},
     "Juan Diaz": {"stance": "Orthodox"},
+    # UFC Fight Night 295 audit, user-supplied (2026-11-23).
+    "Yaroslav Amosov": {"stance": "Orthodox"},
+    "Akbar Abdullaev": {"reach_in": 70.0, "stance": "Orthodox"},
+    "Magomed Tuchalov": {"reach_in": 78.0, "stance": "Orthodox"},
+    "Ivan Gnizditskiy": {"reach_in": 73.0, "stance": "Orthodox"},
+    "Modestino Rodrigues": {"stance": "Orthodox"},
+    "Abdul Hussein": {"reach_in": 67.0},
 }
 
 
@@ -153,6 +160,9 @@ REPLACE = {
     "Theodor Berggren": {"height_in": 72.0},
     # UFC Fight Night 294 audit (2026-11-16): user kept ours over UFC.com --
     # Horiguchi 5'5"/66" (UFC.com 5'4"/69"), Abdullayev 5'8" (UFC.com 5'10").
+    # UFC Fight Night 295 audit (2026-11-23): ours 1994-06-13 vs Sherdog
+    # 1994-08-30 -- user chose Sherdog. Kept ours for Akbar Abdullaev (Sep 20).
+    "Marco Tulio": {"dob": "1994-08-30"},
 }
 
 
