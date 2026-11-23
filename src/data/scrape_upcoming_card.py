@@ -391,9 +391,17 @@ def match_fighter_ids(bouts):
 
     for b in bouts:
         for side in ("fighter_a_name", "fighter_b_name"):
-            key = normalize_name(b[side])
-            key = NAME_ALIASES.get(key, key)
+            raw_key = normalize_name(b[side])
+            key = NAME_ALIASES.get(raw_key, raw_key)
             candidates = by_norm_name.get(key, [])
+            if not candidates and key != raw_key and raw_key in by_norm_name:
+                # The alias target vanished because the upstream mirror
+                # re-spelled fighters.csv to match ufc.com (found 2026-11-23:
+                # "mahammadali osmanli" -> "mehemmedeli osmanli" alias went
+                # stale once fighters.csv itself switched to "Mahammadali").
+                # The raw name is still an EXACT match, so it's safe to use.
+                key = raw_key
+                candidates = by_norm_name[key]
             if key in MANUAL_FIGHTER_IDS:
                 fid = MANUAL_FIGHTER_IDS[key]
             elif len(candidates) == 1:
