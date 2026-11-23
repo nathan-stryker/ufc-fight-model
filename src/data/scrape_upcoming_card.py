@@ -567,6 +567,31 @@ MANUAL_CARDS = {
             frozenset({"john mitchell", "shoaib yousaf"}): {"weight_class": "Lightweight", "is_title_fight": False},
         },
     },
+    "UFC Fight Night 295": {
+        "main_card": 6,
+        "order": [
+            # Full running order from the user, 2026-11-23 (top of the card first).
+            ("Israel Adesanya", "Shara Magomedov"),
+            ("Ian Machado Garry", "Yaroslav Amosov"),
+            ("Levan Chokheli", "Islam Dulatov"),
+            ("Ion Cutelaba", "Magomed Tuchalov"),
+            ("Mairon Santos", "Akbar Abdullaev"),
+            ("Serghei Spivac", "Mario Pinto"),
+            ("Jafel Filho", "Bruno Silva"),  # featured prelim
+            ("Matthieu Duclos", "Modestino Rodrigues"),
+            ("Abdul Hussein", "Hecher Sosa"),
+            ("Uran Satybaldiev", "Ivan Gnizditskiy"),
+            ("JunYong Park", "Marco Tulio"),
+            ("Mahammadali Osmanli", "Pavel Andrusca"),
+            ("Mateusz Rebecki", "Elves Brener"),
+            ("Luke Riley", "Gabriel Santos"),  # opener
+        ],
+        "added": {
+            # Not on ufc.com yet; weight classes from Sherdog's event page (2026-11-23).
+            frozenset({"mateusz rebecki", "elves brener"}): {"weight_class": "Lightweight", "is_title_fight": False},
+            frozenset({"luke riley", "gabriel santos"}): {"weight_class": "Featherweight", "is_title_fight": False},
+        },
+    },
 }
 
 
