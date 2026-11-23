@@ -127,6 +127,7 @@ MANUAL = {
     "Ivan Gnizditskiy": {"reach_in": 73.0, "stance": "Orthodox"},
     "Modestino Rodrigues": {"stance": "Orthodox"},
     "Abdul Hussein": {"reach_in": 67.0},
+    "Luke Riley": {"stance": "Orthodox"},
 }
 
 
@@ -163,6 +164,8 @@ REPLACE = {
     # UFC Fight Night 295 audit (2026-11-23): ours 1994-06-13 vs Sherdog
     # 1994-08-30 -- user chose Sherdog. Kept ours for Akbar Abdullaev (Sep 20).
     "Marco Tulio": {"dob": "1994-08-30"},
+    # Ours 1992-11-03 vs Sherdog 1992-10-03 -- user chose Sherdog (2026-11-23).
+    "Mateusz Rebecki": {"dob": "1992-10-03"},
 }
 
 
