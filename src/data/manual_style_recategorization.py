@@ -453,7 +453,7 @@ MANUAL = {
     "Matthieu Duclos": "MMA",
     "Michal Oleksiejczuk": "Pressure Striker",
     "Modestino Rodrigues": "MMA",
-    "Nicholas Galanti": "Grappler",
+    "Nick Galanti": "Grappler",
     "Nursulton Ruziboev": "MMA",
     "Ozzy Diaz": "Striker",
     "Robert Valentin": "MMA",

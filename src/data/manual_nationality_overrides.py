@@ -256,7 +256,7 @@ MANUAL = {
     "Mackenzie Stiller": ("United States", "US"),
     "Javad Mahjoub": ("Canada", "CA"),
     "Joel Faglier": ("United States", "US"),
-    "Nicholas Galanti": ("United States", "US"),
+    "Nick Galanti": ("United States", "US"),
     "Louis Jourdain": ("Canada", "CA"),
     "Cristian Perez": ("Mexico", "MX"),
     # UFC 333 (Volkanovski vs. Evloev) -- user-supplied directly (2026-10-19).
@@ -290,6 +290,11 @@ MANUAL = {
     "Carlos Calderon": ("United States", "US", "https://www.sherdog.com/fighter/Carlos-Calderon-247279"),
     # Ours USA vs UFC.com's card Indonesia -- user chose Indonesia (UFC 334, 2026-11-09).
     "Bilal Hasan": ("Indonesia", "ID"),
+    # Flyweight Bruno "Bulldog" Silva -- keyed by fighter_id because the
+    # middleweight Bruno "Blindado" Silva shares the name, and both rows had
+    # been given Blindado's Sherdog page. Link from the UFC Fight Night 295
+    # event page (vs. Jafel Filho), 2026-11-23.
+    "http://ufcstats.com/fighter-details/294aa73dbf37d281": ("Brazil", "BR", "https://www.sherdog.com/fighter/Bruno-Silva-118601"),
 }
 
 
@@ -313,7 +318,7 @@ def main():
     for name, entry in MANUAL.items():
         nat, iso = entry[0], entry[1]
         fixed_url = entry[2] if len(entry) > 2 else None
-        mask = df["name"] == name
+        mask = fighter_mask(df, name)  # name, or fighter_id for same-name pairs
         if mask.any():
             df.loc[mask, "nationality"] = nat
             df.loc[mask, "iso_code"] = iso

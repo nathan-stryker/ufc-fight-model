@@ -207,11 +207,10 @@ RAW_FIGHTER_NAME_ALIASES = {
     # user after the site showed him 0-1 in the UFC instead of his real
     # 1-2 (2026-09-14).
     "Patricio Freire": "Patricio Pitbull",
-    # His UFC debut (sub win over Julien Leblanc, UFC Fight Night 291,
-    # 2026-10-17) is recorded as "Nick Galanti"; his UFCStats profile is
-    # "Nicholas Galanti". Same bout on Sherdog's event page. Found because
-    # Last Week's Results matched only 12 of 13 bouts (2026-10-19).
-    "Nick Galanti": "Nicholas Galanti",
+    # (Removed 2026-11-23: "Nick Galanti" -> "Nicholas Galanti". UFCStats has
+    # since renamed his profile to "Nick Galanti", matching the fight row, so
+    # the alias pointed at a name that no longer existed and unmatched his
+    # debut vs. Julien Leblanc. Override keys now use "Nick Galanti".)
     # Found by the UFC Fight Night 290 card audit (2026-10-05): 9 more UFC
     # fights silently dropped by spelling variants. Each checked against
     # Sherdog's fight list for that fighter.
